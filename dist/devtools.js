@@ -28,9 +28,7 @@ chrome.devtools.panels.create("DappHub","chrome.png", "panel.html", function(pan
 
       return _window.xs.create({
         start: listener => {
-          console.log("asd");
           port.onMessage.addListener(function (data) {
-            console.log(data);
             listener.next(data);
           });
         },
