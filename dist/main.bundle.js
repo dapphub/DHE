@@ -58,11 +58,11 @@
 
 	var _treeview = __webpack_require__(125);
 
-	var _http = __webpack_require__(126);
+	var _http = __webpack_require__(127);
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-	__webpack_require__(135);
+	__webpack_require__(136);
 
 	window.main = function (sources) {
 
@@ -8948,11 +8948,21 @@
 
 	var _dom = __webpack_require__(10);
 
+	var _isolate = __webpack_require__(312);
+
+	var _isolate2 = _interopRequireDefault(_isolate);
+
 	var _xstream = __webpack_require__(4);
 
 	var _xstream2 = _interopRequireDefault(_xstream);
 
+	var _flattenConcurrently = __webpack_require__(126);
+
+	var _flattenConcurrently2 = _interopRequireDefault(_flattenConcurrently);
+
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+	function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
 
 	var constructSelectors = function constructSelectors(selected, data) {
 	  return data.map(function (k, i) {
@@ -8984,37 +8994,65 @@
 	    line.push((0, _dom.span)(".resp", JSON.stringify(data.resp, false, 2)));
 	  }
 	  return (0, _dom.li)({
-	    class: { sniffline: true, open: selected != 0 }
+	    class: _defineProperty({ sniffline: true, open: selected != 0 }, "id" + data.req.id, true)
 	  }, line);
 	};
 
-	var SnifferTab = function SnifferTab(sources) {
-	  var click$ = sources.DOM.select(".sniffline .req").events("click").map(function (e) {
-	    console.log(e.target.attributes);
-	    return e.target.getAttribute("_id");
-	  }).fold(function (acc, e) {
-	    if (e in acc) {
-	      acc[e] = (acc[e] + 1) % 2;
-	    } else {
-	      acc[e] = 1;
-	    }
-	    return acc;
-	  }, {});
+	var Line = function Line(sources) {
+	  var expanded$ = sources.DOM.select(".req").events("click").fold(function (acc) {
+	    return !acc;
+	  }, false).debug("isExpanded");
 
-	  var lines$ = sources.Sniffer.fold(function (acc, e) {
-	    return acc.concat([e]);
-	  }, []);
-
-	  var vdom$ = _xstream2.default.combine(lines$, click$).map(function (_ref) {
+	  var vdom$ = _xstream2.default.combine(sources.data, expanded$).debug("draw").map(function (_ref) {
 	    var _ref2 = _slicedToArray(_ref, 2),
-	        lines = _ref2[0],
-	        clicks = _ref2[1];
+	        state = _ref2[0],
+	        isExpanded = _ref2[1];
 
-	    var vdom = lines.map(function (line) {
-	      return formatSniffLine(line, clicks[line.req.id]);
-	    });
-	    return tab("sniffer", [(0, _dom.ul)("", vdom)]);
+	    return formatSniffLine(state, isExpanded);
 	  });
+
+	  return {
+	    DOM: vdom$
+	  };
+	};
+
+	var SnifferTab = function SnifferTab(sources) {
+	  // var click$ = sources.DOM
+	  // .select(".sniffline .req")
+	  // .events("click")
+	  // .map(e => {
+	  //   console.log(e.target.attributes);
+	  //   return e.target.getAttribute("_id")
+	  // })
+	  // .fold((acc, e) => {
+	  //   if(e in acc) {
+	  //     acc[e] = (acc[e]+1) % 2;
+	  //   } else {
+	  //     acc[e] = 1;
+	  //   }
+	  //   return acc;
+	  // }, {});
+
+	  var vdom$ = sources.Sniffer.take(10).map(function (l) {
+	    return (0, _isolate2.default)(Line)({
+	      DOM: sources.DOM,
+	      data: _xstream2.default.of(l)
+	    }).DOM;
+	  }).flatten()
+	  // .compose(flattenConcurrently)
+	  .debug("acom").fold(function (acc, e) {
+	    return acc.concat([e]);
+	  }, []).map(function (lines) {
+	    return tab("sniffer", [(0, _dom.ul)("", lines)]);
+	  });
+
+	  // var vdom$ = xs.combine(lines$)
+	  // .map(([lines]) => {
+	  //   var vdom = lines.map(line => formatSniffLine(line, false))
+	  //   return tab("sniffer", [
+	  //     ul("", vdom)
+	  //   ]);
+	  // });
 
 	  return {
 	    DOM: vdom$
@@ -9060,6 +9098,103 @@
 
 /***/ },
 /* 126 */
+/***/ function(module, exports, __webpack_require__) {
+
+	"use strict";
+	var core_1 = __webpack_require__(5);
+	var FCIL = (function () {
+	    function FCIL(out, op) {
+	        this.out = out;
+	        this.op = op;
+	    }
+	    FCIL.prototype._n = function (t) {
+	        this.out._n(t);
+	    };
+	    FCIL.prototype._e = function (err) {
+	        this.out._e(err);
+	    };
+	    FCIL.prototype._c = function () {
+	        this.op.less();
+	    };
+	    return FCIL;
+	}());
+	var FlattenConcOperator = (function () {
+	    function FlattenConcOperator(ins) {
+	        this.ins = ins;
+	        this.type = 'flattenConcurrently';
+	        this.active = 1; // number of outers and inners that have not yet ended
+	        this.out = null;
+	    }
+	    FlattenConcOperator.prototype._start = function (out) {
+	        this.out = out;
+	        this.ins._add(this);
+	    };
+	    FlattenConcOperator.prototype._stop = function () {
+	        this.ins._remove(this);
+	        this.active = 1;
+	        this.out = null;
+	    };
+	    FlattenConcOperator.prototype.less = function () {
+	        if (--this.active === 0) {
+	            var u = this.out;
+	            if (!u)
+	                return;
+	            u._c();
+	        }
+	    };
+	    FlattenConcOperator.prototype._n = function (s) {
+	        var u = this.out;
+	        if (!u)
+	            return;
+	        this.active++;
+	        s._add(new FCIL(u, this));
+	    };
+	    FlattenConcOperator.prototype._e = function (err) {
+	        var u = this.out;
+	        if (!u)
+	            return;
+	        u._e(err);
+	    };
+	    FlattenConcOperator.prototype._c = function () {
+	        this.less();
+	    };
+	    return FlattenConcOperator;
+	}());
+	exports.FlattenConcOperator = FlattenConcOperator;
+	/**
+	 * Flattens a "stream of streams", handling multiple concurrent nested streams
+	 * simultaneously.
+	 *
+	 * If the input stream is a stream that emits streams, then this operator will
+	 * return an output stream which is a flat stream: emits regular events. The
+	 * flattening happens concurrently. It works like this: when the input stream
+	 * emits a nested stream, *flattenConcurrently* will start imitating that
+	 * nested one. When the next nested stream is emitted on the input stream,
+	 * *flattenConcurrently* will also imitate that new one, but will continue to
+	 * imitate the previous nested streams as well.
+	 *
+	 * Marble diagram:
+	 *
+	 * ```text
+	 * --+--------+---------------
+	 *   \        \
+	 *    \       ----1----2---3--
+	 *    --a--b----c----d--------
+	 *     flattenConcurrently
+	 * -----a--b----c-1--d-2---3--
+	 * ```
+	 *
+	 * @return {Stream}
+	 */
+	function flattenConcurrently(ins) {
+	    return new core_1.Stream(new FlattenConcOperator(ins));
+	}
+	Object.defineProperty(exports, "__esModule", { value: true });
+	exports.default = flattenConcurrently;
+	//# sourceMappingURL=flattenConcurrently.js.map
+
+/***/ },
+/* 127 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
@@ -9120,19 +9255,19 @@
 	 * @return {Function} the HTTP Driver function
 	 * @function makeHTTPDriver
 	 */
-	var http_driver_1 = __webpack_require__(127);
+	var http_driver_1 = __webpack_require__(128);
 	exports.makeHTTPDriver = http_driver_1.makeHTTPDriver;
 	//# sourceMappingURL=index.js.map
 
 /***/ },
-/* 127 */
+/* 128 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
 	var xstream_1 = __webpack_require__(4);
-	var MainHTTPSource_1 = __webpack_require__(128);
+	var MainHTTPSource_1 = __webpack_require__(129);
 	var xstream_adapter_1 = __webpack_require__(3);
-	var superagent = __webpack_require__(130);
+	var superagent = __webpack_require__(131);
 	function preprocessReqOptions(reqOptions) {
 	    reqOptions.withCredentials = reqOptions.withCredentials || false;
 	    reqOptions.redirects = typeof reqOptions.redirects === 'number' ? reqOptions.redirects : 5;
@@ -9284,11 +9419,11 @@
 	//# sourceMappingURL=http-driver.js.map
 
 /***/ },
-/* 128 */
+/* 129 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
-	var isolate_1 = __webpack_require__(129);
+	var isolate_1 = __webpack_require__(130);
 	var xstream_adapter_1 = __webpack_require__(3);
 	var MainHTTPSource = (function () {
 	    function MainHTTPSource(_res$$, runStreamAdapter, _name, _namespace) {
@@ -9320,7 +9455,7 @@
 	//# sourceMappingURL=MainHTTPSource.js.map
 
 /***/ },
-/* 129 */
+/* 130 */
 /***/ function(module, exports) {
 
 	"use strict";
@@ -9345,7 +9480,7 @@
 	//# sourceMappingURL=isolate.js.map
 
 /***/ },
-/* 130 */
+/* 131 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -9362,9 +9497,9 @@
 	  root = this;
 	}
 
-	var Emitter = __webpack_require__(131);
-	var requestBase = __webpack_require__(132);
-	var isObject = __webpack_require__(133);
+	var Emitter = __webpack_require__(132);
+	var requestBase = __webpack_require__(133);
+	var isObject = __webpack_require__(134);
 
 	/**
 	 * Noop.
@@ -9376,7 +9511,7 @@
 	 * Expose `request`.
 	 */
 
-	var request = module.exports = __webpack_require__(134).bind(null, Request);
+	var request = module.exports = __webpack_require__(135).bind(null, Request);
 
 	/**
 	 * Determine XHR.
@@ -10327,7 +10462,7 @@
 
 
 /***/ },
-/* 131 */
+/* 132 */
 /***/ function(module, exports, __webpack_require__) {
 
 	
@@ -10496,13 +10631,13 @@
 
 
 /***/ },
-/* 132 */
+/* 133 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
 	 * Module of mixed-in functions shared between node and client code
 	 */
-	var isObject = __webpack_require__(133);
+	var isObject = __webpack_require__(134);
 
 	/**
 	 * Clear previous timeout.
@@ -10874,7 +11009,7 @@
 
 
 /***/ },
-/* 133 */
+/* 134 */
 /***/ function(module, exports) {
 
 	/**
@@ -10893,7 +11028,7 @@
 
 
 /***/ },
-/* 134 */
+/* 135 */
 /***/ function(module, exports) {
 
 	// The node and browser modules expose versions of this with the
@@ -10931,16 +11066,16 @@
 
 
 /***/ },
-/* 135 */
+/* 136 */
 /***/ function(module, exports, __webpack_require__) {
 
 	// style-loader: Adds some css to the DOM by adding a <style> tag
 
 	// load the styles
-	var content = __webpack_require__(136);
+	var content = __webpack_require__(137);
 	if(typeof content === 'string') content = [[module.id, content, '']];
 	// add the styles to the DOM
-	var update = __webpack_require__(138)(content, {});
+	var update = __webpack_require__(139)(content, {});
 	if(content.locals) module.exports = content.locals;
 	// Hot Module Replacement
 	if(false) {
@@ -10957,10 +11092,10 @@
 	}
 
 /***/ },
-/* 136 */
+/* 137 */
 /***/ function(module, exports, __webpack_require__) {
 
-	exports = module.exports = __webpack_require__(137)();
+	exports = module.exports = __webpack_require__(138)();
 	// imports
 	exports.push([module.id, "@import url(https://fonts.googleapis.com/css?family=Lato:100,400,300,500);", ""]);
 	exports.push([module.id, "@import url(https://fonts.googleapis.com/css?family=Source+Code+Pro);", ""]);
@@ -10972,7 +11107,7 @@
 
 
 /***/ },
-/* 137 */
+/* 138 */
 /***/ function(module, exports) {
 
 	/*
@@ -11028,7 +11163,7 @@
 
 
 /***/ },
-/* 138 */
+/* 139 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/*
@@ -11278,6 +11413,273 @@
 			URL.revokeObjectURL(oldSrc);
 	}
 
+
+/***/ },
+/* 140 */,
+/* 141 */,
+/* 142 */,
+/* 143 */,
+/* 144 */,
+/* 145 */,
+/* 146 */,
+/* 147 */,
+/* 148 */,
+/* 149 */,
+/* 150 */,
+/* 151 */,
+/* 152 */,
+/* 153 */,
+/* 154 */,
+/* 155 */,
+/* 156 */,
+/* 157 */,
+/* 158 */,
+/* 159 */,
+/* 160 */,
+/* 161 */,
+/* 162 */,
+/* 163 */,
+/* 164 */,
+/* 165 */,
+/* 166 */,
+/* 167 */,
+/* 168 */,
+/* 169 */,
+/* 170 */,
+/* 171 */,
+/* 172 */,
+/* 173 */,
+/* 174 */,
+/* 175 */,
+/* 176 */,
+/* 177 */,
+/* 178 */,
+/* 179 */,
+/* 180 */,
+/* 181 */,
+/* 182 */,
+/* 183 */,
+/* 184 */,
+/* 185 */,
+/* 186 */,
+/* 187 */,
+/* 188 */,
+/* 189 */,
+/* 190 */,
+/* 191 */,
+/* 192 */,
+/* 193 */,
+/* 194 */,
+/* 195 */,
+/* 196 */,
+/* 197 */,
+/* 198 */,
+/* 199 */,
+/* 200 */,
+/* 201 */,
+/* 202 */,
+/* 203 */,
+/* 204 */,
+/* 205 */,
+/* 206 */,
+/* 207 */,
+/* 208 */,
+/* 209 */,
+/* 210 */,
+/* 211 */,
+/* 212 */,
+/* 213 */,
+/* 214 */,
+/* 215 */,
+/* 216 */,
+/* 217 */,
+/* 218 */,
+/* 219 */,
+/* 220 */,
+/* 221 */,
+/* 222 */,
+/* 223 */,
+/* 224 */,
+/* 225 */,
+/* 226 */,
+/* 227 */,
+/* 228 */,
+/* 229 */,
+/* 230 */,
+/* 231 */,
+/* 232 */,
+/* 233 */,
+/* 234 */,
+/* 235 */,
+/* 236 */,
+/* 237 */,
+/* 238 */,
+/* 239 */,
+/* 240 */,
+/* 241 */,
+/* 242 */,
+/* 243 */,
+/* 244 */,
+/* 245 */,
+/* 246 */,
+/* 247 */,
+/* 248 */,
+/* 249 */,
+/* 250 */,
+/* 251 */,
+/* 252 */,
+/* 253 */,
+/* 254 */,
+/* 255 */,
+/* 256 */,
+/* 257 */,
+/* 258 */,
+/* 259 */,
+/* 260 */,
+/* 261 */,
+/* 262 */,
+/* 263 */,
+/* 264 */,
+/* 265 */,
+/* 266 */,
+/* 267 */,
+/* 268 */,
+/* 269 */,
+/* 270 */,
+/* 271 */,
+/* 272 */,
+/* 273 */,
+/* 274 */,
+/* 275 */,
+/* 276 */,
+/* 277 */,
+/* 278 */,
+/* 279 */,
+/* 280 */,
+/* 281 */,
+/* 282 */,
+/* 283 */,
+/* 284 */,
+/* 285 */,
+/* 286 */,
+/* 287 */,
+/* 288 */,
+/* 289 */,
+/* 290 */,
+/* 291 */,
+/* 292 */,
+/* 293 */,
+/* 294 */,
+/* 295 */,
+/* 296 */,
+/* 297 */,
+/* 298 */,
+/* 299 */,
+/* 300 */,
+/* 301 */,
+/* 302 */,
+/* 303 */,
+/* 304 */,
+/* 305 */,
+/* 306 */,
+/* 307 */,
+/* 308 */,
+/* 309 */,
+/* 310 */,
+/* 311 */,
+/* 312 */
+/***/ function(module, exports) {
+
+	"use strict";
+	var counter = 0;
+	function newScope() {
+	    return "cycle" + ++counter;
+	}
+	function checkIsolateArgs(dataflowComponent, scope) {
+	    if (typeof dataflowComponent !== "function") {
+	        throw new Error("First argument given to isolate() must be a " +
+	            "'dataflowComponent' function");
+	    }
+	    if (scope === null) {
+	        throw new Error("Second argument given to isolate() must not be null");
+	    }
+	}
+	function isolateAllSources(sources, scope) {
+	    var scopedSources = {};
+	    for (var key in sources) {
+	        if (sources.hasOwnProperty(key) && sources[key]
+	            && typeof sources[key].isolateSource === "function") {
+	            scopedSources[key] = sources[key].isolateSource(sources[key], scope);
+	        }
+	        else if (sources.hasOwnProperty(key)) {
+	            scopedSources[key] = sources[key];
+	        }
+	    }
+	    return scopedSources;
+	}
+	function isolateAllSinks(sources, sinks, scope) {
+	    var scopedSinks = {};
+	    for (var key in sinks) {
+	        if (sinks.hasOwnProperty(key)
+	            && sources[key]
+	            && typeof sources[key].isolateSink === "function") {
+	            scopedSinks[key] = sources[key].isolateSink(sinks[key], scope);
+	        }
+	        else if (sinks.hasOwnProperty(key)) {
+	            scopedSinks[key] = sinks[key];
+	        }
+	    }
+	    return scopedSinks;
+	}
+	/**
+	 * Takes a `dataflowComponent` function and an optional `scope` string, and
+	 * returns a scoped version of the `dataflowComponent` function.
+	 *
+	 * When the scoped dataflow component is invoked, each source provided to the
+	 * scoped dataflowComponent is isolated to the scope using
+	 * `source.isolateSource(source, scope)`, if possible. Likewise, the sinks
+	 * returned from the scoped dataflow component are isolate to the scope using
+	 * `source.isolateSink(sink, scope)`.
+	 *
+	 * If the `scope` is not provided, a new scope will be automatically created.
+	 * This means that while **`isolate(dataflowComponent, scope)` is pure**
+	 * (referentially transparent), **`isolate(dataflowComponent)` is impure**
+	 * (not referentially transparent). Two calls to `isolate(Foo, bar)` will
+	 * generate two indistinct dataflow components. But, two calls to `isolate(Foo)`
+	 * will generate two distinct dataflow components.
+	 *
+	 * Note that both `isolateSource()` and `isolateSink()` are static members of
+	 * `source`. The reason for this is that drivers produce `source` while the
+	 * application produces `sink`, and it's the driver's responsibility to
+	 * implement `isolateSource()` and `isolateSink()`.
+	 *
+	 * @param {Function} dataflowComponent a function that takes `sources` as input
+	 * and outputs a collection of `sinks`.
+	 * @param {String} scope an optional string that is used to isolate each
+	 * `sources` and `sinks` when the returned scoped dataflow component is invoked.
+	 * @return {Function} the scoped dataflow component function that, as the
+	 * original `dataflowComponent` function, takes `sources` and returns `sinks`.
+	 * @function isolate
+	 */
+	function isolate(component, scope) {
+	    if (scope === void 0) { scope = newScope(); }
+	    checkIsolateArgs(component, scope);
+	    var convertedScope = typeof scope === 'string' ? scope : scope.toString();
+	    return function scopedComponent(sources) {
+	        var rest = [];
+	        for (var _i = 1; _i < arguments.length; _i++) {
+	            rest[_i - 1] = arguments[_i];
+	        }
+	        var scopedSources = isolateAllSources(sources, convertedScope);
+	        var sinks = component.apply(void 0, [scopedSources].concat(rest));
+	        var scopedSinks = isolateAllSinks(sources, sinks, convertedScope);
+	        return scopedSinks;
+	    };
+	}
+	isolate.reset = function () { return counter = 0; };
+	Object.defineProperty(exports, "__esModule", { value: true });
+	exports.default = isolate;
+	//# sourceMappingURL=index.js.map
 
 /***/ }
 /******/ ]);
