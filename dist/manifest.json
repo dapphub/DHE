@@ -1,0 +1,31 @@
+{
+  "name": "DappHub",
+  "version": "0.0.1",
+  "manifest_version": 2,
+  "description": "Dapp developer multitool",
+  "devtools_page": "devtools.html",
+  "background": {
+    "scripts": [
+      "background.js"
+    ]
+  },
+  "content_scripts": [
+    {
+      "matches": ["http://*/*", "https://*/*"],
+      "js": ["inject.js"],
+      "run_at": "document_start",
+      "all_frames": true
+    }
+  ],
+  "web_accessible_resources": [
+    "content.js",
+    "testrpc.bundle.js"
+  ],
+  "permissions": [
+    "tabs",
+    "storage",
+    "http://*/*",
+    "https://*/*",
+    "https://7i22h93cg3.execute-api.us-east-1.amazonaws.com/dev/get"
+  ]
+}

@@ -1,0 +1,98 @@
+@import "colors";
+
+@import url(https://fonts.googleapis.com/css?family=Lato:100,400,300,500);
+@import url(https://fonts.googleapis.com/css?family=Source+Code+Pro);
+
+@mixin font-size($size) {
+  font-size: $size;
+  font-size: calculateRem($size);
+}
+
+body {
+  margin: 0;
+  @include font-size(12px)
+  background: $secondary-color;
+  font-family: 'proxima-nova', sans-serif;
+  color: $dark-bg-color;
+
+  #app {
+    height: 100%;
+  }
+}
+
+
+.treeview {
+  height: 100%;
+  display: flex;
+  flex-direction: row;
+  align-content: flex-start;
+  flex: 1;
+  .selectView {
+    flex: 1;
+    overflow-y: auto;
+    position: relative;
+    background: $dark-bg-color;
+    color: $white;
+    min-width: 15%;
+    width: 15%;
+
+    .navBtn {
+      padding: 6px 15px;
+      font-size: 12px;
+      font-weight: 300;
+      letter-spacing: 1px;
+      background-color: $dark-bg-color;
+      color: #fff;
+      &:hover {
+        background-color: lighten($dark-bg-color, 20%);
+      }
+
+      &.selected {
+        border-left: 4px solid $main2;
+        background: lighten($dark-bg-color, 20%);
+        padding-left: 11px;
+      }
+    }
+  }
+  .mainView {
+    flex: 8;
+    overflow: auto;
+    display: flex;
+    .sniffer {
+      font-family: monospace;
+      width: 100%;
+      overflow-wrap: break-word;
+      ul {
+        padding: 0;
+        li.sniffline {
+          width: 100%;
+          list-style: none;
+          span.req {
+            padding: 4px 15px;
+            display: block;
+            border-bottom: 1px solid #cdcdcd;
+            &:hover, &.open {
+              background: rgba(255,255,255,0.3);
+            }
+          }
+          span.resp {
+            display: block;
+            padding: 5px 35px;
+            background: rgba(0,0,0,0.1);
+            white-space: pre-wrap;
+          }
+          &::before {
+            content: "▸";
+            font-size: 10px;
+            line-height: 10px;
+            float: left;
+            margin: 5px 10px;
+          }
+          &.open::before {
+           content: "▾";
+          }
+        }//li
+      }
+    }
+  }
+}

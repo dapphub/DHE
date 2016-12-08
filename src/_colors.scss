@@ -1,0 +1,32 @@
+$primary-color: #403888;
+$secondary-color: #e7e7e7;
+
+$purple-bg-dark:#725AC1;
+$purple-bg: #8D86C9;
+
+
+$dark-bg-color: #27243F;
+$bg-light-panel: #F8F7F5;
+
+
+$alert-color: #FFC857;
+$success-color: #1ABC9C;
+$warning-color: #f08a24;
+$info-color: #C4BFF6;
+
+
+$white: #fff;
+
+$main1: #8D86C9;
+$main1_disabled: lighten(desaturate($main1, 5%),5%);
+$main2: #725AC1;
+$main3: #F8F7F5;
+
+$dark: $main1;
+$dark2: $main1_disabled;
+
+$grey: #888;
+
+$red: #e23d24;
+$yellow: #f0a800;
+$green: #67a029;
