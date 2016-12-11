@@ -9011,7 +9011,9 @@
 	        clicks = _ref2[1];
 
 	    var vdom = lines.map(function (line) {
-	      return formatSniffLine(line, clicks[line.req.id]);
+	      return (0, _dom.thunk)("li", line.req.id, function (line, ac) {
+	        return formatSniffLine(line, ac);
+	      }, [line, clicks[line.req.id]]);
 	    });
 	    return tab("sniffer", [(0, _dom.ul)("", vdom)]);
 	  });

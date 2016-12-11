@@ -1,4 +1,4 @@
-import {div, span, ul, li, label, input, hr, h1, makeDOMDriver} from '@cycle/dom';
+import {thunk, div, span, ul, li, label, input, hr, h1, makeDOMDriver} from '@cycle/dom';
 import xs from 'xstream';
 
 var constructSelectors = (selected, data) => {
@@ -55,7 +55,7 @@ var SnifferTab = (sources) => {
 
   var vdom$ = xs.combine(lines$, click$)
   .map(([lines, clicks]) => {
-    var vdom = lines.map(line => formatSniffLine(line, clicks[line.req.id]))
+    var vdom = lines.map(line => thunk("li", line.req.id, (line, ac) => formatSniffLine(line,ac), [line, clicks[line.req.id]]))
     return tab("sniffer", [
       ul("", vdom)
     ]);
