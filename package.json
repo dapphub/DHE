@@ -27,6 +27,7 @@
     "webpack-dev-server": "^1.16.2"
   },
   "dependencies": {
+    "@cycle/collection": "^0.4.0",
     "@cycle/dom": "^14.0.0",
     "@cycle/http": "^11.2.0",
     "@cycle/isolate": "^1.4.0",

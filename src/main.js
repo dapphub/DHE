@@ -6,8 +6,10 @@ import {makeHTTPDriver} from '@cycle/http';
 require("./style.scss");
 
 window.main = (sources) => {
+  
+  const DHExtension = mainView(sources);
 
-  var DH$ = mainView(sources).DOM;
+  var DH$ = DHExtension.DOM;
 
   var init$ = sources.DOM.select('.toggleDappHub')
   .events('click')
@@ -25,7 +27,8 @@ window.main = (sources) => {
   });
 
   var MV = {
-    DOM: vdom$
+    DOM: vdom$,
+    HTTP: DHExtension.HTTP
   }
 
   return MV;

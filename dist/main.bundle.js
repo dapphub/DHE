@@ -58,15 +58,17 @@
 
 	var _treeview = __webpack_require__(125);
 
-	var _http = __webpack_require__(126);
+	var _http = __webpack_require__(133);
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-	__webpack_require__(135);
+	__webpack_require__(142);
 
 	window.main = function (sources) {
 
-	  var DH$ = (0, _treeview.mainView)(sources).DOM;
+	  var DHExtension = (0, _treeview.mainView)(sources);
+
+	  var DH$ = DHExtension.DOM;
 
 	  var init$ = sources.DOM.select('.toggleDappHub').events('click').fold(function (acc, x) {
 	    return !acc;
@@ -84,7 +86,8 @@
 	  });
 
 	  var MV = {
-	    DOM: vdom$
+	    DOM: vdom$,
+	    HTTP: DHExtension.HTTP
 	  };
 
 	  return MV;
@@ -8948,11 +8951,25 @@
 
 	var _dom = __webpack_require__(10);
 
+	var _isolate = __webpack_require__(126);
+
+	var _isolate2 = _interopRequireDefault(_isolate);
+
+	var _collection = __webpack_require__(127);
+
+	var _collection2 = _interopRequireDefault(_collection);
+
 	var _xstream = __webpack_require__(4);
 
 	var _xstream2 = _interopRequireDefault(_xstream);
 
+	var _flattenConcurrently = __webpack_require__(132);
+
+	var _flattenConcurrently2 = _interopRequireDefault(_flattenConcurrently);
+
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+	function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
 
 	var constructSelectors = function constructSelectors(selected, data) {
 	  return data.map(function (k, i) {
@@ -8984,38 +9001,50 @@
 	    line.push((0, _dom.span)(".resp", JSON.stringify(data.resp, false, 2)));
 	  }
 	  return (0, _dom.li)({
-	    class: { sniffline: true, open: selected != 0 }
+	    class: _defineProperty({ sniffline: true, open: selected != 0 }, "id" + data.req.id, true)
 	  }, line);
 	};
 
+	var Line = function Line(sources) {
+	  var expanded$ = sources.DOM.select(".req").events("click").fold(function (acc) {
+	    return !acc;
+	  }, false);
+
+	  var vdom$ = expanded$.map(function (isExpanded) {
+	    return formatSniffLine(sources.comm, isExpanded, sources.memp);
+	  });
+
+	  return {
+	    DOM: vdom$
+	  };
+	};
+
 	var SnifferTab = function SnifferTab(sources) {
-	  var click$ = sources.DOM.select(".sniffline .req").events("click").map(function (e) {
-	    console.log(e.target.attributes);
-	    return e.target.getAttribute("_id");
-	  }).fold(function (acc, e) {
-	    if (e in acc) {
-	      acc[e] = (acc[e] + 1) % 2;
-	    } else {
-	      acc[e] = 1;
-	    }
-	    return acc;
-	  }, {});
 
-	  var lines$ = sources.Sniffer.fold(function (acc, e) {
-	    return acc.concat([e]);
-	  }, []);
-
-	  var vdom$ = _xstream2.default.combine(lines$, click$).map(function (_ref) {
+	  var logState$ = _xstream2.default.combine(sources.Sniffer, sources.memepool$).map(function (_ref) {
 	    var _ref2 = _slicedToArray(_ref, 2),
-	        lines = _ref2[0],
-	        clicks = _ref2[1];
+	        comm = _ref2[0],
+	        memp = _ref2[1];
 
+<<<<<<< HEAD
 	    var vdom = lines.map(function (line) {
 	      return (0, _dom.thunk)("li", line.req.id, function (line, ac) {
 	        return formatSniffLine(line, ac);
 	      }, [line, clicks[line.req.id]]);
 	    });
 	    return tab("sniffer", [(0, _dom.ul)("", vdom)]);
+=======
+	    return { comm: comm, memp: memp };
+	  });
+
+	  var lineList$ = (0, _collection2.default)(Line, sources, logState$);
+	  var lines$ = _collection2.default.pluck(lineList$, function (item) {
+	    return item.DOM;
+	  });
+
+	  var vdom$ = lines$.map(function (lines) {
+	    return tab("sniffer", [(0, _dom.div)(".controllBar", []), (0, _dom.ul)("", lines)]);
+>>>>>>> line_decorator_sandbox
 	  });
 
 	  return {
@@ -9029,39 +9058,2503 @@
 	    return newState;
 	  }).startWith(0);
 
-	  var snifferTab$ = SnifferTab(sources).DOM;
-
-	  var response$ = sources.HTTP.select('hello').flatten().map(function (res) {
+	  var memepool$ = sources.HTTP.select('expert').flatten().debug("res").map(function (res) {
 	    return JSON.parse(res.text);
-	  }).startWith('Loading...');
+	  }).fold(function (acc, meme) {
+	    acc.addrs[meme.address] = meme;
+	    return acc;
+	  }, { addrs: {} }).debug("meme");
 
-	  var vdom$ = _xstream2.default.combine(selected$, snifferTab$, response$).map(function (_ref3) {
-	    var _ref4 = _slicedToArray(_ref3, 3),
+	  var snifferTab$ = SnifferTab({
+	    memepool$: memepool$,
+	    DOM: sources.DOM,
+	    Sniffer: sources.Sniffer
+	  }).DOM;
+
+	  var vdom$ = _xstream2.default.combine(selected$, snifferTab$).map(function (_ref3) {
+	    var _ref4 = _slicedToArray(_ref3, 2),
 	        state = _ref4[0],
-	        snifferTab = _ref4[1],
-	        res = _ref4[2];
+	        snifferTab = _ref4[1];
 
 	    var data = [tab("something", "here"), tab("address", [(0, _dom.h1)("")]), snifferTab];
-	    // const data = state[0];
 	    var selected = state;
 	    return (0, _dom.div)('.treeview', [(0, _dom.div)('.selectView', constructSelectors(selected, data)), (0, _dom.div)('.mainView', constructView(selected, data))]);
 	  });
 
-	  var request$ = _xstream2.default.of({
-	    url: 'https://7i22h93cg3.execute-api.us-east-1.amazonaws.com/dev/get',
-	    method: 'GET',
-	    query: { "address": "0x9d6bb976159a6c131512ce27c83ba1fcb05b22ea" },
-	    category: 'hello'
-	  });
+	  // const request$ = xs.of({
+	  //   url: 'https://7i22h93cg3.execute-api.us-east-1.amazonaws.com/dev/get',
+	  //   method: 'GET',
+	  //   query: {"address": "0xd43a1e8b374a17d5556ccca1c42353cc18b55b7a"},
+	  //   category: 'expert',
+	  // });
 
 	  return {
-	    DOM: vdom$,
-	    HTTP: request$
+	    DOM: vdom$
 	  };
 	};
 
 /***/ },
 /* 126 */
+/***/ function(module, exports) {
+
+	"use strict";
+	var counter = 0;
+	function newScope() {
+	    return "cycle" + ++counter;
+	}
+	function checkIsolateArgs(dataflowComponent, scope) {
+	    if (typeof dataflowComponent !== "function") {
+	        throw new Error("First argument given to isolate() must be a " +
+	            "'dataflowComponent' function");
+	    }
+	    if (scope === null) {
+	        throw new Error("Second argument given to isolate() must not be null");
+	    }
+	}
+	function isolateAllSources(sources, scope) {
+	    var scopedSources = {};
+	    for (var key in sources) {
+	        if (sources.hasOwnProperty(key) && sources[key]
+	            && typeof sources[key].isolateSource === "function") {
+	            scopedSources[key] = sources[key].isolateSource(sources[key], scope);
+	        }
+	        else if (sources.hasOwnProperty(key)) {
+	            scopedSources[key] = sources[key];
+	        }
+	    }
+	    return scopedSources;
+	}
+	function isolateAllSinks(sources, sinks, scope) {
+	    var scopedSinks = {};
+	    for (var key in sinks) {
+	        if (sinks.hasOwnProperty(key)
+	            && sources[key]
+	            && typeof sources[key].isolateSink === "function") {
+	            scopedSinks[key] = sources[key].isolateSink(sinks[key], scope);
+	        }
+	        else if (sinks.hasOwnProperty(key)) {
+	            scopedSinks[key] = sinks[key];
+	        }
+	    }
+	    return scopedSinks;
+	}
+	/**
+	 * Takes a `dataflowComponent` function and an optional `scope` string, and
+	 * returns a scoped version of the `dataflowComponent` function.
+	 *
+	 * When the scoped dataflow component is invoked, each source provided to the
+	 * scoped dataflowComponent is isolated to the scope using
+	 * `source.isolateSource(source, scope)`, if possible. Likewise, the sinks
+	 * returned from the scoped dataflow component are isolate to the scope using
+	 * `source.isolateSink(sink, scope)`.
+	 *
+	 * If the `scope` is not provided, a new scope will be automatically created.
+	 * This means that while **`isolate(dataflowComponent, scope)` is pure**
+	 * (referentially transparent), **`isolate(dataflowComponent)` is impure**
+	 * (not referentially transparent). Two calls to `isolate(Foo, bar)` will
+	 * generate two indistinct dataflow components. But, two calls to `isolate(Foo)`
+	 * will generate two distinct dataflow components.
+	 *
+	 * Note that both `isolateSource()` and `isolateSink()` are static members of
+	 * `source`. The reason for this is that drivers produce `source` while the
+	 * application produces `sink`, and it's the driver's responsibility to
+	 * implement `isolateSource()` and `isolateSink()`.
+	 *
+	 * @param {Function} dataflowComponent a function that takes `sources` as input
+	 * and outputs a collection of `sinks`.
+	 * @param {String} scope an optional string that is used to isolate each
+	 * `sources` and `sinks` when the returned scoped dataflow component is invoked.
+	 * @return {Function} the scoped dataflow component function that, as the
+	 * original `dataflowComponent` function, takes `sources` and returns `sinks`.
+	 * @function isolate
+	 */
+	function isolate(component, scope) {
+	    if (scope === void 0) { scope = newScope(); }
+	    checkIsolateArgs(component, scope);
+	    var convertedScope = typeof scope === 'string' ? scope : scope.toString();
+	    return function scopedComponent(sources) {
+	        var rest = [];
+	        for (var _i = 1; _i < arguments.length; _i++) {
+	            rest[_i - 1] = arguments[_i];
+	        }
+	        var scopedSources = isolateAllSources(sources, convertedScope);
+	        var sinks = component.apply(void 0, [scopedSources].concat(rest));
+	        var scopedSinks = isolateAllSinks(sources, sinks, convertedScope);
+	        return scopedSinks;
+	    };
+	}
+	isolate.reset = function () { return counter = 0; };
+	Object.defineProperty(exports, "__esModule", { value: true });
+	exports.default = isolate;
+	//# sourceMappingURL=index.js.map
+
+/***/ },
+/* 127 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+	exports.makeCollection = undefined;
+
+	var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
+
+	var _xstream = __webpack_require__(128);
+
+	var _xstream2 = _interopRequireDefault(_xstream);
+
+	var _delay = __webpack_require__(130);
+
+	var _delay2 = _interopRequireDefault(_delay);
+
+	var _dropRepeats = __webpack_require__(131);
+
+	var _dropRepeats2 = _interopRequireDefault(_dropRepeats);
+
+	var _isolate = __webpack_require__(126);
+
+	var _isolate2 = _interopRequireDefault(_isolate);
+
+	var _xstreamAdapter = __webpack_require__(3);
+
+	var _xstreamAdapter2 = _interopRequireDefault(_xstreamAdapter);
+
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+	function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
+
+	function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }
+
+	var noop = Function.prototype;
+
+	function isVtree(x) {
+	  return x && typeof x.sel === 'string';
+	}
+
+	var _id = 0;
+
+	function id() {
+	  return _id++;
+	}
+
+	function makeItem(component, sources) {
+	  var newId = id();
+
+	  var newItem = (0, _isolate2.default)(component, newId.toString())(sources);
+
+	  newItem._id = newId;
+	  newItem._name = component.name;
+
+	  return newItem;
+	}
+
+	function convert(stream, sourceSA, targetSA) {
+	  return targetSA.isValidStream(stream) ? stream : targetSA.adapt(stream, sourceSA.streamSubscribe);
+	}
+
+	function makeCollection() {
+	  var externalSA = arguments.length <= 0 || arguments[0] === undefined ? _xstreamAdapter2.default : arguments[0];
+
+	  function collection(options) {
+	    var items = arguments.length <= 1 || arguments[1] === undefined ? [] : arguments[1];
+	    var component = options.component;
+	    var sources = options.sources;
+	    var removeSelector = options.removeSelector;
+
+
+	    return {
+	      add: function add() {
+	        var additionalSources = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
+
+	        var newItem = makeItem(component, _extends({}, sources, additionalSources));
+	        var selectedSink = removeSelector(newItem) || _xstream2.default.empty();
+	        var removeSink = convert(selectedSink, externalSA, _xstreamAdapter2.default);
+	        newItem._remove$ = removeSink.take(1).mapTo(newItem);
+
+	        return collection(options, [].concat(_toConsumableArray(items), [newItem]));
+	      },
+	      remove: function remove(itemForRemoval) {
+	        return collection(options, items.filter(function (item) {
+	          return item !== itemForRemoval;
+	        }));
+	      },
+	      asArray: function asArray() {
+	        return items.slice(); // returns a copy of items to avoid mutation
+	      }
+	    };
+	  }
+
+	  function Collection(component) {
+	    var sources = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
+	    var sourceAdd$ = arguments.length <= 2 || arguments[2] === undefined ? _xstream2.default.empty() : arguments[2];
+	    var removeSelector = arguments.length <= 3 || arguments[3] === undefined ? noop : arguments[3];
+
+	    var removeProxy$ = _xstream2.default.create();
+	    var add$ = convert(sourceAdd$, externalSA, _xstreamAdapter2.default);
+	    var addReducer$ = add$.map(function (sourcesList) {
+	      return function (collection) {
+	        if (Array.isArray(sourcesList)) {
+	          // multiple items
+	          return sourcesList.reduce(function (collection, sources) {
+	            return collection.add(sources);
+	          }, collection);
+	        } else {
+	          // single item
+	          return collection.add(sourcesList);
+	        }
+	      };
+	    });
+	    var removeReducer$ = removeProxy$.map(function (item) {
+	      return function (collection) {
+	        return collection.remove(item);
+	      };
+	    });
+	    var reducer$ = _xstream2.default.merge(addReducer$, removeReducer$);
+
+	    var emptyCollection = collection({ component: component, sources: sources, removeSelector: removeSelector });
+	    var collection$ = reducer$.fold(function (collection, reducer) {
+	      return reducer(collection);
+	    }, emptyCollection).map(function (collection) {
+	      return collection.asArray();
+	    });
+
+	    var remove$ = Collection.merge(collection$, function (item) {
+	      return item._remove$;
+	    }, true);
+	    removeProxy$.imitate(remove$);
+
+	    return convert(collection$, _xstreamAdapter2.default, externalSA);
+	  }
+
+	  Collection.pluck = function pluck(sourceCollection$, pluckSelector) {
+	    var sinks = {};
+
+	    function sink$(item) {
+	      var key = item._id;
+
+	      if (sinks[key] === undefined) {
+	        var selectedSink = convert(pluckSelector(item), externalSA, _xstreamAdapter2.default);
+	        var sink = selectedSink.map(function (x) {
+	          return isVtree(x) && x.key == null ? _extends({}, x, { key: key }) : x;
+	        });
+	        sinks[key] = sink.remember();
+	      }
+
+	      return sinks[key];
+	    }
+
+	    var collection$ = convert(sourceCollection$, externalSA, _xstreamAdapter2.default);
+	    var outputCollection$ = collection$.map(function (items) {
+	      return items.map(function (item) {
+	        return sink$(item);
+	      });
+	    }).map(function (sinkStreams) {
+	      return _xstream2.default.combine.apply(_xstream2.default, _toConsumableArray(sinkStreams));
+	    }).flatten().startWith([]);
+	    return convert(outputCollection$, _xstreamAdapter2.default, externalSA);
+	  };
+
+	  Collection.merge = function merge(sourceCollection$, mergeSelector) {
+	    var internal = arguments.length <= 2 || arguments[2] === undefined ? false : arguments[2];
+
+	    var sinks = {};
+
+	    function sink$(item) {
+	      var key = item._id;
+
+	      if (sinks[key] === undefined) {
+	        var selectedSink = convert(mergeSelector(item), externalSA, _xstreamAdapter2.default);
+	        var sink = selectedSink.map(function (x) {
+	          return isVtree(x) && x.key == null ? _extends({}, x, { key: key }) : x;
+	        });
+	        // prevent sink from early completion and reinitialization
+	        sinks[key] = _xstream2.default.merge(sink, _xstream2.default.never());
+	      }
+
+	      return sinks[key];
+	    }
+
+	    var collection$ = convert(sourceCollection$, externalSA, _xstreamAdapter2.default);
+	    var outputCollection$ = collection$.map(function (items) {
+	      return items.map(function (item) {
+	        return sink$(item);
+	      });
+	    }).map(function (sinkStreams) {
+	      return _xstream2.default.merge.apply(_xstream2.default, _toConsumableArray(sinkStreams));
+	    }).flatten();
+	    return internal ? outputCollection$ : convert(outputCollection$, _xstreamAdapter2.default, externalSA);
+	  };
+
+	  // convert a stream of items' sources snapshots into a stream of collections
+	  Collection.gather = function gather(component, sources, sourceItems$) {
+	    var idAttribute = arguments.length <= 3 || arguments[3] === undefined ? 'id' : arguments[3];
+
+	    function makeDestroyable(component) {
+	      return function (sources) {
+	        return _extends({}, component(sources), {
+	          _destroy$: sources._destroy$
+	        });
+	      };
+	    }
+
+	    // finds items not present in previous snapshot
+	    function findNewItems(_ref, items) {
+	      var prevIds = _ref.prevIds;
+
+	      return {
+	        prevIds: items.map(function (item) {
+	          return item[idAttribute];
+	        }),
+	        addedItems: items.filter(function (item) {
+	          return prevIds.indexOf(item[idAttribute]) === -1;
+	        })
+	      };
+	    }
+
+	    function compareJSON(value, nextValue) {
+	      if (value === nextValue) {
+	        return true;
+	      }
+	      try {
+	        if (JSON.stringify(value) === JSON.stringify(nextValue)) {
+	          return true;
+	        }
+	      } catch (e) {}
+	      // if not equal or not serializable
+	      return false;
+	    }
+
+	    // turn a new item into a hash of source streams, tracking all the future updates
+	    function itemToSourceStreams(addedItem, itemsState$) {
+	      var itemStateInfinite$ = itemsState$.map(function (items) {
+	        return items.find(function (item) {
+	          return item[idAttribute] === addedItem[idAttribute];
+	        });
+	      });
+	      // if an item isn't present if a new snapshot, it shall be destroyed
+	      var _destroy$ = itemStateInfinite$.filter(function (item) {
+	        return !item;
+	      }).take(1);
+	      var itemState$ = itemStateInfinite$.endWhen(_destroy$.compose((0, _delay2.default)()));
+
+	      return Object.keys(addedItem).reduce(function (sources, key) {
+	        // skip idAttribute
+	        if (key === idAttribute) {
+	          return sources;
+	        }
+
+	        var stream$ = itemState$.map(function (state) {
+	          return state[key];
+	        }).startWith(addedItem[key])
+	        // skip the snapshot if the value didn't change
+	        .compose((0, _dropRepeats2.default)(compareJSON)).remember();
+
+	        return _extends({}, sources, _defineProperty({}, key, convert(stream$, _xstreamAdapter2.default, externalSA)));
+	      }, {
+	        _destroy$: _destroy$
+	      });
+	    }
+
+	    var items$ = convert(sourceItems$, externalSA, _xstreamAdapter2.default);
+	    var itemsState$ = items$.remember();
+
+	    var add$ = itemsState$
+	    // get the added items at each step
+	    .fold(findNewItems, { prevIds: [], addedItems: [] }).map(function (_ref2) {
+	      var addedItems = _ref2.addedItems;
+	      return addedItems;
+	    }).filter(function (addedItems) {
+	      return addedItems.length;
+	    }).map(function (addedItems) {
+	      return addedItems.map(function (item) {
+	        return itemToSourceStreams(item, itemsState$);
+	      });
+	    });
+
+	    return Collection(makeDestroyable(component), sources, add$, function (item) {
+	      return item._destroy$;
+	    });
+	  };
+
+	  return Collection;
+	}
+
+	var Collection = makeCollection();
+
+	exports.default = Collection;
+	exports.makeCollection = makeCollection;
+
+/***/ },
+/* 128 */
+/***/ function(module, exports, __webpack_require__) {
+
+	"use strict";
+	var core_1 = __webpack_require__(129);
+	exports.Stream = core_1.Stream;
+	exports.MemoryStream = core_1.MemoryStream;
+	Object.defineProperty(exports, "__esModule", { value: true });
+	exports.default = core_1.Stream;
+	//# sourceMappingURL=index.js.map
+
+/***/ },
+/* 129 */
+/***/ function(module, exports) {
+
+	"use strict";
+	var __extends = (this && this.__extends) || function (d, b) {
+	    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+	    function __() { this.constructor = d; }
+	    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+	};
+	var NO = {};
+	function noop() { }
+	function copy(a) {
+	    var l = a.length;
+	    var b = Array(l);
+	    for (var i = 0; i < l; ++i) {
+	        b[i] = a[i];
+	    }
+	    return b;
+	}
+	exports.NO_IL = {
+	    _n: noop,
+	    _e: noop,
+	    _c: noop,
+	};
+	// mutates the input
+	function internalizeProducer(producer) {
+	    producer._start =
+	        function _start(il) {
+	            il.next = il._n;
+	            il.error = il._e;
+	            il.complete = il._c;
+	            this.start(il);
+	        };
+	    producer._stop = producer.stop;
+	}
+	function compose2(f1, f2) {
+	    return function composedFn(arg) {
+	        return f1(f2(arg));
+	    };
+	}
+	function and(f1, f2) {
+	    return function andFn(t) {
+	        return f1(t) && f2(t);
+	    };
+	}
+	var MergeProducer = (function () {
+	    function MergeProducer(insArr) {
+	        this.type = 'merge';
+	        this.insArr = insArr;
+	        this.out = NO;
+	        this.ac = 0;
+	    }
+	    MergeProducer.prototype._start = function (out) {
+	        this.out = out;
+	        var s = this.insArr;
+	        var L = s.length;
+	        this.ac = L;
+	        for (var i = 0; i < L; i++) {
+	            s[i]._add(this);
+	        }
+	    };
+	    MergeProducer.prototype._stop = function () {
+	        var s = this.insArr;
+	        var L = s.length;
+	        for (var i = 0; i < L; i++) {
+	            s[i]._remove(this);
+	        }
+	        this.out = NO;
+	    };
+	    MergeProducer.prototype._n = function (t) {
+	        var u = this.out;
+	        if (u === NO)
+	            return;
+	        u._n(t);
+	    };
+	    MergeProducer.prototype._e = function (err) {
+	        var u = this.out;
+	        if (u === NO)
+	            return;
+	        u._e(err);
+	    };
+	    MergeProducer.prototype._c = function () {
+	        if (--this.ac <= 0) {
+	            var u = this.out;
+	            if (u === NO)
+	                return;
+	            u._c();
+	        }
+	    };
+	    return MergeProducer;
+	}());
+	exports.MergeProducer = MergeProducer;
+	var CombineListener = (function () {
+	    function CombineListener(i, out, p) {
+	        this.i = i;
+	        this.out = out;
+	        this.p = p;
+	        p.ils.push(this);
+	    }
+	    CombineListener.prototype._n = function (t) {
+	        var p = this.p, out = this.out;
+	        if (!out)
+	            return;
+	        if (p.up(t, this.i)) {
+	            out._n(p.vals);
+	        }
+	    };
+	    CombineListener.prototype._e = function (err) {
+	        var out = this.out;
+	        if (!out)
+	            return;
+	        out._e(err);
+	    };
+	    CombineListener.prototype._c = function () {
+	        var p = this.p;
+	        if (!p.out)
+	            return;
+	        if (--p.Nc === 0) {
+	            p.out._c();
+	        }
+	    };
+	    return CombineListener;
+	}());
+	exports.CombineListener = CombineListener;
+	var CombineProducer = (function () {
+	    function CombineProducer(insArr) {
+	        this.type = 'combine';
+	        this.insArr = insArr;
+	        this.out = NO;
+	        this.ils = [];
+	        this.Nc = this.Nn = 0;
+	        this.vals = [];
+	    }
+	    CombineProducer.prototype.up = function (t, i) {
+	        var v = this.vals[i];
+	        var Nn = !this.Nn ? 0 : v === NO ? --this.Nn : this.Nn;
+	        this.vals[i] = t;
+	        return Nn === 0;
+	    };
+	    CombineProducer.prototype._start = function (out) {
+	        this.out = out;
+	        var s = this.insArr;
+	        var n = this.Nc = this.Nn = s.length;
+	        var vals = this.vals = new Array(n);
+	        if (n === 0) {
+	            out._n([]);
+	            out._c();
+	        }
+	        else {
+	            for (var i = 0; i < n; i++) {
+	                vals[i] = NO;
+	                s[i]._add(new CombineListener(i, out, this));
+	            }
+	        }
+	    };
+	    CombineProducer.prototype._stop = function () {
+	        var s = this.insArr;
+	        var n = s.length;
+	        for (var i = 0; i < n; i++) {
+	            s[i]._remove(this.ils[i]);
+	        }
+	        this.out = NO;
+	        this.ils = [];
+	        this.vals = [];
+	    };
+	    return CombineProducer;
+	}());
+	exports.CombineProducer = CombineProducer;
+	var FromArrayProducer = (function () {
+	    function FromArrayProducer(a) {
+	        this.type = 'fromArray';
+	        this.a = a;
+	    }
+	    FromArrayProducer.prototype._start = function (out) {
+	        var a = this.a;
+	        for (var i = 0, l = a.length; i < l; i++) {
+	            out._n(a[i]);
+	        }
+	        out._c();
+	    };
+	    FromArrayProducer.prototype._stop = function () {
+	    };
+	    return FromArrayProducer;
+	}());
+	exports.FromArrayProducer = FromArrayProducer;
+	var FromPromiseProducer = (function () {
+	    function FromPromiseProducer(p) {
+	        this.type = 'fromPromise';
+	        this.on = false;
+	        this.p = p;
+	    }
+	    FromPromiseProducer.prototype._start = function (out) {
+	        var prod = this;
+	        this.on = true;
+	        this.p.then(function (v) {
+	            if (prod.on) {
+	                out._n(v);
+	                out._c();
+	            }
+	        }, function (e) {
+	            out._e(e);
+	        }).then(null, function (err) {
+	            setTimeout(function () { throw err; });
+	        });
+	    };
+	    FromPromiseProducer.prototype._stop = function () {
+	        this.on = false;
+	    };
+	    return FromPromiseProducer;
+	}());
+	exports.FromPromiseProducer = FromPromiseProducer;
+	var PeriodicProducer = (function () {
+	    function PeriodicProducer(period) {
+	        this.type = 'periodic';
+	        this.period = period;
+	        this.intervalID = -1;
+	        this.i = 0;
+	    }
+	    PeriodicProducer.prototype._start = function (stream) {
+	        var self = this;
+	        function intervalHandler() { stream._n(self.i++); }
+	        this.intervalID = setInterval(intervalHandler, this.period);
+	    };
+	    PeriodicProducer.prototype._stop = function () {
+	        if (this.intervalID !== -1)
+	            clearInterval(this.intervalID);
+	        this.intervalID = -1;
+	        this.i = 0;
+	    };
+	    return PeriodicProducer;
+	}());
+	exports.PeriodicProducer = PeriodicProducer;
+	var DebugOperator = (function () {
+	    function DebugOperator(arg, ins) {
+	        this.type = 'debug';
+	        this.ins = ins;
+	        this.out = NO;
+	        this.s = noop;
+	        this.l = '';
+	        if (typeof arg === 'string') {
+	            this.l = arg;
+	        }
+	        else if (typeof arg === 'function') {
+	            this.s = arg;
+	        }
+	    }
+	    DebugOperator.prototype._start = function (out) {
+	        this.out = out;
+	        this.ins._add(this);
+	    };
+	    DebugOperator.prototype._stop = function () {
+	        this.ins._remove(this);
+	        this.out = NO;
+	    };
+	    DebugOperator.prototype._n = function (t) {
+	        var u = this.out;
+	        if (u === NO)
+	            return;
+	        var s = this.s, l = this.l;
+	        if (s !== noop) {
+	            try {
+	                s(t);
+	            }
+	            catch (e) {
+	                u._e(e);
+	            }
+	        }
+	        else if (l) {
+	            console.log(l + ':', t);
+	        }
+	        else {
+	            console.log(t);
+	        }
+	        u._n(t);
+	    };
+	    DebugOperator.prototype._e = function (err) {
+	        var u = this.out;
+	        if (u === NO)
+	            return;
+	        u._e(err);
+	    };
+	    DebugOperator.prototype._c = function () {
+	        var u = this.out;
+	        if (u === NO)
+	            return;
+	        u._c();
+	    };
+	    return DebugOperator;
+	}());
+	exports.DebugOperator = DebugOperator;
+	var DropOperator = (function () {
+	    function DropOperator(max, ins) {
+	        this.type = 'drop';
+	        this.ins = ins;
+	        this.out = NO;
+	        this.max = max;
+	        this.dropped = 0;
+	    }
+	    DropOperator.prototype._start = function (out) {
+	        this.out = out;
+	        this.dropped = 0;
+	        this.ins._add(this);
+	    };
+	    DropOperator.prototype._stop = function () {
+	        this.ins._remove(this);
+	        this.out = NO;
+	    };
+	    DropOperator.prototype._n = function (t) {
+	        var u = this.out;
+	        if (u === NO)
+	            return;
+	        if (this.dropped++ >= this.max)
+	            u._n(t);
+	    };
+	    DropOperator.prototype._e = function (err) {
+	        var u = this.out;
+	        if (u === NO)
+	            return;
+	        u._e(err);
+	    };
+	    DropOperator.prototype._c = function () {
+	        var u = this.out;
+	        if (u === NO)
+	            return;
+	        u._c();
+	    };
+	    return DropOperator;
+	}());
+	exports.DropOperator = DropOperator;
+	var OtherIL = (function () {
+	    function OtherIL(out, op) {
+	        this.out = out;
+	        this.op = op;
+	    }
+	    OtherIL.prototype._n = function (t) {
+	        this.op.end();
+	    };
+	    OtherIL.prototype._e = function (err) {
+	        this.out._e(err);
+	    };
+	    OtherIL.prototype._c = function () {
+	        this.op.end();
+	    };
+	    return OtherIL;
+	}());
+	var EndWhenOperator = (function () {
+	    function EndWhenOperator(o, ins) {
+	        this.type = 'endWhen';
+	        this.ins = ins;
+	        this.out = NO;
+	        this.o = o;
+	        this.oil = exports.NO_IL;
+	    }
+	    EndWhenOperator.prototype._start = function (out) {
+	        this.out = out;
+	        this.o._add(this.oil = new OtherIL(out, this));
+	        this.ins._add(this);
+	    };
+	    EndWhenOperator.prototype._stop = function () {
+	        this.ins._remove(this);
+	        this.o._remove(this.oil);
+	        this.out = NO;
+	        this.oil = exports.NO_IL;
+	    };
+	    EndWhenOperator.prototype.end = function () {
+	        var u = this.out;
+	        if (u === NO)
+	            return;
+	        u._c();
+	    };
+	    EndWhenOperator.prototype._n = function (t) {
+	        var u = this.out;
+	        if (u === NO)
+	            return;
+	        u._n(t);
+	    };
+	    EndWhenOperator.prototype._e = function (err) {
+	        var u = this.out;
+	        if (u === NO)
+	            return;
+	        u._e(err);
+	    };
+	    EndWhenOperator.prototype._c = function () {
+	        this.end();
+	    };
+	    return EndWhenOperator;
+	}());
+	exports.EndWhenOperator = EndWhenOperator;
+	var FilterOperator = (function () {
+	    function FilterOperator(passes, ins) {
+	        this.type = 'filter';
+	        this.ins = ins;
+	        this.out = NO;
+	        this.passes = passes;
+	    }
+	    FilterOperator.prototype._start = function (out) {
+	        this.out = out;
+	        this.ins._add(this);
+	    };
+	    FilterOperator.prototype._stop = function () {
+	        this.ins._remove(this);
+	        this.out = NO;
+	    };
+	    FilterOperator.prototype._n = function (t) {
+	        var u = this.out;
+	        if (u === NO)
+	            return;
+	        try {
+	            if (this.passes(t))
+	                u._n(t);
+	        }
+	        catch (e) {
+	            u._e(e);
+	        }
+	    };
+	    FilterOperator.prototype._e = function (err) {
+	        var u = this.out;
+	        if (u === NO)
+	            return;
+	        u._e(err);
+	    };
+	    FilterOperator.prototype._c = function () {
+	        var u = this.out;
+	        if (u === NO)
+	            return;
+	        u._c();
+	    };
+	    return FilterOperator;
+	}());
+	exports.FilterOperator = FilterOperator;
+	var FlattenListener = (function () {
+	    function FlattenListener(out, op) {
+	        this.out = out;
+	        this.op = op;
+	    }
+	    FlattenListener.prototype._n = function (t) {
+	        this.out._n(t);
+	    };
+	    FlattenListener.prototype._e = function (err) {
+	        this.out._e(err);
+	    };
+	    FlattenListener.prototype._c = function () {
+	        this.op.inner = NO;
+	        this.op.less();
+	    };
+	    return FlattenListener;
+	}());
+	var FlattenOperator = (function () {
+	    function FlattenOperator(ins) {
+	        this.type = 'flatten';
+	        this.ins = ins;
+	        this.out = NO;
+	        this.open = true;
+	        this.inner = NO;
+	        this.il = exports.NO_IL;
+	    }
+	    FlattenOperator.prototype._start = function (out) {
+	        this.out = out;
+	        this.open = true;
+	        this.inner = NO;
+	        this.il = exports.NO_IL;
+	        this.ins._add(this);
+	    };
+	    FlattenOperator.prototype._stop = function () {
+	        this.ins._remove(this);
+	        if (this.inner !== NO)
+	            this.inner._remove(this.il);
+	        this.out = NO;
+	        this.open = true;
+	        this.inner = NO;
+	        this.il = exports.NO_IL;
+	    };
+	    FlattenOperator.prototype.less = function () {
+	        var u = this.out;
+	        if (u === NO)
+	            return;
+	        if (!this.open && this.inner === NO)
+	            u._c();
+	    };
+	    FlattenOperator.prototype._n = function (s) {
+	        var u = this.out;
+	        if (u === NO)
+	            return;
+	        var _a = this, inner = _a.inner, il = _a.il;
+	        if (inner !== NO && il !== exports.NO_IL)
+	            inner._remove(il);
+	        (this.inner = s)._add(this.il = new FlattenListener(u, this));
+	    };
+	    FlattenOperator.prototype._e = function (err) {
+	        var u = this.out;
+	        if (u === NO)
+	            return;
+	        u._e(err);
+	    };
+	    FlattenOperator.prototype._c = function () {
+	        this.open = false;
+	        this.less();
+	    };
+	    return FlattenOperator;
+	}());
+	exports.FlattenOperator = FlattenOperator;
+	var FoldOperator = (function () {
+	    function FoldOperator(f, seed, ins) {
+	        this.type = 'fold';
+	        this.ins = ins;
+	        this.out = NO;
+	        this.f = f;
+	        this.acc = this.seed = seed;
+	    }
+	    FoldOperator.prototype._start = function (out) {
+	        this.out = out;
+	        this.acc = this.seed;
+	        out._n(this.acc);
+	        this.ins._add(this);
+	    };
+	    FoldOperator.prototype._stop = function () {
+	        this.ins._remove(this);
+	        this.out = NO;
+	        this.acc = this.seed;
+	    };
+	    FoldOperator.prototype._n = function (t) {
+	        var u = this.out;
+	        if (u === NO)
+	            return;
+	        try {
+	            u._n(this.acc = this.f(this.acc, t));
+	        }
+	        catch (e) {
+	            u._e(e);
+	        }
+	    };
+	    FoldOperator.prototype._e = function (err) {
+	        var u = this.out;
+	        if (u === NO)
+	            return;
+	        u._e(err);
+	    };
+	    FoldOperator.prototype._c = function () {
+	        var u = this.out;
+	        if (u === NO)
+	            return;
+	        u._c();
+	    };
+	    return FoldOperator;
+	}());
+	exports.FoldOperator = FoldOperator;
+	var LastOperator = (function () {
+	    function LastOperator(ins) {
+	        this.type = 'last';
+	        this.ins = ins;
+	        this.out = NO;
+	        this.has = false;
+	        this.val = NO;
+	    }
+	    LastOperator.prototype._start = function (out) {
+	        this.out = out;
+	        this.has = false;
+	        this.ins._add(this);
+	    };
+	    LastOperator.prototype._stop = function () {
+	        this.ins._remove(this);
+	        this.out = NO;
+	        this.val = NO;
+	    };
+	    LastOperator.prototype._n = function (t) {
+	        this.has = true;
+	        this.val = t;
+	    };
+	    LastOperator.prototype._e = function (err) {
+	        var u = this.out;
+	        if (u === NO)
+	            return;
+	        u._e(err);
+	    };
+	    LastOperator.prototype._c = function () {
+	        var u = this.out;
+	        if (u === NO)
+	            return;
+	        if (this.has) {
+	            u._n(this.val);
+	            u._c();
+	        }
+	        else {
+	            u._e('TODO show proper error');
+	        }
+	    };
+	    return LastOperator;
+	}());
+	exports.LastOperator = LastOperator;
+	var MapFlattenInner = (function () {
+	    function MapFlattenInner(out, op) {
+	        this.out = out;
+	        this.op = op;
+	    }
+	    MapFlattenInner.prototype._n = function (r) {
+	        this.out._n(r);
+	    };
+	    MapFlattenInner.prototype._e = function (err) {
+	        this.out._e(err);
+	    };
+	    MapFlattenInner.prototype._c = function () {
+	        this.op.inner = NO;
+	        this.op.less();
+	    };
+	    return MapFlattenInner;
+	}());
+	var MapFlattenOperator = (function () {
+	    function MapFlattenOperator(mapOp) {
+	        this.type = mapOp.type + "+flatten";
+	        this.ins = mapOp.ins;
+	        this.out = NO;
+	        this.mapOp = mapOp;
+	        this.inner = NO;
+	        this.il = exports.NO_IL;
+	        this.open = true;
+	    }
+	    MapFlattenOperator.prototype._start = function (out) {
+	        this.out = out;
+	        this.inner = NO;
+	        this.il = exports.NO_IL;
+	        this.open = true;
+	        this.mapOp.ins._add(this);
+	    };
+	    MapFlattenOperator.prototype._stop = function () {
+	        this.mapOp.ins._remove(this);
+	        if (this.inner !== NO)
+	            this.inner._remove(this.il);
+	        this.out = NO;
+	        this.inner = NO;
+	        this.il = exports.NO_IL;
+	    };
+	    MapFlattenOperator.prototype.less = function () {
+	        if (!this.open && this.inner === NO) {
+	            var u = this.out;
+	            if (u === NO)
+	                return;
+	            u._c();
+	        }
+	    };
+	    MapFlattenOperator.prototype._n = function (v) {
+	        var u = this.out;
+	        if (u === NO)
+	            return;
+	        var _a = this, inner = _a.inner, il = _a.il;
+	        var s;
+	        try {
+	            s = this.mapOp.project(v);
+	        }
+	        catch (e) {
+	            u._e(e);
+	            return;
+	        }
+	        if (inner !== NO && il !== exports.NO_IL)
+	            inner._remove(il);
+	        (this.inner = s)._add(this.il = new MapFlattenInner(u, this));
+	    };
+	    MapFlattenOperator.prototype._e = function (err) {
+	        var u = this.out;
+	        if (u === NO)
+	            return;
+	        u._e(err);
+	    };
+	    MapFlattenOperator.prototype._c = function () {
+	        this.open = false;
+	        this.less();
+	    };
+	    return MapFlattenOperator;
+	}());
+	exports.MapFlattenOperator = MapFlattenOperator;
+	var MapOperator = (function () {
+	    function MapOperator(project, ins) {
+	        this.type = 'map';
+	        this.ins = ins;
+	        this.out = NO;
+	        this.project = project;
+	    }
+	    MapOperator.prototype._start = function (out) {
+	        this.out = out;
+	        this.ins._add(this);
+	    };
+	    MapOperator.prototype._stop = function () {
+	        this.ins._remove(this);
+	        this.out = NO;
+	    };
+	    MapOperator.prototype._n = function (t) {
+	        var u = this.out;
+	        if (u === NO)
+	            return;
+	        try {
+	            u._n(this.project(t));
+	        }
+	        catch (e) {
+	            u._e(e);
+	        }
+	    };
+	    MapOperator.prototype._e = function (err) {
+	        var u = this.out;
+	        if (u === NO)
+	            return;
+	        u._e(err);
+	    };
+	    MapOperator.prototype._c = function () {
+	        var u = this.out;
+	        if (u === NO)
+	            return;
+	        u._c();
+	    };
+	    return MapOperator;
+	}());
+	exports.MapOperator = MapOperator;
+	var FilterMapOperator = (function (_super) {
+	    __extends(FilterMapOperator, _super);
+	    function FilterMapOperator(passes, project, ins) {
+	        _super.call(this, project, ins);
+	        this.type = 'filter+map';
+	        this.passes = passes;
+	    }
+	    FilterMapOperator.prototype._n = function (v) {
+	        if (this.passes(v)) {
+	            _super.prototype._n.call(this, v);
+	        }
+	        ;
+	    };
+	    return FilterMapOperator;
+	}(MapOperator));
+	exports.FilterMapOperator = FilterMapOperator;
+	var RememberOperator = (function () {
+	    function RememberOperator(ins) {
+	        this.type = 'remember';
+	        this.ins = ins;
+	        this.out = NO;
+	    }
+	    RememberOperator.prototype._start = function (out) {
+	        this.out = out;
+	        this.ins._add(out);
+	    };
+	    RememberOperator.prototype._stop = function () {
+	        this.ins._remove(this.out);
+	        this.out = NO;
+	    };
+	    return RememberOperator;
+	}());
+	exports.RememberOperator = RememberOperator;
+	var ReplaceErrorOperator = (function () {
+	    function ReplaceErrorOperator(fn, ins) {
+	        this.type = 'replaceError';
+	        this.ins = ins;
+	        this.out = NO;
+	        this.fn = fn;
+	    }
+	    ReplaceErrorOperator.prototype._start = function (out) {
+	        this.out = out;
+	        this.ins._add(this);
+	    };
+	    ReplaceErrorOperator.prototype._stop = function () {
+	        this.ins._remove(this);
+	        this.out = NO;
+	    };
+	    ReplaceErrorOperator.prototype._n = function (t) {
+	        var u = this.out;
+	        if (u === NO)
+	            return;
+	        u._n(t);
+	    };
+	    ReplaceErrorOperator.prototype._e = function (err) {
+	        var u = this.out;
+	        if (u === NO)
+	            return;
+	        try {
+	            this.ins._remove(this);
+	            (this.ins = this.fn(err))._add(this);
+	        }
+	        catch (e) {
+	            u._e(e);
+	        }
+	    };
+	    ReplaceErrorOperator.prototype._c = function () {
+	        var u = this.out;
+	        if (u === NO)
+	            return;
+	        u._c();
+	    };
+	    return ReplaceErrorOperator;
+	}());
+	exports.ReplaceErrorOperator = ReplaceErrorOperator;
+	var StartWithOperator = (function () {
+	    function StartWithOperator(ins, val) {
+	        this.type = 'startWith';
+	        this.ins = ins;
+	        this.out = NO;
+	        this.val = val;
+	    }
+	    StartWithOperator.prototype._start = function (out) {
+	        this.out = out;
+	        this.out._n(this.val);
+	        this.ins._add(out);
+	    };
+	    StartWithOperator.prototype._stop = function () {
+	        this.ins._remove(this.out);
+	        this.out = NO;
+	    };
+	    return StartWithOperator;
+	}());
+	exports.StartWithOperator = StartWithOperator;
+	var TakeOperator = (function () {
+	    function TakeOperator(max, ins) {
+	        this.type = 'take';
+	        this.ins = ins;
+	        this.out = NO;
+	        this.max = max;
+	        this.taken = 0;
+	    }
+	    TakeOperator.prototype._start = function (out) {
+	        this.out = out;
+	        this.taken = 0;
+	        if (this.max <= 0) {
+	            out._c();
+	        }
+	        else {
+	            this.ins._add(this);
+	        }
+	    };
+	    TakeOperator.prototype._stop = function () {
+	        this.ins._remove(this);
+	        this.out = NO;
+	    };
+	    TakeOperator.prototype._n = function (t) {
+	        var u = this.out;
+	        if (u === NO)
+	            return;
+	        if (this.taken++ < this.max - 1) {
+	            u._n(t);
+	        }
+	        else {
+	            u._n(t);
+	            u._c();
+	        }
+	    };
+	    TakeOperator.prototype._e = function (err) {
+	        var u = this.out;
+	        if (u === NO)
+	            return;
+	        u._e(err);
+	    };
+	    TakeOperator.prototype._c = function () {
+	        var u = this.out;
+	        if (u === NO)
+	            return;
+	        u._c();
+	    };
+	    return TakeOperator;
+	}());
+	exports.TakeOperator = TakeOperator;
+	var Stream = (function () {
+	    function Stream(producer) {
+	        this._prod = producer || NO;
+	        this._ils = [];
+	        this._stopID = NO;
+	        this._target = NO;
+	        this._err = NO;
+	    }
+	    Stream.prototype._n = function (t) {
+	        var a = this._ils;
+	        var L = a.length;
+	        if (L == 1)
+	            a[0]._n(t);
+	        else {
+	            var b = copy(a);
+	            for (var i = 0; i < L; i++)
+	                b[i]._n(t);
+	        }
+	    };
+	    Stream.prototype._e = function (err) {
+	        if (this._err !== NO)
+	            return;
+	        this._err = err;
+	        var a = this._ils;
+	        var L = a.length;
+	        if (L == 1)
+	            a[0]._e(err);
+	        else {
+	            var b = copy(a);
+	            for (var i = 0; i < L; i++)
+	                b[i]._e(err);
+	        }
+	        this._x();
+	    };
+	    Stream.prototype._c = function () {
+	        var a = this._ils;
+	        var L = a.length;
+	        if (L == 1)
+	            a[0]._c();
+	        else {
+	            var b = copy(a);
+	            for (var i = 0; i < L; i++)
+	                b[i]._c();
+	        }
+	        this._x();
+	    };
+	    Stream.prototype._x = function () {
+	        if (this._ils.length === 0)
+	            return;
+	        if (this._prod !== NO)
+	            this._prod._stop();
+	        this._err = NO;
+	        this._ils = [];
+	    };
+	    Stream.prototype._stopNow = function () {
+	        // WARNING: code that calls this method should
+	        // first check if this._prod is valid (not `NO`)
+	        this._prod._stop();
+	        this._err = NO;
+	        this._stopID = NO;
+	    };
+	    Stream.prototype._add = function (il) {
+	        var ta = this._target;
+	        if (ta !== NO)
+	            return ta._add(il);
+	        var a = this._ils;
+	        a.push(il);
+	        if (a.length === 1) {
+	            if (this._stopID !== NO) {
+	                clearTimeout(this._stopID);
+	                this._stopID = NO;
+	            }
+	            var p = this._prod;
+	            if (p !== NO)
+	                p._start(this);
+	        }
+	    };
+	    Stream.prototype._remove = function (il) {
+	        var _this = this;
+	        var ta = this._target;
+	        if (ta !== NO)
+	            return ta._remove(il);
+	        var a = this._ils;
+	        var i = a.indexOf(il);
+	        if (i > -1) {
+	            a.splice(i, 1);
+	            if (this._prod !== NO && a.length <= 0) {
+	                this._err = NO;
+	                this._stopID = setTimeout(function () { return _this._stopNow(); });
+	            }
+	            else if (a.length === 1) {
+	                this._pruneCycles();
+	            }
+	        }
+	    };
+	    // If all paths stemming from `this` stream eventually end at `this`
+	    // stream, then we remove the single listener of `this` stream, to
+	    // force it to end its execution and dispose resources. This method
+	    // assumes as a precondition that this._ils has just one listener.
+	    Stream.prototype._pruneCycles = function () {
+	        if (this._hasNoSinks(this, [])) {
+	            this._remove(this._ils[0]);
+	        }
+	    };
+	    // Checks whether *there is no* path starting from `x` that leads to an end
+	    // listener (sink) in the stream graph, following edges A->B where B is a
+	    // listener of A. This means these paths constitute a cycle somehow. Is given
+	    // a trace of all visited nodes so far.
+	    Stream.prototype._hasNoSinks = function (x, trace) {
+	        if (trace.indexOf(x) !== -1) {
+	            return true;
+	        }
+	        else if (x.out === this) {
+	            return true;
+	        }
+	        else if (x.out && x.out !== NO) {
+	            return this._hasNoSinks(x.out, trace.concat(x));
+	        }
+	        else if (x._ils) {
+	            for (var i = 0, N = x._ils.length; i < N; i++) {
+	                if (!this._hasNoSinks(x._ils[i], trace.concat(x))) {
+	                    return false;
+	                }
+	            }
+	            return true;
+	        }
+	        else {
+	            return false;
+	        }
+	    };
+	    Stream.prototype.ctor = function () {
+	        return this instanceof MemoryStream ? MemoryStream : Stream;
+	    };
+	    /**
+	     * Adds a Listener to the Stream.
+	     *
+	     * @param {Listener<T>} listener
+	     */
+	    Stream.prototype.addListener = function (listener) {
+	        if (typeof listener.next !== 'function'
+	            || typeof listener.error !== 'function'
+	            || typeof listener.complete !== 'function') {
+	            throw new Error('stream.addListener() requires all three next, error, ' +
+	                'and complete functions.');
+	        }
+	        listener._n = listener.next;
+	        listener._e = listener.error;
+	        listener._c = listener.complete;
+	        this._add(listener);
+	    };
+	    /**
+	     * Removes a Listener from the Stream, assuming the Listener was added to it.
+	     *
+	     * @param {Listener<T>} listener
+	     */
+	    Stream.prototype.removeListener = function (listener) {
+	        this._remove(listener);
+	    };
+	    /**
+	     * Creates a new Stream given a Producer.
+	     *
+	     * @factory true
+	     * @param {Producer} producer An optional Producer that dictates how to
+	     * start, generate events, and stop the Stream.
+	     * @return {Stream}
+	     */
+	    Stream.create = function (producer) {
+	        if (producer) {
+	            if (typeof producer.start !== 'function'
+	                || typeof producer.stop !== 'function') {
+	                throw new Error('producer requires both start and stop functions');
+	            }
+	            internalizeProducer(producer); // mutates the input
+	        }
+	        return new Stream(producer);
+	    };
+	    /**
+	     * Creates a new MemoryStream given a Producer.
+	     *
+	     * @factory true
+	     * @param {Producer} producer An optional Producer that dictates how to
+	     * start, generate events, and stop the Stream.
+	     * @return {MemoryStream}
+	     */
+	    Stream.createWithMemory = function (producer) {
+	        if (producer) {
+	            internalizeProducer(producer); // mutates the input
+	        }
+	        return new MemoryStream(producer);
+	    };
+	    /**
+	     * Creates a Stream that does nothing when started. It never emits any event.
+	     *
+	     * Marble diagram:
+	     *
+	     * ```text
+	     *          never
+	     * -----------------------
+	     * ```
+	     *
+	     * @factory true
+	     * @return {Stream}
+	     */
+	    Stream.never = function () {
+	        return new Stream({ _start: noop, _stop: noop });
+	    };
+	    /**
+	     * Creates a Stream that immediately emits the "complete" notification when
+	     * started, and that's it.
+	     *
+	     * Marble diagram:
+	     *
+	     * ```text
+	     * empty
+	     * -|
+	     * ```
+	     *
+	     * @factory true
+	     * @return {Stream}
+	     */
+	    Stream.empty = function () {
+	        return new Stream({
+	            _start: function (il) { il._c(); },
+	            _stop: noop,
+	        });
+	    };
+	    /**
+	     * Creates a Stream that immediately emits an "error" notification with the
+	     * value you passed as the `error` argument when the stream starts, and that's
+	     * it.
+	     *
+	     * Marble diagram:
+	     *
+	     * ```text
+	     * throw(X)
+	     * -X
+	     * ```
+	     *
+	     * @factory true
+	     * @param error The error event to emit on the created stream.
+	     * @return {Stream}
+	     */
+	    Stream.throw = function (error) {
+	        return new Stream({
+	            _start: function (il) { il._e(error); },
+	            _stop: noop,
+	        });
+	    };
+	    /**
+	     * Creates a Stream that immediately emits the arguments that you give to
+	     * *of*, then completes.
+	     *
+	     * Marble diagram:
+	     *
+	     * ```text
+	     * of(1,2,3)
+	     * 123|
+	     * ```
+	     *
+	     * @factory true
+	     * @param a The first value you want to emit as an event on the stream.
+	     * @param b The second value you want to emit as an event on the stream. One
+	     * or more of these values may be given as arguments.
+	     * @return {Stream}
+	     */
+	    Stream.of = function () {
+	        var items = [];
+	        for (var _i = 0; _i < arguments.length; _i++) {
+	            items[_i - 0] = arguments[_i];
+	        }
+	        return Stream.fromArray(items);
+	    };
+	    /**
+	     * Converts an array to a stream. The returned stream will emit synchronously
+	     * all the items in the array, and then complete.
+	     *
+	     * Marble diagram:
+	     *
+	     * ```text
+	     * fromArray([1,2,3])
+	     * 123|
+	     * ```
+	     *
+	     * @factory true
+	     * @param {Array} array The array to be converted as a stream.
+	     * @return {Stream}
+	     */
+	    Stream.fromArray = function (array) {
+	        return new Stream(new FromArrayProducer(array));
+	    };
+	    /**
+	     * Converts a promise to a stream. The returned stream will emit the resolved
+	     * value of the promise, and then complete. However, if the promise is
+	     * rejected, the stream will emit the corresponding error.
+	     *
+	     * Marble diagram:
+	     *
+	     * ```text
+	     * fromPromise( ----42 )
+	     * -----------------42|
+	     * ```
+	     *
+	     * @factory true
+	     * @param {Promise} promise The promise to be converted as a stream.
+	     * @return {Stream}
+	     */
+	    Stream.fromPromise = function (promise) {
+	        return new Stream(new FromPromiseProducer(promise));
+	    };
+	    /**
+	     * Creates a stream that periodically emits incremental numbers, every
+	     * `period` milliseconds.
+	     *
+	     * Marble diagram:
+	     *
+	     * ```text
+	     *     periodic(1000)
+	     * ---0---1---2---3---4---...
+	     * ```
+	     *
+	     * @factory true
+	     * @param {number} period The interval in milliseconds to use as a rate of
+	     * emission.
+	     * @return {Stream}
+	     */
+	    Stream.periodic = function (period) {
+	        return new Stream(new PeriodicProducer(period));
+	    };
+	    Stream.prototype._map = function (project) {
+	        var p = this._prod;
+	        var ctor = this.ctor();
+	        if (p instanceof FilterOperator) {
+	            return new ctor(new FilterMapOperator(p.passes, project, p.ins));
+	        }
+	        if (p instanceof FilterMapOperator) {
+	            return new ctor(new FilterMapOperator(p.passes, compose2(project, p.project), p.ins));
+	        }
+	        if (p instanceof MapOperator) {
+	            return new ctor(new MapOperator(compose2(project, p.project), p.ins));
+	        }
+	        return new ctor(new MapOperator(project, this));
+	    };
+	    /**
+	     * Transforms each event from the input Stream through a `project` function,
+	     * to get a Stream that emits those transformed events.
+	     *
+	     * Marble diagram:
+	     *
+	     * ```text
+	     * --1---3--5-----7------
+	     *    map(i => i * 10)
+	     * --10--30-50----70-----
+	     * ```
+	     *
+	     * @param {Function} project A function of type `(t: T) => U` that takes event
+	     * `t` of type `T` from the input Stream and produces an event of type `U`, to
+	     * be emitted on the output Stream.
+	     * @return {Stream}
+	     */
+	    Stream.prototype.map = function (project) {
+	        return this._map(project);
+	    };
+	    /**
+	     * It's like `map`, but transforms each input event to always the same
+	     * constant value on the output Stream.
+	     *
+	     * Marble diagram:
+	     *
+	     * ```text
+	     * --1---3--5-----7-----
+	     *       mapTo(10)
+	     * --10--10-10----10----
+	     * ```
+	     *
+	     * @param projectedValue A value to emit on the output Stream whenever the
+	     * input Stream emits any value.
+	     * @return {Stream}
+	     */
+	    Stream.prototype.mapTo = function (projectedValue) {
+	        var s = this.map(function () { return projectedValue; });
+	        var op = s._prod;
+	        op.type = op.type.replace('map', 'mapTo');
+	        return s;
+	    };
+	    /**
+	     * Only allows events that pass the test given by the `passes` argument.
+	     *
+	     * Each event from the input stream is given to the `passes` function. If the
+	     * function returns `true`, the event is forwarded to the output stream,
+	     * otherwise it is ignored and not forwarded.
+	     *
+	     * Marble diagram:
+	     *
+	     * ```text
+	     * --1---2--3-----4-----5---6--7-8--
+	     *     filter(i => i % 2 === 0)
+	     * ------2--------4---------6----8--
+	     * ```
+	     *
+	     * @param {Function} passes A function of type `(t: T) +> boolean` that takes
+	     * an event from the input stream and checks if it passes, by returning a
+	     * boolean.
+	     * @return {Stream}
+	     */
+	    Stream.prototype.filter = function (passes) {
+	        var p = this._prod;
+	        if (p instanceof FilterOperator) {
+	            return new Stream(new FilterOperator(and(p.passes, passes), p.ins));
+	        }
+	        return new Stream(new FilterOperator(passes, this));
+	    };
+	    /**
+	     * Lets the first `amount` many events from the input stream pass to the
+	     * output stream, then makes the output stream complete.
+	     *
+	     * Marble diagram:
+	     *
+	     * ```text
+	     * --a---b--c----d---e--
+	     *    take(3)
+	     * --a---b--c|
+	     * ```
+	     *
+	     * @param {number} amount How many events to allow from the input stream
+	     * before completing the output stream.
+	     * @return {Stream}
+	     */
+	    Stream.prototype.take = function (amount) {
+	        return new (this.ctor())(new TakeOperator(amount, this));
+	    };
+	    /**
+	     * Ignores the first `amount` many events from the input stream, and then
+	     * after that starts forwarding events from the input stream to the output
+	     * stream.
+	     *
+	     * Marble diagram:
+	     *
+	     * ```text
+	     * --a---b--c----d---e--
+	     *       drop(3)
+	     * --------------d---e--
+	     * ```
+	     *
+	     * @param {number} amount How many events to ignore from the input stream
+	     * before forwarding all events from the input stream to the output stream.
+	     * @return {Stream}
+	     */
+	    Stream.prototype.drop = function (amount) {
+	        return new Stream(new DropOperator(amount, this));
+	    };
+	    /**
+	     * When the input stream completes, the output stream will emit the last event
+	     * emitted by the input stream, and then will also complete.
+	     *
+	     * Marble diagram:
+	     *
+	     * ```text
+	     * --a---b--c--d----|
+	     *       last()
+	     * -----------------d|
+	     * ```
+	     *
+	     * @return {Stream}
+	     */
+	    Stream.prototype.last = function () {
+	        return new Stream(new LastOperator(this));
+	    };
+	    /**
+	     * Prepends the given `initial` value to the sequence of events emitted by the
+	     * input stream. The returned stream is a MemoryStream, which means it is
+	     * already `remember()`'d.
+	     *
+	     * Marble diagram:
+	     *
+	     * ```text
+	     * ---1---2-----3---
+	     *   startWith(0)
+	     * 0--1---2-----3---
+	     * ```
+	     *
+	     * @param initial The value or event to prepend.
+	     * @return {MemoryStream}
+	     */
+	    Stream.prototype.startWith = function (initial) {
+	        return new MemoryStream(new StartWithOperator(this, initial));
+	    };
+	    /**
+	     * Uses another stream to determine when to complete the current stream.
+	     *
+	     * When the given `other` stream emits an event or completes, the output
+	     * stream will complete. Before that happens, the output stream will behaves
+	     * like the input stream.
+	     *
+	     * Marble diagram:
+	     *
+	     * ```text
+	     * ---1---2-----3--4----5----6---
+	     *   endWhen( --------a--b--| )
+	     * ---1---2-----3--4--|
+	     * ```
+	     *
+	     * @param other Some other stream that is used to know when should the output
+	     * stream of this operator complete.
+	     * @return {Stream}
+	     */
+	    Stream.prototype.endWhen = function (other) {
+	        return new (this.ctor())(new EndWhenOperator(other, this));
+	    };
+	    /**
+	     * "Folds" the stream onto itself.
+	     *
+	     * Combines events from the past throughout
+	     * the entire execution of the input stream, allowing you to accumulate them
+	     * together. It's essentially like `Array.prototype.reduce`. The returned
+	     * stream is a MemoryStream, which means it is already `remember()`'d.
+	     *
+	     * The output stream starts by emitting the `seed` which you give as argument.
+	     * Then, when an event happens on the input stream, it is combined with that
+	     * seed value through the `accumulate` function, and the output value is
+	     * emitted on the output stream. `fold` remembers that output value as `acc`
+	     * ("accumulator"), and then when a new input event `t` happens, `acc` will be
+	     * combined with that to produce the new `acc` and so forth.
+	     *
+	     * Marble diagram:
+	     *
+	     * ```text
+	     * ------1-----1--2----1----1------
+	     *   fold((acc, x) => acc + x, 3)
+	     * 3-----4-----5--7----8----9------
+	     * ```
+	     *
+	     * @param {Function} accumulate A function of type `(acc: R, t: T) => R` that
+	     * takes the previous accumulated value `acc` and the incoming event from the
+	     * input stream and produces the new accumulated value.
+	     * @param seed The initial accumulated value, of type `R`.
+	     * @return {MemoryStream}
+	     */
+	    Stream.prototype.fold = function (accumulate, seed) {
+	        return new MemoryStream(new FoldOperator(accumulate, seed, this));
+	    };
+	    /**
+	     * Replaces an error with another stream.
+	     *
+	     * When (and if) an error happens on the input stream, instead of forwarding
+	     * that error to the output stream, *replaceError* will call the `replace`
+	     * function which returns the stream that the output stream will replicate.
+	     * And, in case that new stream also emits an error, `replace` will be called
+	     * again to get another stream to start replicating.
+	     *
+	     * Marble diagram:
+	     *
+	     * ```text
+	     * --1---2-----3--4-----X
+	     *   replaceError( () => --10--| )
+	     * --1---2-----3--4--------10--|
+	     * ```
+	     *
+	     * @param {Function} replace A function of type `(err) => Stream` that takes
+	     * the error that occurred on the input stream or on the previous replacement
+	     * stream and returns a new stream. The output stream will behave like the
+	     * stream that this function returns.
+	     * @return {Stream}
+	     */
+	    Stream.prototype.replaceError = function (replace) {
+	        return new (this.ctor())(new ReplaceErrorOperator(replace, this));
+	    };
+	    /**
+	     * Flattens a "stream of streams", handling only one nested stream at a time
+	     * (no concurrency).
+	     *
+	     * If the input stream is a stream that emits streams, then this operator will
+	     * return an output stream which is a flat stream: emits regular events. The
+	     * flattening happens without concurrency. It works like this: when the input
+	     * stream emits a nested stream, *flatten* will start imitating that nested
+	     * one. However, as soon as the next nested stream is emitted on the input
+	     * stream, *flatten* will forget the previous nested one it was imitating, and
+	     * will start imitating the new nested one.
+	     *
+	     * Marble diagram:
+	     *
+	     * ```text
+	     * --+--------+---------------
+	     *   \        \
+	     *    \       ----1----2---3--
+	     *    --a--b----c----d--------
+	     *           flatten
+	     * -----a--b------1----2---3--
+	     * ```
+	     *
+	     * @return {Stream}
+	     */
+	    Stream.prototype.flatten = function () {
+	        var p = this._prod;
+	        return new Stream(p instanceof MapOperator && !(p instanceof FilterMapOperator) ?
+	            new MapFlattenOperator(p) :
+	            new FlattenOperator(this));
+	    };
+	    /**
+	     * Passes the input stream to a custom operator, to produce an output stream.
+	     *
+	     * *compose* is a handy way of using an existing function in a chained style.
+	     * Instead of writing `outStream = f(inStream)` you can write
+	     * `outStream = inStream.compose(f)`.
+	     *
+	     * @param {function} operator A function that takes a stream as input and
+	     * returns a stream as well.
+	     * @return {Stream}
+	     */
+	    Stream.prototype.compose = function (operator) {
+	        return operator(this);
+	    };
+	    /**
+	     * Returns an output stream that behaves like the input stream, but also
+	     * remembers the most recent event that happens on the input stream, so that a
+	     * newly added listener will immediately receive that memorised event.
+	     *
+	     * @return {MemoryStream}
+	     */
+	    Stream.prototype.remember = function () {
+	        return new MemoryStream(new RememberOperator(this));
+	    };
+	    /**
+	     * Returns an output stream that identically behaves like the input stream,
+	     * but also runs a `spy` function fo each event, to help you debug your app.
+	     *
+	     * *debug* takes a `spy` function as argument, and runs that for each event
+	     * happening on the input stream. If you don't provide the `spy` argument,
+	     * then *debug* will just `console.log` each event. This helps you to
+	     * understand the flow of events through some operator chain.
+	     *
+	     * Please note that if the output stream has no listeners, then it will not
+	     * start, which means `spy` will never run because no actual event happens in
+	     * that case.
+	     *
+	     * Marble diagram:
+	     *
+	     * ```text
+	     * --1----2-----3-----4--
+	     *         debug
+	     * --1----2-----3-----4--
+	     * ```
+	     *
+	     * @param {function} labelOrSpy A string to use as the label when printing
+	     * debug information on the console, or a 'spy' function that takes an event
+	     * as argument, and does not need to return anything.
+	     * @return {Stream}
+	     */
+	    Stream.prototype.debug = function (labelOrSpy) {
+	        return new (this.ctor())(new DebugOperator(labelOrSpy, this));
+	    };
+	    /**
+	     * *imitate* changes this current Stream to emit the same events that the
+	     * `other` given Stream does. This method returns nothing.
+	     *
+	     * This method exists to allow one thing: **circular dependency of streams**.
+	     * For instance, let's imagine that for some reason you need to create a
+	     * circular dependency where stream `first$` depends on stream `second$`
+	     * which in turn depends on `first$`:
+	     *
+	     * <!-- skip-example -->
+	     * ```js
+	     * import delay from 'xstream/extra/delay'
+	     *
+	     * var first$ = second$.map(x => x * 10).take(3);
+	     * var second$ = first$.map(x => x + 1).startWith(1).compose(delay(100));
+	     * ```
+	     *
+	     * However, that is invalid JavaScript, because `second$` is undefined
+	     * on the first line. This is how *imitate* can help solve it:
+	     *
+	     * ```js
+	     * import delay from 'xstream/extra/delay'
+	     *
+	     * var secondProxy$ = xs.create();
+	     * var first$ = secondProxy$.map(x => x * 10).take(3);
+	     * var second$ = first$.map(x => x + 1).startWith(1).compose(delay(100));
+	     * secondProxy$.imitate(second$);
+	     * ```
+	     *
+	     * We create `secondProxy$` before the others, so it can be used in the
+	     * declaration of `first$`. Then, after both `first$` and `second$` are
+	     * defined, we hook `secondProxy$` with `second$` with `imitate()` to tell
+	     * that they are "the same". `imitate` will not trigger the start of any
+	     * stream, it just binds `secondProxy$` and `second$` together.
+	     *
+	     * The following is an example where `imitate()` is important in Cycle.js
+	     * applications. A parent component contains some child components. A child
+	     * has an action stream which is given to the parent to define its state:
+	     *
+	     * <!-- skip-example -->
+	     * ```js
+	     * const childActionProxy$ = xs.create();
+	     * const parent = Parent({...sources, childAction$: childActionProxy$});
+	     * const childAction$ = parent.state$.map(s => s.child.action$).flatten();
+	     * childActionProxy$.imitate(childAction$);
+	     * ```
+	     *
+	     * Note, though, that **`imitate()` does not support MemoryStreams**. If we
+	     * would attempt to imitate a MemoryStream in a circular dependency, we would
+	     * either get a race condition (where the symptom would be "nothing happens")
+	     * or an infinite cyclic emission of values. It's useful to think about
+	     * MemoryStreams as cells in a spreadsheet. It doesn't make any sense to
+	     * define a spreadsheet cell `A1` with a formula that depends on `B1` and
+	     * cell `B1` defined with a formula that depends on `A1`.
+	     *
+	     * If you find yourself wanting to use `imitate()` with a
+	     * MemoryStream, you should rework your code around `imitate()` to use a
+	     * Stream instead. Look for the stream in the circular dependency that
+	     * represents an event stream, and that would be a candidate for creating a
+	     * proxy Stream which then imitates the target Stream.
+	     *
+	     * @param {Stream} target The other stream to imitate on the current one. Must
+	     * not be a MemoryStream.
+	     */
+	    Stream.prototype.imitate = function (target) {
+	        if (target instanceof MemoryStream) {
+	            throw new Error('A MemoryStream was given to imitate(), but it only ' +
+	                'supports a Stream. Read more about this restriction here: ' +
+	                'https://github.com/staltz/xstream#faq');
+	        }
+	        this._target = target;
+	        for (var ils = this._ils, N = ils.length, i = 0; i < N; i++) {
+	            target._add(ils[i]);
+	        }
+	        this._ils = [];
+	    };
+	    /**
+	     * Forces the Stream to emit the given value to its listeners.
+	     *
+	     * As the name indicates, if you use this, you are most likely doing something
+	     * The Wrong Way. Please try to understand the reactive way before using this
+	     * method. Use it only when you know what you are doing.
+	     *
+	     * @param value The "next" value you want to broadcast to all listeners of
+	     * this Stream.
+	     */
+	    Stream.prototype.shamefullySendNext = function (value) {
+	        this._n(value);
+	    };
+	    /**
+	     * Forces the Stream to emit the given error to its listeners.
+	     *
+	     * As the name indicates, if you use this, you are most likely doing something
+	     * The Wrong Way. Please try to understand the reactive way before using this
+	     * method. Use it only when you know what you are doing.
+	     *
+	     * @param {any} error The error you want to broadcast to all the listeners of
+	     * this Stream.
+	     */
+	    Stream.prototype.shamefullySendError = function (error) {
+	        this._e(error);
+	    };
+	    /**
+	     * Forces the Stream to emit the "completed" event to its listeners.
+	     *
+	     * As the name indicates, if you use this, you are most likely doing something
+	     * The Wrong Way. Please try to understand the reactive way before using this
+	     * method. Use it only when you know what you are doing.
+	     */
+	    Stream.prototype.shamefullySendComplete = function () {
+	        this._c();
+	    };
+	    /**
+	     * Blends multiple streams together, emitting events from all of them
+	     * concurrently.
+	     *
+	     * *merge* takes multiple streams as arguments, and creates a stream that
+	     * behaves like each of the argument streams, in parallel.
+	     *
+	     * Marble diagram:
+	     *
+	     * ```text
+	     * --1----2-----3--------4---
+	     * ----a-----b----c---d------
+	     *            merge
+	     * --1-a--2--b--3-c---d--4---
+	     * ```
+	     *
+	     * @factory true
+	     * @param {Stream} stream1 A stream to merge together with other streams.
+	     * @param {Stream} stream2 A stream to merge together with other streams. Two
+	     * or more streams may be given as arguments.
+	     * @return {Stream}
+	     */
+	    Stream.merge = function merge() {
+	        var streams = [];
+	        for (var _i = 0; _i < arguments.length; _i++) {
+	            streams[_i - 0] = arguments[_i];
+	        }
+	        return new Stream(new MergeProducer(streams));
+	    };
+	    /**
+	     * Combines multiple input streams together to return a stream whose events
+	     * are arrays that collect the latest events from each input stream.
+	     *
+	     * *combine* internally remembers the most recent event from each of the input
+	     * streams. When any of the input streams emits an event, that event together
+	     * with all the other saved events are combined into an array. That array will
+	     * be emitted on the output stream. It's essentially a way of joining together
+	     * the events from multiple streams.
+	     *
+	     * Marble diagram:
+	     *
+	     * ```text
+	     * --1----2-----3--------4---
+	     * ----a-----b-----c--d------
+	     *          combine
+	     * ----1a-2a-2b-3b-3c-3d-4d--
+	     * ```
+	     *
+	     * @factory true
+	     * @param {Stream} stream1 A stream to combine together with other streams.
+	     * @param {Stream} stream2 A stream to combine together with other streams.
+	     * Multiple streams, not just two, may be given as arguments.
+	     * @return {Stream}
+	     */
+	    Stream.combine = function combine() {
+	        var streams = [];
+	        for (var _i = 0; _i < arguments.length; _i++) {
+	            streams[_i - 0] = arguments[_i];
+	        }
+	        return new Stream(new CombineProducer(streams));
+	    };
+	    return Stream;
+	}());
+	exports.Stream = Stream;
+	var MemoryStream = (function (_super) {
+	    __extends(MemoryStream, _super);
+	    function MemoryStream(producer) {
+	        _super.call(this, producer);
+	        this._has = false;
+	    }
+	    MemoryStream.prototype._n = function (x) {
+	        this._v = x;
+	        this._has = true;
+	        _super.prototype._n.call(this, x);
+	    };
+	    MemoryStream.prototype._add = function (il) {
+	        if (this._has) {
+	            il._n(this._v);
+	        }
+	        _super.prototype._add.call(this, il);
+	    };
+	    MemoryStream.prototype._stopNow = function () {
+	        this._has = false;
+	        _super.prototype._stopNow.call(this);
+	    };
+	    MemoryStream.prototype._x = function () {
+	        this._has = false;
+	        _super.prototype._x.call(this);
+	    };
+	    MemoryStream.prototype.map = function (project) {
+	        return this._map(project);
+	    };
+	    MemoryStream.prototype.mapTo = function (projectedValue) {
+	        return _super.prototype.mapTo.call(this, projectedValue);
+	    };
+	    MemoryStream.prototype.take = function (amount) {
+	        return _super.prototype.take.call(this, amount);
+	    };
+	    MemoryStream.prototype.endWhen = function (other) {
+	        return _super.prototype.endWhen.call(this, other);
+	    };
+	    MemoryStream.prototype.replaceError = function (replace) {
+	        return _super.prototype.replaceError.call(this, replace);
+	    };
+	    MemoryStream.prototype.remember = function () {
+	        return this;
+	    };
+	    MemoryStream.prototype.debug = function (labelOrSpy) {
+	        return _super.prototype.debug.call(this, labelOrSpy);
+	    };
+	    return MemoryStream;
+	}(Stream));
+	exports.MemoryStream = MemoryStream;
+	Object.defineProperty(exports, "__esModule", { value: true });
+	exports.default = Stream;
+	//# sourceMappingURL=core.js.map
+
+/***/ },
+/* 130 */
+/***/ function(module, exports, __webpack_require__) {
+
+	"use strict";
+	var core_1 = __webpack_require__(129);
+	var DelayOperator = (function () {
+	    function DelayOperator(dt, ins) {
+	        this.dt = dt;
+	        this.ins = ins;
+	        this.type = 'delay';
+	        this.out = null;
+	    }
+	    DelayOperator.prototype._start = function (out) {
+	        this.out = out;
+	        this.ins._add(this);
+	    };
+	    DelayOperator.prototype._stop = function () {
+	        this.ins._remove(this);
+	        this.out = null;
+	    };
+	    DelayOperator.prototype._n = function (t) {
+	        var u = this.out;
+	        if (!u)
+	            return;
+	        var id = setInterval(function () {
+	            u._n(t);
+	            clearInterval(id);
+	        }, this.dt);
+	    };
+	    DelayOperator.prototype._e = function (err) {
+	        var u = this.out;
+	        if (!u)
+	            return;
+	        var id = setInterval(function () {
+	            u._e(err);
+	            clearInterval(id);
+	        }, this.dt);
+	    };
+	    DelayOperator.prototype._c = function () {
+	        var u = this.out;
+	        if (!u)
+	            return;
+	        var id = setInterval(function () {
+	            u._c();
+	            clearInterval(id);
+	        }, this.dt);
+	    };
+	    return DelayOperator;
+	}());
+	/**
+	 * Delays periodic events by a given time period.
+	 *
+	 * Marble diagram:
+	 *
+	 * ```text
+	 * 1----2--3--4----5|
+	 *     delay(60)
+	 * ---1----2--3--4----5|
+	 * ```
+	 *
+	 * Example:
+	 *
+	 * ```js
+	 * import fromDiagram from 'xstream/extra/fromDiagram'
+	 * import delay from 'xstream/extra/delay'
+	 *
+	 * const stream = fromDiagram('1----2--3--4----5|')
+	 *  .compose(delay(60))
+	 *
+	 * stream.addListener({
+	 *   next: i => console.log(i),
+	 *   error: err => console.error(err),
+	 *   complete: () => console.log('completed')
+	 * })
+	 * ```
+	 *
+	 * ```text
+	 * > 1  (after 60 ms)
+	 * > 2  (after 160 ms)
+	 * > 3  (after 220 ms)
+	 * > 4  (after 280 ms)
+	 * > 5  (after 380 ms)
+	 * > completed
+	 * ```
+	 *
+	 * @param {number} period The amount of silence required in milliseconds.
+	 * @return {Stream}
+	 */
+	function delay(period) {
+	    return function delayOperator(ins) {
+	        return new core_1.Stream(new DelayOperator(period, ins));
+	    };
+	}
+	Object.defineProperty(exports, "__esModule", { value: true });
+	exports.default = delay;
+	//# sourceMappingURL=delay.js.map
+
+/***/ },
+/* 131 */
+/***/ function(module, exports, __webpack_require__) {
+
+	"use strict";
+	var core_1 = __webpack_require__(129);
+	var empty = {};
+	var DropRepeatsOperator = (function () {
+	    function DropRepeatsOperator(fn, ins) {
+	        this.fn = fn;
+	        this.ins = ins;
+	        this.type = 'dropRepeats';
+	        this.out = null;
+	        this.v = empty;
+	    }
+	    DropRepeatsOperator.prototype._start = function (out) {
+	        this.out = out;
+	        this.ins._add(this);
+	    };
+	    DropRepeatsOperator.prototype._stop = function () {
+	        this.ins._remove(this);
+	        this.out = null;
+	        this.v = empty;
+	    };
+	    DropRepeatsOperator.prototype.isEq = function (x, y) {
+	        return this.fn ? this.fn(x, y) : x === y;
+	    };
+	    DropRepeatsOperator.prototype._n = function (t) {
+	        var u = this.out;
+	        if (!u)
+	            return;
+	        var v = this.v;
+	        if (v !== empty && this.isEq(t, v))
+	            return;
+	        this.v = Array.isArray(t) ? t.slice() : t;
+	        u._n(t);
+	    };
+	    DropRepeatsOperator.prototype._e = function (err) {
+	        var u = this.out;
+	        if (!u)
+	            return;
+	        u._e(err);
+	    };
+	    DropRepeatsOperator.prototype._c = function () {
+	        var u = this.out;
+	        if (!u)
+	            return;
+	        u._c();
+	    };
+	    return DropRepeatsOperator;
+	}());
+	exports.DropRepeatsOperator = DropRepeatsOperator;
+	/**
+	 * Drops consecutive duplicate values in a stream.
+	 *
+	 * Marble diagram:
+	 *
+	 * ```text
+	 * --1--2--1--1--1--2--3--4--3--3|
+	 *     dropRepeats
+	 * --1--2--1--------2--3--4--3---|
+	 * ```
+	 *
+	 * Example:
+	 *
+	 * ```js
+	 * import dropRepeats from 'xstream/extra/dropRepeats'
+	 *
+	 * const stream = xs.of(1, 2, 1, 1, 1, 2, 3, 4, 3, 3)
+	 *   .compose(dropRepeats())
+	 *
+	 * stream.addListener({
+	 *   next: i => console.log(i),
+	 *   error: err => console.error(err),
+	 *   complete: () => console.log('completed')
+	 * })
+	 * ```
+	 *
+	 * ```text
+	 * > 1
+	 * > 2
+	 * > 1
+	 * > 2
+	 * > 3
+	 * > 4
+	 * > 3
+	 * > completed
+	 * ```
+	 *
+	 * Example with a custom isEqual function:
+	 *
+	 * ```js
+	 * import dropRepeats from 'xstream/extra/dropRepeats'
+	 *
+	 * const stream = xs.of('a', 'b', 'a', 'A', 'B', 'b')
+	 *   .compose(dropRepeats((x, y) => x.toLowerCase() === y.toLowerCase()))
+	 *
+	 * stream.addListener({
+	 *   next: i => console.log(i),
+	 *   error: err => console.error(err),
+	 *   complete: () => console.log('completed')
+	 * })
+	 * ```
+	 *
+	 * ```text
+	 * > a
+	 * > b
+	 * > a
+	 * > B
+	 * > completed
+	 * ```
+	 *
+	 * @param {Function} isEqual An optional function of type
+	 * `(x: T, y: T) => boolean` that takes an event from the input stream and
+	 * checks if it is equal to previous event, by returning a boolean.
+	 * @return {Stream}
+	 */
+	function dropRepeats(isEqual) {
+	    if (isEqual === void 0) { isEqual = null; }
+	    return function dropRepeatsOperator(ins) {
+	        return new core_1.Stream(new DropRepeatsOperator(isEqual, ins));
+	    };
+	}
+	Object.defineProperty(exports, "__esModule", { value: true });
+	exports.default = dropRepeats;
+	//# sourceMappingURL=dropRepeats.js.map
+
+/***/ },
+/* 132 */
+/***/ function(module, exports, __webpack_require__) {
+
+	"use strict";
+	var core_1 = __webpack_require__(5);
+	var FCIL = (function () {
+	    function FCIL(out, op) {
+	        this.out = out;
+	        this.op = op;
+	    }
+	    FCIL.prototype._n = function (t) {
+	        this.out._n(t);
+	    };
+	    FCIL.prototype._e = function (err) {
+	        this.out._e(err);
+	    };
+	    FCIL.prototype._c = function () {
+	        this.op.less();
+	    };
+	    return FCIL;
+	}());
+	var FlattenConcOperator = (function () {
+	    function FlattenConcOperator(ins) {
+	        this.ins = ins;
+	        this.type = 'flattenConcurrently';
+	        this.active = 1; // number of outers and inners that have not yet ended
+	        this.out = null;
+	    }
+	    FlattenConcOperator.prototype._start = function (out) {
+	        this.out = out;
+	        this.ins._add(this);
+	    };
+	    FlattenConcOperator.prototype._stop = function () {
+	        this.ins._remove(this);
+	        this.active = 1;
+	        this.out = null;
+	    };
+	    FlattenConcOperator.prototype.less = function () {
+	        if (--this.active === 0) {
+	            var u = this.out;
+	            if (!u)
+	                return;
+	            u._c();
+	        }
+	    };
+	    FlattenConcOperator.prototype._n = function (s) {
+	        var u = this.out;
+	        if (!u)
+	            return;
+	        this.active++;
+	        s._add(new FCIL(u, this));
+	    };
+	    FlattenConcOperator.prototype._e = function (err) {
+	        var u = this.out;
+	        if (!u)
+	            return;
+	        u._e(err);
+	    };
+	    FlattenConcOperator.prototype._c = function () {
+	        this.less();
+	    };
+	    return FlattenConcOperator;
+	}());
+	exports.FlattenConcOperator = FlattenConcOperator;
+	/**
+	 * Flattens a "stream of streams", handling multiple concurrent nested streams
+	 * simultaneously.
+	 *
+	 * If the input stream is a stream that emits streams, then this operator will
+	 * return an output stream which is a flat stream: emits regular events. The
+	 * flattening happens concurrently. It works like this: when the input stream
+	 * emits a nested stream, *flattenConcurrently* will start imitating that
+	 * nested one. When the next nested stream is emitted on the input stream,
+	 * *flattenConcurrently* will also imitate that new one, but will continue to
+	 * imitate the previous nested streams as well.
+	 *
+	 * Marble diagram:
+	 *
+	 * ```text
+	 * --+--------+---------------
+	 *   \        \
+	 *    \       ----1----2---3--
+	 *    --a--b----c----d--------
+	 *     flattenConcurrently
+	 * -----a--b----c-1--d-2---3--
+	 * ```
+	 *
+	 * @return {Stream}
+	 */
+	function flattenConcurrently(ins) {
+	    return new core_1.Stream(new FlattenConcOperator(ins));
+	}
+	Object.defineProperty(exports, "__esModule", { value: true });
+	exports.default = flattenConcurrently;
+	//# sourceMappingURL=flattenConcurrently.js.map
+
+/***/ },
+/* 133 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
@@ -9122,19 +11615,19 @@
 	 * @return {Function} the HTTP Driver function
 	 * @function makeHTTPDriver
 	 */
-	var http_driver_1 = __webpack_require__(127);
+	var http_driver_1 = __webpack_require__(134);
 	exports.makeHTTPDriver = http_driver_1.makeHTTPDriver;
 	//# sourceMappingURL=index.js.map
 
 /***/ },
-/* 127 */
+/* 134 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
 	var xstream_1 = __webpack_require__(4);
-	var MainHTTPSource_1 = __webpack_require__(128);
+	var MainHTTPSource_1 = __webpack_require__(135);
 	var xstream_adapter_1 = __webpack_require__(3);
-	var superagent = __webpack_require__(130);
+	var superagent = __webpack_require__(137);
 	function preprocessReqOptions(reqOptions) {
 	    reqOptions.withCredentials = reqOptions.withCredentials || false;
 	    reqOptions.redirects = typeof reqOptions.redirects === 'number' ? reqOptions.redirects : 5;
@@ -9286,11 +11779,11 @@
 	//# sourceMappingURL=http-driver.js.map
 
 /***/ },
-/* 128 */
+/* 135 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
-	var isolate_1 = __webpack_require__(129);
+	var isolate_1 = __webpack_require__(136);
 	var xstream_adapter_1 = __webpack_require__(3);
 	var MainHTTPSource = (function () {
 	    function MainHTTPSource(_res$$, runStreamAdapter, _name, _namespace) {
@@ -9322,7 +11815,7 @@
 	//# sourceMappingURL=MainHTTPSource.js.map
 
 /***/ },
-/* 129 */
+/* 136 */
 /***/ function(module, exports) {
 
 	"use strict";
@@ -9347,7 +11840,7 @@
 	//# sourceMappingURL=isolate.js.map
 
 /***/ },
-/* 130 */
+/* 137 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -9364,9 +11857,9 @@
 	  root = this;
 	}
 
-	var Emitter = __webpack_require__(131);
-	var requestBase = __webpack_require__(132);
-	var isObject = __webpack_require__(133);
+	var Emitter = __webpack_require__(138);
+	var requestBase = __webpack_require__(139);
+	var isObject = __webpack_require__(140);
 
 	/**
 	 * Noop.
@@ -9378,7 +11871,7 @@
 	 * Expose `request`.
 	 */
 
-	var request = module.exports = __webpack_require__(134).bind(null, Request);
+	var request = module.exports = __webpack_require__(141).bind(null, Request);
 
 	/**
 	 * Determine XHR.
@@ -10329,7 +12822,7 @@
 
 
 /***/ },
-/* 131 */
+/* 138 */
 /***/ function(module, exports, __webpack_require__) {
 
 	
@@ -10498,13 +12991,13 @@
 
 
 /***/ },
-/* 132 */
+/* 139 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
 	 * Module of mixed-in functions shared between node and client code
 	 */
-	var isObject = __webpack_require__(133);
+	var isObject = __webpack_require__(140);
 
 	/**
 	 * Clear previous timeout.
@@ -10876,7 +13369,7 @@
 
 
 /***/ },
-/* 133 */
+/* 140 */
 /***/ function(module, exports) {
 
 	/**
@@ -10895,7 +13388,7 @@
 
 
 /***/ },
-/* 134 */
+/* 141 */
 /***/ function(module, exports) {
 
 	// The node and browser modules expose versions of this with the
@@ -10933,16 +13426,16 @@
 
 
 /***/ },
-/* 135 */
+/* 142 */
 /***/ function(module, exports, __webpack_require__) {
 
 	// style-loader: Adds some css to the DOM by adding a <style> tag
 
 	// load the styles
-	var content = __webpack_require__(136);
+	var content = __webpack_require__(143);
 	if(typeof content === 'string') content = [[module.id, content, '']];
 	// add the styles to the DOM
-	var update = __webpack_require__(138)(content, {});
+	var update = __webpack_require__(145)(content, {});
 	if(content.locals) module.exports = content.locals;
 	// Hot Module Replacement
 	if(false) {
@@ -10959,22 +13452,22 @@
 	}
 
 /***/ },
-/* 136 */
+/* 143 */
 /***/ function(module, exports, __webpack_require__) {
 
-	exports = module.exports = __webpack_require__(137)();
+	exports = module.exports = __webpack_require__(144)();
 	// imports
 	exports.push([module.id, "@import url(https://fonts.googleapis.com/css?family=Lato:100,400,300,500);", ""]);
 	exports.push([module.id, "@import url(https://fonts.googleapis.com/css?family=Source+Code+Pro);", ""]);
 
 	// module
-	exports.push([module.id, "@charset \"UTF-8\";\nbody {\n  margin: 0;\n  font-size: 12px;\n  font-size: calculateRem(12px);\n  background: #e7e7e7;\n  font-family: 'proxima-nova', sans-serif;\n  color: #27243F; }\n  body #app {\n    height: 100%; }\n\n.treeview {\n  height: 100%;\n  display: flex;\n  flex-direction: row;\n  align-content: flex-start;\n  flex: 1; }\n  .treeview .selectView {\n    flex: 1;\n    overflow-y: auto;\n    position: relative;\n    background: #27243F;\n    color: #fff;\n    min-width: 15%;\n    width: 15%; }\n    .treeview .selectView .navBtn {\n      padding: 6px 15px;\n      font-size: 12px;\n      font-weight: 300;\n      letter-spacing: 1px;\n      background-color: #27243F;\n      color: #fff; }\n      .treeview .selectView .navBtn:hover {\n        background-color: #4f4980; }\n      .treeview .selectView .navBtn.selected {\n        border-left: 4px solid #725AC1;\n        background: #4f4980;\n        padding-left: 11px; }\n  .treeview .mainView {\n    flex: 8;\n    overflow: auto;\n    display: flex; }\n    .treeview .mainView .sniffer {\n      font-family: monospace;\n      width: 100%;\n      overflow-wrap: break-word; }\n      .treeview .mainView .sniffer ul {\n        padding: 0; }\n        .treeview .mainView .sniffer ul li.sniffline {\n          width: 100%;\n          list-style: none; }\n          .treeview .mainView .sniffer ul li.sniffline span.req {\n            padding: 4px 15px;\n            display: block;\n            border-bottom: 1px solid #cdcdcd; }\n            .treeview .mainView .sniffer ul li.sniffline span.req:hover, .treeview .mainView .sniffer ul li.sniffline span.req.open {\n              background: rgba(255, 255, 255, 0.3); }\n          .treeview .mainView .sniffer ul li.sniffline span.resp {\n            display: block;\n            padding: 5px 35px;\n            background: rgba(0, 0, 0, 0.1);\n            white-space: pre-wrap; }\n          .treeview .mainView .sniffer ul li.sniffline::before {\n            content: \"\\25B8\";\n            font-size: 10px;\n            line-height: 10px;\n            float: left;\n            margin: 5px 10px; }\n          .treeview .mainView .sniffer ul li.sniffline.open::before {\n            content: \"\\25BE\"; }\n", ""]);
+	exports.push([module.id, "@charset \"UTF-8\";\nbody {\n  margin: 0;\n  font-size: 12px;\n  font-size: calculateRem(12px);\n  background: #e7e7e7;\n  font-family: 'proxima-nova', sans-serif;\n  color: #27243F; }\n  body #app {\n    height: 100%; }\n\n.treeview {\n  height: 100%;\n  display: flex;\n  flex-direction: row;\n  align-content: flex-start;\n  flex: 1; }\n  .treeview .selectView {\n    flex: 1;\n    overflow-y: auto;\n    position: relative;\n    background: #27243F;\n    color: #fff;\n    min-width: 15%;\n    width: 15%; }\n    .treeview .selectView .navBtn {\n      padding: 6px 15px;\n      font-size: 12px;\n      font-weight: 300;\n      letter-spacing: 1px;\n      background-color: #27243F;\n      color: #fff; }\n      .treeview .selectView .navBtn:hover {\n        background-color: #4f4980; }\n      .treeview .selectView .navBtn.selected {\n        border-left: 4px solid #725AC1;\n        background: #4f4980;\n        padding-left: 11px; }\n  .treeview .mainView {\n    flex: 8;\n    overflow: auto;\n    display: flex; }\n    .treeview .mainView .sniffer {\n      font-family: monospace;\n      width: 100%;\n      overflow-wrap: break-word; }\n      .treeview .mainView .sniffer ul {\n        padding: 0; }\n        .treeview .mainView .sniffer ul li.sniffline {\n          cursor: default;\n          width: 100%;\n          list-style: none; }\n          .treeview .mainView .sniffer ul li.sniffline span.req {\n            padding: 4px 15px;\n            display: block;\n            border-bottom: 1px solid #cdcdcd; }\n            .treeview .mainView .sniffer ul li.sniffline span.req:hover, .treeview .mainView .sniffer ul li.sniffline span.req.open {\n              background: rgba(255, 255, 255, 0.3); }\n          .treeview .mainView .sniffer ul li.sniffline span.resp {\n            display: block;\n            padding: 5px 35px;\n            background: rgba(0, 0, 0, 0.1);\n            white-space: pre-wrap; }\n          .treeview .mainView .sniffer ul li.sniffline::before {\n            content: \"\\25B8\";\n            font-size: 10px;\n            line-height: 10px;\n            float: left;\n            margin: 5px 10px; }\n          .treeview .mainView .sniffer ul li.sniffline.open::before {\n            content: \"\\25BE\"; }\n", ""]);
 
 	// exports
 
 
 /***/ },
-/* 137 */
+/* 144 */
 /***/ function(module, exports) {
 
 	/*
@@ -11030,7 +13523,7 @@
 
 
 /***/ },
-/* 138 */
+/* 145 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/*

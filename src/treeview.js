@@ -1,5 +1,12 @@
+<<<<<<< HEAD
 import {thunk, div, span, ul, li, label, input, hr, h1, makeDOMDriver} from '@cycle/dom';
+=======
+import {div, span, ul, li, label, input, hr, h1, makeDOMDriver} from '@cycle/dom';
+import isolate from '@cycle/isolate';
+import Collection from '@cycle/collection';
+>>>>>>> line_decorator_sandbox
 import xs from 'xstream';
+import flattenConcurrently from 'xstream/extra/flattenConcurrently'
 
 var constructSelectors = (selected, data) => {
   return data
@@ -29,30 +36,26 @@ var formatSniffLine = (data, selected = 0) => {
     line.push(span(".resp", JSON.stringify(data.resp, false, 2)))
   }
   return li({
-    class: {sniffline: true, open: selected != 0},
+    class: {sniffline: true, open: selected != 0, ["id"+data.req.id]: true},
   }, line)
 }
 
-var SnifferTab = (sources) => {
-  var click$ = sources.DOM
-  .select(".sniffline .req")
+const Line = function(sources) {
+  var expanded$ = sources.DOM
+  .select(".req")
   .events("click")
-  .map(e => {
-    console.log(e.target.attributes);
-    return e.target.getAttribute("_id")
+  .fold(acc => !acc, false)
+
+  const vdom$ = expanded$.map( isExpanded => {
+    return (formatSniffLine(sources.comm, isExpanded, sources.memp));
   })
-  .fold((acc, e) => {
-    if(e in acc) {
-      acc[e] = (acc[e]+1) % 2;
-    } else {
-      acc[e] = 1;
-    }
-    return acc;
-  }, {});
 
-  var lines$ = sources.Sniffer
-  .fold((acc, e) => acc.concat([e]), []);
+  return {
+    DOM: vdom$
+  }
+}
 
+<<<<<<< HEAD
   var vdom$ = xs.combine(lines$, click$)
   .map(([lines, clicks]) => {
     var vdom = lines.map(line => thunk("li", line.req.id, (line, ac) => formatSniffLine(line,ac), [line, clicks[line.req.id]]))
@@ -60,6 +63,23 @@ var SnifferTab = (sources) => {
       ul("", vdom)
     ]);
   });
+=======
+var SnifferTab = (sources) => {
+
+  var logState$ = xs.combine(sources.Sniffer, sources.memepool$)
+  .map(([comm, memp]) => ({comm, memp}));
+
+
+  const lineList$ = Collection(Line, sources, logState$);
+  const lines$ = Collection.pluck(lineList$, item => item.DOM)
+
+  const vdom$ = lines$
+  .map(lines => tab("sniffer", [
+    div(".controllBar", [
+    ]),
+    ul("", lines)
+  ]));
+>>>>>>> line_decorator_sandbox
 
   return {
     DOM: vdom$
@@ -76,16 +96,25 @@ export var mainView = (sources) => {
   })
   .startWith(0);
 
-  var snifferTab$ = SnifferTab(sources).DOM;
-
-  let response$ = sources.HTTP
-  .select('hello')
+  const memepool$ = sources.HTTP
+  .select('expert')
   .flatten()
+  .debug("res")
   .map(res => JSON.parse(res.text))
-  .startWith('Loading...')
+  .fold( (acc, meme) => {
+    acc.addrs[meme.address] = meme;
+    return acc;
+  }, {addrs: {}})
+  .debug("meme");
 
-  const vdom$ = xs.combine(selected$, snifferTab$, response$)
-  .map( ([state, snifferTab, res]) => {
+  const snifferTab$ = SnifferTab({
+    memepool$: memepool$,
+    DOM: sources.DOM,
+    Sniffer: sources.Sniffer
+  }).DOM;
+
+  const vdom$ = xs.combine(selected$, snifferTab$)
+  .map( ([state, snifferTab]) => {
     var data = [
       tab("something", "here"),
       tab("address", [
@@ -93,7 +122,6 @@ export var mainView = (sources) => {
       ]),
       snifferTab
     ]
-    // const data = state[0];
     const selected = state;
     return div('.treeview',[
       div('.selectView', constructSelectors(selected, data) ),
@@ -101,15 +129,15 @@ export var mainView = (sources) => {
     ])
   });
 
-  let request$ = xs.of({
-    url: 'https://7i22h93cg3.execute-api.us-east-1.amazonaws.com/dev/get',
-    method: 'GET',
-    query: {"address": "0x9d6bb976159a6c131512ce27c83ba1fcb05b22ea"},
-    category: 'hello',
-  });
+  // const request$ = xs.of({
+  //   url: 'https://7i22h93cg3.execute-api.us-east-1.amazonaws.com/dev/get',
+  //   method: 'GET',
+  //   query: {"address": "0xd43a1e8b374a17d5556ccca1c42353cc18b55b7a"},
+  //   category: 'expert',
+  // });
 
   return {
     DOM: vdom$,
-    HTTP: request$
+    // HTTP: request$
   }
 }
