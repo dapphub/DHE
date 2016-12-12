@@ -1,5 +1,6 @@
 import {div, span, ul, li, label, input, hr, h1, makeDOMDriver} from '@cycle/dom';
 import isolate from '@cycle/isolate';
+import Collection from '@cycle/collection';
 import xs from 'xstream';
 import flattenConcurrently from 'xstream/extra/flattenConcurrently'
 
@@ -40,12 +41,9 @@ const Line = function(sources) {
   .select(".req")
   .events("click")
   .fold(acc => !acc, false)
-  .debug("isExpanded");
 
-  const vdom$ = xs.combine(sources.data, expanded$)
-  .debug("draw", )
-  .map(([state, isExpanded]) => {
-    return (formatSniffLine(state, isExpanded));
+  const vdom$ = expanded$.map( isExpanded => {
+    return (formatSniffLine(sources.comm, isExpanded, sources.memp));
   })
 
   return {
@@ -54,43 +52,20 @@ const Line = function(sources) {
 }
 
 var SnifferTab = (sources) => {
-  // var click$ = sources.DOM
-  // .select(".sniffline .req")
-  // .events("click")
-  // .map(e => {
-  //   console.log(e.target.attributes);
-  //   return e.target.getAttribute("_id")
-  // })
-  // .fold((acc, e) => {
-  //   if(e in acc) {
-  //     acc[e] = (acc[e]+1) % 2;
-  //   } else {
-  //     acc[e] = 1;
-  //   }
-  //   return acc;
-  // }, {});
 
-  var vdom$ = sources.Sniffer
-  .take(10)
-  // TODO - here I wanted to flatten a stream of streams into an array
-  // .map(l => isolate(Line)({
-  //   DOM: sources.DOM,
-  //   data: xs.of(l)
-  // }).DOM)
-  // .compose(flattenConcurrently)
-  .fold((acc, e) => acc.concat([isolate(Line)({
-    DOM: sources.DOM,
-    data: xs.of(l)
-  }).DOM], []) // TODO - here I have a array of streams
-  .map(lines => tab("sniffer", [ul("", lines)]));
+  var logState$ = xs.combine(sources.Sniffer, sources.memepool$)
+  .map(([comm, memp]) => ({comm, memp}));
 
-  // var vdom$ = xs.combine(lines$)
-  // .map(([lines]) => {
-  //   var vdom = lines.map(line => formatSniffLine(line, false))
-  //   return tab("sniffer", [
-  //     ul("", vdom)
-  //   ]);
-  // });
+
+  const lineList$ = Collection(Line, sources, logState$);
+  const lines$ = Collection.pluck(lineList$, item => item.DOM)
+
+  const vdom$ = lines$
+  .map(lines => tab("sniffer", [
+    div(".controllBar", [
+    ]),
+    ul("", lines)
+  ]));
 
   return {
     DOM: vdom$
@@ -107,16 +82,25 @@ export var mainView = (sources) => {
   })
   .startWith(0);
 
-  var snifferTab$ = SnifferTab(sources).DOM;
-
-  let response$ = sources.HTTP
-  .select('hello')
+  const memepool$ = sources.HTTP
+  .select('expert')
   .flatten()
+  .debug("res")
   .map(res => JSON.parse(res.text))
-  .startWith('Loading...')
+  .fold( (acc, meme) => {
+    acc.addrs[meme.address] = meme;
+    return acc;
+  }, {addrs: {}})
+  .debug("meme");
 
-  const vdom$ = xs.combine(selected$, snifferTab$, response$)
-  .map( ([state, snifferTab, res]) => {
+  const snifferTab$ = SnifferTab({
+    memepool$: memepool$,
+    DOM: sources.DOM,
+    Sniffer: sources.Sniffer
+  }).DOM;
+
+  const vdom$ = xs.combine(selected$, snifferTab$)
+  .map( ([state, snifferTab]) => {
     var data = [
       tab("something", "here"),
       tab("address", [
@@ -124,7 +108,6 @@ export var mainView = (sources) => {
       ]),
       snifferTab
     ]
-    // const data = state[0];
     const selected = state;
     return div('.treeview',[
       div('.selectView', constructSelectors(selected, data) ),
@@ -132,15 +115,15 @@ export var mainView = (sources) => {
     ])
   });
 
-  let request$ = xs.of({
-    url: 'https://7i22h93cg3.execute-api.us-east-1.amazonaws.com/dev/get',
-    method: 'GET',
-    query: {"address": "0x9d6bb976159a6c131512ce27c83ba1fcb05b22ea"},
-    category: 'hello',
-  });
+  // const request$ = xs.of({
+  //   url: 'https://7i22h93cg3.execute-api.us-east-1.amazonaws.com/dev/get',
+  //   method: 'GET',
+  //   query: {"address": "0xd43a1e8b374a17d5556ccca1c42353cc18b55b7a"},
+  //   category: 'expert',
+  // });
 
   return {
     DOM: vdom$,
-    HTTP: request$
+    // HTTP: request$
   }
 }
