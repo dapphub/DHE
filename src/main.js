@@ -1,15 +1,15 @@
 import {run} from '@cycle/xstream-run';
 import {button, span, div, label, input, hr, h1, makeDOMDriver} from '@cycle/dom';
 import xs from 'xstream';
-import {mainView, tab} from './treeview.js';
+import {DHExtension} from './treeview.js';
 import {makeHTTPDriver} from '@cycle/http';
 require("./style.scss");
 
 window.main = (sources) => {
-  
-  const DHExtension = mainView(sources);
 
-  var DH$ = DHExtension.DOM;
+  const dhExtension = DHExtension(sources);
+
+  var DH$ = dhExtension.DOM;
 
   var init$ = sources.DOM.select('.toggleDappHub')
   .events('click')
@@ -28,7 +28,7 @@ window.main = (sources) => {
 
   var MV = {
     DOM: vdom$,
-    HTTP: DHExtension.HTTP
+    HTTP: dhExtension.HTTP
   }
 
   return MV;

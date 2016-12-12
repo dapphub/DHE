@@ -65,6 +65,9 @@ body {
       ul {
         padding: 0;
         li.sniffline {
+          &.success {
+            background: #f00;
+          }
           cursor:default;
           width: 100%;
           list-style: none;
