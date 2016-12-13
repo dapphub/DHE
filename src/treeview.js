@@ -43,7 +43,7 @@ var Tab = (sources) => {
   .filter(state => state.selected)
   .map(state => div(state.name))
 
-  const snifferView$ = Sniffer(sources).DOM;
+  const snifferView$ = isolate(Sniffer)(sources).DOM;
 
   const view$ = xs.combine(state$, defaultView$, snifferView$)
   .filter(([state]) => state.selected)

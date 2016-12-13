@@ -12,6 +12,6 @@ injectScript(chrome.extension.getURL('content.js'), 'html');
 //Listening to messages from DOM
 window.addEventListener("message", function(event) {
   if(event.data.type != "WEB3_SNIFFER") return null;
-  console.log("send msg from content script");
+  // console.log("send msg from content script");
   chrome.extension.sendMessage(event.data);
 });

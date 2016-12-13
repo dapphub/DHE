@@ -59,18 +59,45 @@ body {
     overflow: auto;
     display: flex;
     .sniffer {
+      display: flex;
+      flex-direction: column;
       font-family: monospace;
       width: 100%;
       overflow-wrap: break-word;
+      .controllBar {
+        border-bottom: 4px solid #ddd;
+        padding: 2px 6px;
+        .record {
+          input {
+            display: none;
+          }
+          &::before{
+            content: " ";
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            background: #bbb;
+            border-radius: 20px;
+            margin: 0px 7px 2px 3px;
+            vertical-align: middle;
+          }
+          &.checked::before {
+            background: #ff603b;
+            box-shadow: 0px 1px 4px 0px #ff603b;
+          }
+        }
+      }
       ul {
         padding: 0;
+        margin: 0;
+        overflow-y: scroll;
         li.sniffline {
-          &.success {
-            background: #f00;
-          }
           cursor:default;
           width: 100%;
           list-style: none;
+          &.succ {
+            background: #cce1f0;
+          }
           span.req {
             padding: 4px 15px;
             display: block;

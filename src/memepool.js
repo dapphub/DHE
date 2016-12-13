@@ -1,5 +1,6 @@
 "use strict";
 import xs from 'xstream';
+import Contract from 'dapple-core/contract.js';
 
 export var Memepool = (sources) => {
 
@@ -7,11 +8,15 @@ export var Memepool = (sources) => {
   .select('expert')
   .flatten()
   .debug("res")
+  .filter(res => res.text !== "")
   .map(res => JSON.parse(res.text))
   .fold( (acc, meme) => {
+    const contractName = Object.keys(meme.lock.contracts).find(name => meme.lock.contracts[name].address === meme.address);
+    const contractDef = meme.lock.contracts[contractName];
+    meme.contract = new Contract(contractDef, contractDef.contract_name);
     acc.addrs[meme.address] = meme;
     return acc;
-  }, {addrs: {}})
+  }, {addrs: {}, known: {}})
   .debug("meme");
 
   const discoveredAddrs$ = sources.Sniffer
@@ -20,7 +25,7 @@ export var Memepool = (sources) => {
 
 
   const request$ = xs.combine(discoveredAddrs$, memepool$)
-  .filter(([addr, memepool]) => !(addr in memepool.addrs))
+  .filter(([addr, memepool]) => !(addr in memepool.addrs) && !(addr in memepool.known))
   .map(([addr, _]) => ({
     url: 'https://4zgkma87x3.execute-api.us-east-1.amazonaws.com/dev/get',
     method: 'GET',
