@@ -6,10 +6,9 @@ import xs from 'xstream';
 
 
 var formatSniffLine = (data, selected = 0, memep = {}) => {
-  
 
   var formattedInput = `${data.req.method}(${data.req.params.map(e => JSON.stringify(e)).join(", ")})`;
-  var formattedOutput = JSON.stringify(data.resp, false, 2);
+  var formattedOutput = JSON.stringify(data.res, false, 2);
 
   var succ = false;
   if(data.req.method === "eth_call"
@@ -18,7 +17,9 @@ var formatSniffLine = (data, selected = 0, memep = {}) => {
      const object = memep.addrs[data.req.params[0].to];
      const fsign = data.req.params[0].data.slice(2, 10);
      const fdata = data.req.params[0].data.slice(10);
-     const fres = data.resp.slice(2);
+     const fres = typeof data.res === "object"
+                  ? data.res.result.slice(2)
+                  : data.res.slice(2)
      const fabi = object.contract.signatures_to_fabi[fsign]
      const fname = fabi.name;
      const finput = fabi.decodeInputs(fdata);
@@ -42,7 +43,7 @@ var formatSniffLine = (data, selected = 0, memep = {}) => {
      }, formattedInput)
    ];
    if(selected != 0) {
-     line.push(span(".resp", formattedOutput))
+     line.push(span(".res", formattedOutput))
    }
 
   return li({
@@ -73,7 +74,6 @@ const Line = function(sources) {
 
 export var Sniffer = (sources) => {
 
-
   const toggle$ = sources.DOM
   .select(".record input")
   .events("change")
@@ -93,8 +93,7 @@ export var Sniffer = (sources) => {
       label(".record", {class: {checked: toggled}}, [
         input({attrs: {type: 'checkbox'}}),
         span("record"),
-      ]),
-      toggled ? "YEP" : "NO"
+      ])
     ]),
     ul("", lines)
   ]));

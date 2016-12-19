@@ -6,12 +6,15 @@ function injectScript(file_path, tag) {
     script.setAttribute('src', file_path);
     node.insertBefore(script, node.firstChild);
 }
-injectScript(chrome.extension.getURL('testrpc.bundle.js'), 'html');
-injectScript(chrome.extension.getURL('content.js'), 'html');
+// injectScript(chrome.extension.getURL('testrpc.bundle.js'), 'html');
+injectScript(chrome.extension.getURL('content.bundle.js'), 'html');
 
 //Listening to messages from DOM
 window.addEventListener("message", function(event) {
-  if(event.data.type != "WEB3_SNIFFER") return null;
-  // console.log("send msg from content script");
+  if(["WEB3_SNIFFER", "REQ"].indexOf(event.data.type) === -1) return null;
   chrome.extension.sendMessage(event.data);
 });
+
+chrome.extension.onMessage.addListener((msg, sender) => {
+  window.postMessage(msg, "*");
+})

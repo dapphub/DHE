@@ -29,7 +29,16 @@ chrome.devtools.panels.create("DappHub","chrome.png", "panel.html", function(pan
       return _window.xs.create({
         start: listener => {
           port.onMessage.addListener(function (data) {
-            listener.next(data);
+            let msgs;
+            if(Array.isArray(data.req)) {
+              msgs = data.req.map( (e, i) => ({req: e, res: data.res[i]}))
+            } else {
+              msgs = [data]
+            }
+
+            msgs.forEach(r => {
+              listener.next(r)
+            })
           });
         },
         stop: () => {},

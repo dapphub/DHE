@@ -1,8 +1,11 @@
+"use strict";
+
 import {thunk, div, span, ul, li, label, input, hr, h1, makeDOMDriver} from '@cycle/dom';
 import isolate from '@cycle/isolate';
 import Collection from '@cycle/collection';
 import xs from 'xstream';
 import {Sniffer} from './components/sniffer.js';
+import {AddrView} from './components/addr.js';
 import {Memepool} from './memepool.js';
 
 var constructSelectors = (selected, data) => {
@@ -23,12 +26,10 @@ export var tab = (name, data) => {
 }
 
 var Tab = (sources) => {
-  console.log("new tab");
-  console.log(sources);
 
-  const state$ = sources.props.debug("props");
+  const state$ = sources.props
 
-  const selector$ = state$
+  const navigation$ = state$
   .map(state => div({
     class: {
       navBtn: true,
@@ -39,21 +40,29 @@ var Tab = (sources) => {
     }
   }, state.name))
 
-  const defaultView$ = state$
+  const view$ = state$
   .filter(state => state.selected)
-  .map(state => div(state.name))
+  .map(state => {
+    var vdom$;
+    switch(state.type) {
+      case "addr":
+        vdom$ = isolate(AddrView)(sources).DOM;
+        break;
+      case "sniffer":
+        vdom$ = isolate(Sniffer)(sources).DOM;
+        break;
+      default:
+        vdom$ = xs.of(div(state.name),div(state.name));
+    }
+    return xs.combine(sources.props, vdom$)
+  })
+  .flatten()
+  .filter(([p]) => p.selected)
+  .map(([_, dom]) => dom);
 
-  const snifferView$ = isolate(Sniffer)(sources).DOM;
-
-  const view$ = xs.combine(state$, defaultView$, snifferView$)
-  .filter(([state]) => state.selected)
-  .map(([state, def, sniffer]) => (state.type === "sniffer") ? sniffer : def)
-
-  // const selector$ = sources.props.map(_ => div("omg"));
   return {
-    selector$, // TODO - better name
+    navigation$, // TODO - better name
     view$: view$
-    // select$
   };
 }
 
@@ -68,11 +77,10 @@ export var DHExtension = (sources) => {
   .events('click')
   .map(e => e.target.getAttribute('ref'))
   .startWith("tab1")
-  .debug("select")
 
-  const state$ = select$
-  .map(id => [
-    {
+  const state$ = xs.combine(select$, memepool.state$)
+  .map(([id, state]) => {
+    return [{
       id: "tab1",
       props: {
         index: "tab1",
@@ -80,8 +88,7 @@ export var DHExtension = (sources) => {
         type: "asd",
         selected: id === "tab1"
       }
-    },
-    {
+    }, {
       id: "tab2",
       props: {
         index: "tab2",
@@ -89,23 +96,27 @@ export var DHExtension = (sources) => {
         type: "sniffer",
         selected: id === "tab2"
       }
-    }
-  ]).debug("state");
-
-  // console.log(selected$, xs.of("tab1"));
-  // sources.selected$ = selected$;
-  // sources.selected$ = xs.of("tab1")
-  // sources.selected = select$;
+    }].concat(Object.keys(state.addrs).map(addr => ({
+      id: addr,
+      props: {
+        index: addr,
+        name: addr.slice(0,10),
+        type: "addr",
+        state: state.addrs[addr],
+        selected: id === addr
+      }
+    })))
+  })
 
   const tab$ = Collection.gather(Tab, sources, state$);
 
-  const tabSelectors$ = Collection
-  .pluck(tab$, tab => tab.selector$)
+  const tabNavigation$ = Collection
+  .pluck(tab$, tab => tab.navigation$)
 
   const mainView$ = Collection
   .merge(tab$, tab => tab.view$)
 
-  const vdom$ = xs.combine(tabSelectors$, mainView$)
+  const vdom$ = xs.combine(tabNavigation$, mainView$)
   .map(([tabs, view]) => div(".treeview", [
       div('.selectView', tabs),
       div('.mainView', [view])

@@ -23,7 +23,6 @@ export var Memepool = (sources) => {
   .filter(comm => comm.req.method === "eth_call")
   .map(comm => comm.req.params[0].to)
 
-
   const request$ = xs.combine(discoveredAddrs$, memepool$)
   .filter(([addr, memepool]) => !(addr in memepool.addrs) && !(addr in memepool.known))
   .map(([addr, _]) => ({

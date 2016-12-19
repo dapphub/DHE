@@ -4,7 +4,9 @@ var webpack = require('webpack');
 var config = module.exports = {
      entry: {
        main: './src/main.js',
-       testrpc: './src/testrpc.js'
+       content: './src/content.js',
+       sandbox: './src/sandbox.js',
+       background: './src/background.js'
      },
      output: {
          path: './dist/',

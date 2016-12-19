@@ -12,11 +12,67 @@ body {
   margin: 0;
   @include font-size(12px)
   background: $secondary-color;
-  font-family: 'proxima-nova', sans-serif;
+  font-family: sans-serif;
   color: $dark-bg-color;
 
   #app {
     height: 100%;
+  }
+}
+
+legend {
+  color: darken($dark-bg-color , 10%);
+  letter-spacing: 1px;
+}
+
+label {
+  @include font-size(12px)
+}
+
+
+fieldset {
+  margin: 1.2rem 0 0 0;
+  border: 1px solid $secondary-color;
+  color: lighten($dark-bg-color , 10%);
+}
+
+input {
+  border: 1px solid $secondary-color;
+  color: $purple-bg;
+  display: inline-block;
+  width: 80%;
+  padding: 6px 10px;
+  margin: 6px 0;
+}
+
+button {
+  display: inline-block;
+  border: 1px solid $dark-bg-color;
+  background: $dark-bg-color;
+  color: $secondary-color;
+  border-radius: 2px;
+  letter-spacing: 1px;
+  margin: 10px 0;
+  padding: 8px 28px;
+  text-transform: uppercase;
+  &+ button {
+    margin-left: 10px;
+  }
+  &:disabled {
+    background: $main1_disabled;
+    color: #ddd;
+    position: relative;
+    &:after {
+      display: block;
+      position: absolute;
+      color: #333;
+      top: 0;
+      width: 460px;
+      content: 'cannot call non static functions via server.';
+      left: 100%;
+      text-align: left;
+      padding: 9px 18px;
+    }
   }
 }
 
@@ -90,7 +146,7 @@ body {
       ul {
         padding: 0;
         margin: 0;
-        overflow-y: scroll;
+        overflow-y: auto;
         li.sniffline {
           cursor:default;
           width: 100%;
@@ -106,7 +162,7 @@ body {
               background: rgba(255,255,255,0.3);
             }
           }
-          span.resp {
+          span.res {
             display: block;
             padding: 5px 35px;
             background: rgba(0,0,0,0.1);
@@ -126,4 +182,102 @@ body {
       }
     }
   }
+}
+.objectView {
+  width: 100%;
+}
+
+.abiView {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  .navigationView {
+    flex: 3;
+    overflow-y: auto;
+    .abiNavBtn {
+      cursor:default;
+      font-weight: 100;
+      background: $white;
+      font-weight: 400;
+      position: relative;
+      padding: 6px 15px;
+
+      &.contract, &.objectInfo {
+        font-size: 18px;
+        padding: 10px;
+        background: $dark;
+        color: $white;
+        letter-spacing: 1px;
+        &.selected {
+          border-left: 4px solid $yellow;
+          padding-left: 11px;
+        }
+        &:hover, &.selected {
+          background: lighten($dark-bg-color, 22%);
+        }
+        &:before { border-bottom: none; }
+      }
+
+      &.selected {
+        border-left: 4px solid $main2;
+        padding-left: 11px;
+      }
+
+      &:hover {
+        background: rgba($white, 0.1);
+      }
+
+      &:before {
+        content: " ";
+        border-bottom: 1px dotted $secondary-color;
+        display:block;
+        position: absolute;
+        bottom: 0;
+        right: 0;
+        width: 90%;
+      }
+      &:hover {
+        background: $bg-light-panel;
+      }
+      &.selected {
+        border-left: 4px solid $main2;
+        background: $bg-light-panel;
+      }
+    }
+  }
+  .mainView {
+    flex: 6;
+    overflow-y: auto;
+    padding: 15px;
+    border-left: 1px solid $main3;
+    background: #fff;
+    table {
+      width: 100%;
+      td {
+        margin: 6px 0;
+      }
+      td.input {
+        display: flex;
+        > input {
+          flex: 1;
+        }
+      }
+      td.label {
+        text-align: right;
+        padding-right: 10px;
+        width: 18%;
+      }
+      td.type {
+        padding-left: 4px;
+        width: 15%;
+      }
+    }
+  }
+}
+
+.jsonDisplay {
+  white-space: pre;
+  font-family: monospace;
+  padding: 20px;
+  display: block;
 }

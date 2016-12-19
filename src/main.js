@@ -27,7 +27,7 @@ window.main = (sources) => {
   });
 
   var MV = {
-    DOM: vdom$,
+    DOM: DH$,
     HTTP: dhExtension.HTTP
   }
 
