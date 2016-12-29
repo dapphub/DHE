@@ -9863,37 +9863,6 @@
 
 	  sources.memepool$ = memepool.state$;
 
-	  // const state$ = sources.onion.state$
-	  // .debug("asd")
-	  // .map(state => {
-	  //   return [{
-	  //     id: "tab1",
-	  //     props: {
-	  //       index: "tab1",
-	  //       name: "address",
-	  //       type: "asd",
-	  //       selected: id === "tab1"
-	  //     }
-	  //   }, {
-	  //     id: "tab2",
-	  //     props: {
-	  //       index: "tab2",
-	  //       name: "sniffer",
-	  //       type: "sniffer",
-	  //       selected: id === "tab2"
-	  //     }
-	  //   }].concat(Object.keys(state.addrs).map(addr => ({
-	  //     id: addr,
-	  //     props: {
-	  //       index: addr,
-	  //       name: state.addrs[addr].name,
-	  //       type: "addr",
-	  //       state: state.addrs[addr],
-	  //       selected: id === addr
-	  //     }
-	  //   })))
-	  // })
-
 	  var newMemeReducer$ = memepool.state$.map(function (state) {
 	    return function newMemeReducer(parent) {
 	      var oldAddrs = parent.tabs.filter(function (t) {
