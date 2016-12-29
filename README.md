@@ -84,10 +84,15 @@ https://github.com/nexusdev/dapple-pkg
 
 # TODOs
 
-  1. get rid of local ropsten chain requirement
-      1. use the dapp-local web3 endpoint to trigger calls
-  2. make web3 calls in address view work
-  3. custom contract view
+  * get rid of local ropsten chain requirement
+      * use the dapp-local web3 endpoint to trigger calls
+  * make web3 calls in address view work
+  * custom contract view
+  * fork reset
+  * toggle fork/ forward transactions to real blockchain
+  * settings - main account/ current fork
+  * **resolve testrpc bug where accounts don't get updated**
+  * reset filters once a frontend disconnects
 
 # Screenshots
 
