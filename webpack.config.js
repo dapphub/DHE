@@ -33,6 +33,7 @@ var config = module.exports = {
          loaders: ["style", "css", "sass"]
        }]
      },
+     // devtool: "source-map",
      devServer: {
        inline: true,
        "Access-Control-Allow-Origin": "*"

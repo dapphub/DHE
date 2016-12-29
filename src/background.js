@@ -5,14 +5,20 @@ const debug = false;
 ////////////////////
 ////////////////////
 
-var engine = require('./testrpc.js');
+var setUpEngine = require('./testrpc.js');
+var xs = require('xstream');
+var engine;
 
 // Handle request from devtools
 chrome.extension.onConnect.addListener(function (port) {
-    //Posting back to Devtools
-    chrome.extension.onMessage.addListener(function (message, sender) {
+
+    var middleware = function (message, sender) {
+
+      if(message.req.method === "eth_sendTransaction") {
+        console.log(message.req)
+      }
       if(debug) console.log(">>", message);
-      if(message.type === "REQ" && forkMode) {
+      if(message.type === "REQ" && forkMode && engine) {
         engine.sendAsync(message.req, (err, res) => {
           if(debug) console.log("<<", res);
           // send back to content script
@@ -21,7 +27,7 @@ chrome.extension.onConnect.addListener(function (port) {
             res: res
           })
           // Send to dev tool panel
-          port.postMessage({
+          port && port.postMessage({
             type: "RES",
             res: res,
             req: message.req
@@ -34,7 +40,28 @@ chrome.extension.onConnect.addListener(function (port) {
           res: message.res,
           req: message.req
         })
-        port.postMessage(message);
+        port && port.postMessage(message);
       }
-    });
+    }
+
+    var initTestrpc = function (message, sender) {
+      if( message.type === "start" ) {
+        engine = setUpEngine();
+        console.log("init testrpc", sender);
+      }
+    }
+
+    //Posting back to Devtools
+    chrome.extension.onMessage.addListener(middleware);
+    port.onMessage.addListener(initTestrpc)
+
+    port.onDisconnect.addListener(function () {
+      console.log("disconnect");
+      chrome.extension.onMessage.removeListener(middleware);
+      port = null;
+      engine.stop();
+      engine = null;
+    })
+
 });
+

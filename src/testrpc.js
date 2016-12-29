@@ -10,7 +10,6 @@ const level = require('level-js');
 const levelup = require('levelup');
 var Web3 = require("web3");
 
-const SnifferSubprovider = require("./sniffer.js");
 
 // Buffers are not valid keys
 ["_put", "_get"]
@@ -18,7 +17,7 @@ const SnifferSubprovider = require("./sniffer.js");
   let _f = level.prototype[f];
   level.prototype[f] = function () {
     var args = Array.prototype.slice.call(arguments);
-    args[0] = args[0].toString();
+    args[0] = args[0].toString("hex");
     _f.apply(this, args);
   }
 })
@@ -26,44 +25,48 @@ const SnifferSubprovider = require("./sniffer.js");
 let _f = level.prototype._batch;
 level.prototype._batch = function () {
   var args = Array.prototype.slice.call(arguments);
-  args[0] = args[0].map(o => o.key && (o.key = o.key.toString()) && o || o)
+  args[0] = args[0].map(o => o.key && (o.key = o.key.toString("hex")) && o || o)
     _f.apply(this, args);
 }
 
 
-var engine = new ProviderEngine();
-engine._ready.setMaxListeners(30);
-engine.addProvider(new SnifferSubprovider());
+function setUpEngine() {
+  var engine = new ProviderEngine();
+  engine._ready.setMaxListeners(30);
+  // engine.addProvider(new SnifferSubprovider());
 
-var _web3 = new Web3(engine);
-var db = levelup("/db", {
-  db: level
-})
+  var _web3 = new Web3(engine);
+  var db = levelup("/db", {
+    db: level
+  })
 
-// var sniffer = new SnifferSubprovider();
-// web3.currentProvider._providers.unshift(sniffer);
-// sniffer.setEngine(web3.currentProvider);
+  // var sniffer = new SnifferSubprovider();
+  // web3.currentProvider._providers.unshift(sniffer);
+  // sniffer.setEngine(web3.currentProvider);
 
-// var forkedProvider = new Web3.providers.HttpProvider("");
-// forkedProvider.sendAsync = web3.currentProvider.sendAsync;
-var gethApiDouble = new GethApiDouble({
-  fork: "http://localhost:8545",
-  db,
-  mnemonic: "secret"
-});
-engine.manager = gethApiDouble;
-engine.addProvider(new RequestFunnel());
-engine.addProvider(new FilterSubprovider());
-engine.addProvider(new GethDefaults());
-engine.addProvider(new VmSubprovider());
-engine.addProvider(gethApiDouble);
-// engine.addProvider(new Web3Subprovider(forkedProvider));
+  // var forkedProvider = new Web3.providers.HttpProvider("");
+  // forkedProvider.sendAsync = web3.currentProvider.sendAsync;
+  var gethApiDouble = new GethApiDouble({
+    fork: "http://localhost:8545",
+    db,
+    mnemonic: "secret",
+    // blocktime: 0.1
+  });
+  engine.manager = gethApiDouble;
+  engine.addProvider(new RequestFunnel());
+  engine.addProvider(new FilterSubprovider());
+  engine.addProvider(new GethDefaults());
+  engine.addProvider(new VmSubprovider());
+  engine.addProvider(gethApiDouble);
+  // engine.addProvider(new Web3Subprovider(forkedProvider));
 
-console.log("injecting");
-window.web3 = _web3;
+  console.log("injecting");
+  window.web3 = _web3;
 
-// start polling for blocks
-engine.start()
-// web3.currentProvider.sendAsync = _web3.currentProvider.sendAsync.bind(_web3.currentProvider);
+  // start polling for blocks
+  engine.start()
+  // web3.currentProvider.sendAsync = _web3.currentProvider.sendAsync.bind(_web3.currentProvider);
+  return engine;
+}
 
-module.exports = engine;
+module.exports = setUpEngine;

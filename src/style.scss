@@ -77,6 +77,15 @@ button {
 }
 
 
+.injectDappHub {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  height: 80%;
+}
+
+
 .treeview {
   height: 100%;
   display: flex;
@@ -151,8 +160,11 @@ button {
           cursor:default;
           width: 100%;
           list-style: none;
-          &.succ {
+          &.call {
             background: #cce1f0;
+          }
+          &.tx {
+            background: #f7e5d2;
           }
           span.req {
             padding: 4px 15px;

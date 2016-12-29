@@ -3,9 +3,10 @@ import {button, span, div, label, input, hr, h1, makeDOMDriver} from '@cycle/dom
 import xs from 'xstream';
 import {DHExtension} from './treeview.js';
 import {makeHTTPDriver} from '@cycle/http';
+import onionify from 'cycle-onionify';
 require("./style.scss");
 
-window.main = (sources) => {
+const main = (sources) => {
 
   const dhExtension = DHExtension(sources);
 
@@ -17,23 +18,29 @@ window.main = (sources) => {
 
   var vdom$ = xs.combine(DH$, init$)
   .map(([DH, init]) => {
-    var color = init ? '#0f0' : '#f0f';
-    var initView = div([
-      button(".toggleDappHub", { style: {background: color} }, "Start"),
-      span("This will trigger reloading this webpage.")
+    var initView = div(".injectDappHub", [
+      button(".toggleDappHub", { }, "Start"),
+      span("This will inject HappHub into your webpage."),
+      span("You might want to reload this page."),
     ]);
     var dhView = DH;
     return init ? dhView : initView;
   });
 
+  var sniffer$ = init$
+  .map(i => i ? ({type: "start"}) : ({}))
+
   var MV = {
-    DOM: DH$,
-    HTTP: dhExtension.HTTP
+    DOM: vdom$,
+    HTTP: dhExtension.HTTP,
+    Sniffer: sniffer$,
+    onion: dhExtension.onion
   }
 
   return MV;
 }
 
+window.main = onionify(main);
 window.run = run;
 window.makeDOMDriver = makeDOMDriver;
 window.makeHTTPDriver = makeHTTPDriver;

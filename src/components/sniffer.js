@@ -2,17 +2,21 @@
 
 import {thunk, div, span, ul, li, label, input, hr, h1, makeDOMDriver} from '@cycle/dom';
 import Collection from '@cycle/collection';
+import {pick, mix, isolateSource as isolateOnionSource, isolateSink as isolateOnionSink} from 'cycle-onionify';
+import isolate from '@cycle/isolate';
+import sampleCombine from 'xstream/extra/sampleCombine'
 import xs from 'xstream';
+import {member, json} from '../helper.js';
 
 
-var formatSniffLine = (data, selected = 0, memep = {}) => {
+var formatSniffLine = (data, memep = {}) => {
 
   var formattedInput = `${data.req.method}(${data.req.params.map(e => JSON.stringify(e)).join(", ")})`;
   var formattedOutput = JSON.stringify(data.res, false, 2);
 
-  var succ = false;
-  if(data.req.method === "eth_call"
-   && "addrs" in memep
+  var call = false;
+  var tx = false;
+  if((data.req.method === "eth_call" || data.req.method === "eth_sendTransaction")
    && data.req.params[0].to in memep.addrs) {
      const object = memep.addrs[data.req.params[0].to];
      const fsign = data.req.params[0].data.slice(2, 10);
@@ -26,31 +30,36 @@ var formatSniffLine = (data, selected = 0, memep = {}) => {
      const foutput = fabi.decodeOutputs(fres);
      formattedInput = `${object.contract.name}(${object.address}).${fname}(${finput.join(', ')})`;
      formattedOutput = foutput.join(', ');
-     succ = true;
+     if(data.req.method === "eth_call") {
+       call = true;
+     } else {
+       tx = true;
+     }
    } else {
-
+      
    }
 
    var line = [
      span({
        class: {
          req: true,
-         open: selected != 0
+         open: data.expanded
        },
        attrs: {
          _id: data.req.id
        }
      }, formattedInput)
    ];
-   if(selected != 0) {
+   if(data.expanded) {
      line.push(span(".res", formattedOutput))
    }
 
   return li({
     class: {
-      succ,
+      call,
+      tx,
       sniffline: true,
-      open: selected != 0,
+      open: data.expanded,
       ["id"+data.req.id]: true
     },
   }, line)
@@ -60,15 +69,42 @@ const Line = function(sources) {
   var expanded$ = sources.DOM
   .select(".req")
   .events("click")
-  .fold(acc => !acc, false)
 
-  const vdom$ = xs.combine(expanded$, sources.memepool$)
-  .map(([isExpanded, memp]) => {
-    return (formatSniffLine(sources.comm, isExpanded, memp));
+  const vdom$ = xs.combine(
+    sources.onion.state$,
+    sources.memepool$
+  )
+  .map(([state, memep]) => formatSniffLine(state, memep))
+
+  const reducer$ = expanded$
+  .map(v => function lineExpandedReducer(parent) {
+    return _.assign({}, parent, {
+      expanded: !parent.expanded
+    });
   })
 
   return {
-    DOM: vdom$
+    DOM: vdom$,
+    onion: reducer$
+  }
+}
+
+const Children = (sources) => {
+
+  const lineList$ = sources.onion.state$
+  .compose(member(Line, sources))
+
+  const lines$ = lineList$
+  .compose(pick(sinks => sinks.DOM))
+  .compose(mix(xs.combine))
+
+  const reducer$ = lineList$
+  .compose(pick(sinks => sinks.onion))
+  .compose(mix(xs.merge))
+
+  return {
+    DOM: lines$,
+    onion: reducer$
   }
 }
 
@@ -80,14 +116,14 @@ export var Sniffer = (sources) => {
   .map(e => e.target.checked)
   .startWith(false)
 
-  var logState$ = xs.combine(sources.Sniffer, toggle$)
-  .filter(([_, toggle]) => toggle)
-  .map(([comm]) => ({comm, memp: sources.mempool$}))
+  // Filter out uninteresting information
+  const filter = ["eth_syncing", "eth_getFilterChanges"]
+  const filtered$ = sources.Sniffer
+  .filter(l => filter.indexOf(l.req.method) === -1)
 
-  const lineList$ = Collection(Line, sources, logState$);
-  const lines$ = Collection.pluck(lineList$, item => item.DOM)
+  const lines = isolate(Children, 'history')(sources);
 
-  const vdom$ = xs.combine(lines$, toggle$)
+  const vdom$ = xs.combine(lines.DOM, toggle$)
   .map(([lines, toggled]) => div(".sniffer", [
     div(".controllBar", [
       label(".record", {class: {checked: toggled}}, [
@@ -98,7 +134,16 @@ export var Sniffer = (sources) => {
     ul("", lines)
   ]));
 
+  const logReducer$ = filtered$
+  .compose(sampleCombine(toggle$))
+  .filter(([_, toggle]) => toggle)
+  .map(([comm]) => function logReducer(parent) {
+    const history = parent.history.concat(comm)
+    return _.assign({}, parent, {history});
+  })
+
   return {
-    DOM: vdom$
+    DOM: vdom$,
+    onion: xs.merge(logReducer$, lines.onion)
   }
 }

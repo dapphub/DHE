@@ -57,7 +57,7 @@ var ABI = ({DOM, props}) => {
 }
 
 
-export const AddrView = ({DOM, props}) => {
+export const AddrView = ({DOM, onion}) => {
 
   var listener = {
     next: (value) => {
@@ -97,10 +97,33 @@ export const AddrView = ({DOM, props}) => {
   const sendEvent$ = click$
   .compose(sampleCombine(sendState$))
   .map(([_, state]) => state)
-  .addListener(listener)
 
+  const currentFABI$ = xs.combine(select$, onion.state$)
+  .filter(([s, _]) => s !== 0)
+  .map(([select, p]) => ({
+    contract: p.state.contract,
+    fabi: p.state.contract.signatures_to_fabi[select],
+    address: p.state.address,
+    p: p
+  }))
 
-  const snapshot$ = xs.combine(select$, props)
+  const web3$ = sendEvent$
+  .compose(sampleCombine(currentFABI$))
+  .map(([params, {contract, fabi, address}]) => ({
+    id: 1,
+    method: fabi.constant ? "eth_call" : "eth_sendTransaction",
+    params: [{
+      from: "",
+      to: address,
+      gas: "0x76c0",
+      gasPrice: "0x9184e72a000",
+      value: "0x0",
+      data: fabi.encodeInputs(params)
+    }]
+  }))
+  // .addListener(listener)
+
+  const snapshot$ = xs.combine(select$, onion.state$)
   .map(([select, p]) => p.state.contract.abi.map(abi => ({
     id: abi.signature,
     props: {
@@ -117,7 +140,7 @@ export const AddrView = ({DOM, props}) => {
   .merge(abiC$, abi => abi.mainView$)
   .startWith(div("no"))
 
-  const vdom$ = xs.combine(props, abisView$, mainView$)
+  const vdom$ = xs.combine(onion.state$, abisView$, mainView$)
   .map(([p, abis, view]) => {
     return div(".abiView", [
       div(".navigationView", abis),
@@ -128,6 +151,8 @@ export const AddrView = ({DOM, props}) => {
   })
 
   return {
-    DOM: vdom$
+    DOM: vdom$,
+    web3$: web3$,
+    onion: xs.of()
   }
 }

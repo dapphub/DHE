@@ -1,31 +1,52 @@
 "use strict";
 import xs from 'xstream';
 import Contract from 'dapple-core/contract.js';
+import flattenSequentially from 'xstream/extra/flattenSequentially'
 
 export var Memepool = (sources) => {
 
-  const memepool$ = sources.HTTP
+  const res$ = sources.HTTP
   .select('expert')
-  .flatten()
-  .debug("res")
+  .compose(flattenSequentially)
   .filter(res => res.text !== "")
-  .map(res => JSON.parse(res.text))
-  .fold( (acc, meme) => {
-    const contractName = Object.keys(meme.lock.contracts).find(name => meme.lock.contracts[name].address === meme.address);
-    const contractDef = meme.lock.contracts[contractName];
-    meme.contract = new Contract(contractDef, contractDef.contract_name);
-    acc.addrs[meme.address] = meme;
-    return acc;
-  }, {addrs: {}, known: {}})
-  .debug("meme");
+  .map(res => ({type: "res", data: JSON.parse(res.text)}))
 
-  const discoveredAddrs$ = sources.Sniffer
+  const req$ = sources.Sniffer
   .filter(comm => comm.req.method === "eth_call")
-  .map(comm => comm.req.params[0].to)
+  .map(comm => ({type: "req", addr: comm.req.params[0].to}))
 
-  const request$ = xs.combine(discoveredAddrs$, memepool$)
-  .filter(([addr, memepool]) => !(addr in memepool.addrs) && !(addr in memepool.known))
-  .map(([addr, _]) => ({
+  // TODO - refactor this to onion state
+  const memepool$ = xs.merge(res$, req$)
+  .fold( (state, act) => {
+    state.next = null;
+
+    switch(act.type) {
+
+      case "res":
+        const data = act.data;
+        const contractName = Object.keys(data.lock.contracts).find(name => data.lock.contracts[name].address === data.address);
+        const contractDef = data.lock.contracts[contractName];
+        data.name = contractName;
+        data.contract = new Contract(contractDef, contractDef.contract_name);
+        state.addrs[data.address] = data;
+        break;
+
+      case "req":
+        const addr = act.addr;
+        if(!(addr in state.known)) {
+          state.next = addr;
+          state.known[addr] = true;
+        }
+        break;
+    }
+    return state;
+  }, {addrs: {}, known: {}, next: null})
+
+
+  const request$ = memepool$
+  .filter(memepool => !!memepool.next)
+  .map(memepool => memepool.next)
+  .map(addr => ({
     url: 'https://4zgkma87x3.execute-api.us-east-1.amazonaws.com/dev/get',
     method: 'GET',
     query: {"address": addr},

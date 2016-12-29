@@ -1,35 +1,27 @@
 "use strict";
 
 import {thunk, div, span, ul, li, label, input, hr, h1, makeDOMDriver} from '@cycle/dom';
-import isolate from '@cycle/isolate';
-import Collection from '@cycle/collection';
 import xs from 'xstream';
+import isolate from '@cycle/isolate';
+import {isolateSource} from '@cycle/isolate';
+import Collection from '@cycle/collection';
+import sampleCombine from 'xstream/extra/sampleCombine'
 import {Sniffer} from './components/sniffer.js';
 import {AddrView} from './components/addr.js';
 import {Memepool} from './memepool.js';
+import {componentSwitch} from './helper.js';
+import {pick, mix, isolateSource as isolateOnionSource, isolateSink as isolateOnionSink} from 'cycle-onionify';
+import _ from 'lodash';
 
-var constructSelectors = (selected, data) => {
-  return data
-    .map((k, i) =>
-       div(`.navBtn ${ selected == i ? ".selected" : ""}`, {attrs: {ref: i}}, k.name));
-}
+var TabNav = ({DOM, onion}) => {
 
-var constructView = (selected, data) => {
-  return [div("."+data[selected].name, data[selected].data)];
-}
+  const select$ = DOM
+  .select('.navBtn')
+  .events('click')
+  .compose(sampleCombine(onion.state$))
+  .map(([_, state]) => ({type: "SELECT", index: state.index}))
 
-export var tab = (name, data) => {
-  return {
-    name: name,
-    data: data
-  };
-}
-
-var Tab = (sources) => {
-
-  const state$ = sources.props
-
-  const navigation$ = state$
+  const view$ = onion.state$
   .map(state => div({
     class: {
       navBtn: true,
@@ -40,90 +32,208 @@ var Tab = (sources) => {
     }
   }, state.name))
 
-  const view$ = state$
+  return {
+    DOM: view$,
+    select$
+  }
+}
+
+var Stage = (sources) => {
+
+  const C = {
+    addr: AddrView,
+    sniffer: Sniffer
+  };
+
+  const ctype$ = sources.onion.state$
   .filter(state => state.selected)
-  .map(state => {
-    var vdom$;
-    switch(state.type) {
-      case "addr":
-        vdom$ = isolate(AddrView)(sources).DOM;
-        break;
-      case "sniffer":
-        vdom$ = isolate(Sniffer)(sources).DOM;
-        break;
-      default:
-        vdom$ = xs.of(div(state.name),div(state.name));
-    }
-    return xs.combine(sources.props, vdom$)
-  })
+  .compose(componentSwitch(state => state.type, C, sources))
+
+  const view$ = xs.combine(sources.onion.state$, ctype$
+  .map(c => c.c.DOM)
+  .flatten())
+  .filter(([s]) => s.selected)
+  .map(([_, v]) => v)
+
+  const reducer$ = ctype$
+  .map(c => c.c.onion)
   .flatten()
-  .filter(([p]) => p.selected)
-  .map(([_, dom]) => dom);
 
   return {
-    navigation$, // TODO - better name
-    view$: view$
+    DOM: view$,
+    onion: reducer$
   };
 }
 
-export var DHExtension = (sources) => {
-  // Selected tab
-  const memepool = Memepool(sources)
+const Tabs = (sources) => {
 
-  sources.memepool$ = memepool.state$;
-
-  const select$ = sources.DOM
-  .select('.navBtn')
-  .events('click')
-  .map(e => e.target.getAttribute('ref'))
-  .startWith("tab1")
-
-  const state$ = xs.combine(select$, memepool.state$)
-  .map(([id, state]) => {
-    return [{
-      id: "tab1",
-      props: {
-        index: "tab1",
-        name: "address",
-        type: "asd",
-        selected: id === "tab1"
+  const tabNav$ = sources.onion.state$
+  .fold((parent, state) => {
+    let arr = new Array(state.length);
+    state.forEach((e,i) => {
+      if(i in parent) {
+        arr[i] = parent[i];
+      } else {
+        let filteredSources = _.assign({}, sources, {
+          onion: isolateOnionSource(sources.onion, i),
+          DOM: sources.DOM.isolateSource(sources.DOM, i + '_')
+        })
+        arr[i] = TabNav(filteredSources);
       }
-    }, {
-      id: "tab2",
-      props: {
-        index: "tab2",
-        name: "sniffer",
-        type: "sniffer",
-        selected: id === "tab2"
+    })
+    return arr;
+  }, [])
+
+  const stage$ = sources.onion.state$
+  .fold((parent, state) => {
+    let arr = new Array(state.length);
+    state.forEach((e,i) => {
+      if(i in parent) {
+        arr[i] = parent[i];
+      } else {
+        // let filteredSources = _.assign({}, sources, {
+        //   onion: isolateOnionSource(sources.onion, i),
+        // })
+        arr[i] = isolate(Stage, i)(sources)
       }
-    }].concat(Object.keys(state.addrs).map(addr => ({
-      id: addr,
-      props: {
-        index: addr,
-        name: addr.slice(0,10),
-        type: "addr",
-        state: state.addrs[addr],
-        selected: id === addr
-      }
-    })))
-  })
+    })
+    return arr;
+  }, [])
 
-  const tab$ = Collection.gather(Tab, sources, state$);
+  const tabNavView$ = tabNav$
+    .compose(pick((sinks, i) =>
+      sources.DOM.isolateSink(sinks.DOM, i + '_')
+    ))
+    .compose(mix(xs.combine))
 
-  const tabNavigation$ = Collection
-  .pluck(tab$, tab => tab.navigation$)
+  const tabStageView$ = stage$
+    .compose(pick(sinks => sinks.DOM))
+    .compose(mix(xs.merge))
 
-  const mainView$ = Collection
-  .merge(tab$, tab => tab.view$)
+  const tabStageReducers$ = stage$
+    .compose(pick(sinks => sinks.onion))
+    .compose(mix(xs.merge))
 
-  const vdom$ = xs.combine(tabNavigation$, mainView$)
+  const vdom$ = xs.combine(tabNavView$, tabStageView$)
   .map(([tabs, view]) => div(".treeview", [
       div('.selectView', tabs),
       div('.mainView', [view])
   ]));
 
+  const selectReducer$ = tabNav$
+  .compose(pick(sinks => sinks.select$))
+  .compose(mix(xs.merge))
+  .map(e => function selectReducer(parent){
+    const oldIndex = parent.findIndex(t => t.selected)
+    const newIndex = parent.findIndex(t => t.index === e.index)
+
+    if(oldIndex === newIndex) return parent;
+    const tabs_ = parent.slice(0);
+    tabs_[oldIndex] = _.assign({}, tabs_[oldIndex], {
+      selected: false
+    })
+    tabs_[newIndex] = _.assign({}, tabs_[newIndex], {
+      selected: true
+    })
+    return tabs_;
+  })
+
   return {
     DOM: vdom$,
-    HTTP: memepool.HTTP
+    onion: xs.merge(selectReducer$, tabStageReducers$)
+  }
+
+}
+
+export const DHExtension = (sources) => {
+  // Selected tab
+  const memepool = Memepool(sources)
+
+  sources.memepool$ = memepool.state$;
+
+  // const state$ = sources.onion.state$
+  // .debug("asd")
+  // .map(state => {
+  //   return [{
+  //     id: "tab1",
+  //     props: {
+  //       index: "tab1",
+  //       name: "address",
+  //       type: "asd",
+  //       selected: id === "tab1"
+  //     }
+  //   }, {
+  //     id: "tab2",
+  //     props: {
+  //       index: "tab2",
+  //       name: "sniffer",
+  //       type: "sniffer",
+  //       selected: id === "tab2"
+  //     }
+  //   }].concat(Object.keys(state.addrs).map(addr => ({
+  //     id: addr,
+  //     props: {
+  //       index: addr,
+  //       name: state.addrs[addr].name,
+  //       type: "addr",
+  //       state: state.addrs[addr],
+  //       selected: id === addr
+  //     }
+  //   })))
+  // })
+
+  const newMemeReducer$ = memepool.state$
+  .map(state => function newMemeReducer(parent) {
+    const oldAddrs = parent.tabs
+    .filter(t => t.type === "addr")
+    .map(t => t.index)
+    const newAddrs = Object.keys(state.addrs)
+    const intersection = _.difference(newAddrs, oldAddrs);
+    const newObjects = intersection
+    .map(addr => ({
+      index: addr,
+      name: state.addrs[addr].name,
+      type: "addr",
+      state: state.addrs[addr],
+      selected: false
+    }))
+
+    return _.assign({}, parent, {
+      tabs: parent.tabs.concat(newObjects)
+    });
+  })
+
+  const tabSinks = isolate(Tabs, 'tabs')(sources)
+
+  const initState$ = xs.of(function initStateReducer() {
+    return {
+      tabs: [{
+        index: "tab1",
+        name: "address",
+        type: "asd",
+        selected: true
+      }, {
+        index: "tab2",
+        name: "sniffer",
+        type: "sniffer",
+        history: [],
+        selected: false
+      }],
+      // stores all meta information
+      mempool: {
+      }
+    };
+  })
+
+  const reducer$ = xs.merge(
+    initState$,
+    tabSinks.onion,
+    newMemeReducer$
+  )
+
+  return {
+    DOM: tabSinks.DOM,
+    HTTP: memepool.HTTP,
+    onion: reducer$
   }
 }

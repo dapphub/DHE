@@ -64,7 +64,7 @@
 
 	  var _sendAsync = web3.currentProvider.sendAsync.bind(web3.currentProvider);
 
-	  web3.currentProvider.sendAsync = function (payload, callback) {
+	  function injectedDapphub(payload, callback) {
 
 	    if (!forkMode) {
 	      _sendAsync(payload, function (err, res) {
@@ -72,17 +72,21 @@
 	        callback(err, res);
 	      });
 	    } else {
+
 	      // Remember the callbacks from local web3
 	      if (Array.isArray(payload)) {
-	        if (debug) console.log(">", payload[0].id);
+	        if (debug) console.log(">", payload[0].id, payload[0].method);
 	        cbBuffer[payload[0].id] = callback;
 	      } else {
-	        if (debug) console.log(">", payload.id);
+	        if (debug) console.log(">", payload.id, payload.method);
 	        cbBuffer[payload.id] = callback;
 	      }
 	      window.postMessage({ type: "REQ", req: payload }, "*");
 	    }
-	  };
+	  }
+	  injectedDapphub.__DappHub = true;
+	  // web3._requestManager.sendAsync = injectedDapphub.bind(web3._requestManager);
+	  web3.currentProvider.sendAsync = injectedDapphub.bind(web3.currentProvider);
 	  if (forkMode) {
 	    window.addEventListener("message", function (msg) {
 	      if (["RES"].indexOf(msg.data.type) === -1) {
