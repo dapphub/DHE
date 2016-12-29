@@ -69,17 +69,18 @@ Main entrypoing for the dev-tools-panel view.
 ## Resources
 
 #### Project
-https://github.com/nexusdev/DHE
-https://github.com/nexusdev/DHE-API
-https://github.com/nexusdev/dapple-pkg
+
+  * https://github.com/nexusdev/DHE
+  * https://github.com/nexusdev/DHE-API
+  * https://github.com/nexusdev/dapple-pkg
 
 #### Frontend
-[Intro into cycle.js](https://egghead.io/courses/cycle-js-fundamentals)
-[cycle.js docs](https://cycle.js.org/getting-started.html)
-[cycle.js isolate](https://github.com/cyclejs/cyclejs/tree/master/isolate)
-[cycle.js onionify](https://github.com/staltz/cycle-onionify)
-[cycle.js drivers](https://cycle.js.org/drivers.html)
-[xstream](https://github.com/staltz/xstream)
+  * [Intro into cycle.js](https://egghead.io/courses/cycle-js-fundamentals)
+  * [cycle.js docs](https://cycle.js.org/getting-started.html)
+  * [cycle.js isolate](https://github.com/cyclejs/cyclejs/tree/master/isolate)
+  * [cycle.js onionify](https://github.com/staltz/cycle-onionify)
+  * [cycle.js drivers](https://cycle.js.org/drivers.html)
+  * [xstream](https://github.com/staltz/xstream)
 
 
 # TODOs
