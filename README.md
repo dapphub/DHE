@@ -7,8 +7,8 @@ open `chrome://extension` in chrome and Developer modus
 Load the `dist` folder of this repo.
 
 #### Develop
-The current development is done on the Ropsten chain which has to be run in the background (localhost:8545) e.g. with parity:
-`parity --chain ropsten --rpc`
+The current development is done on the Ropsten chain which has to be run in the background ((localhost:8545) e.g. with parity:
+`parity --chain ropsten --rpc`) together with `https://mkr.market`
 
 Try to keep this extension disabled when you don't use or develop it, for now.
 
@@ -93,4 +93,3 @@ https://github.com/nexusdev/dapple-pkg
 
 ![](doc/1.png)
 ![](doc/2.png)
-
