@@ -85,8 +85,6 @@ Main entrypoing for the dev-tools-panel view.
 
 # TODOs
 
-  * get rid of local ropsten chain requirement
-      * use the dapp-local web3 endpoint to trigger calls
   * make web3 calls in address view work
   * custom contract view
   * fork reset
@@ -94,6 +92,11 @@ Main entrypoing for the dev-tools-panel view.
   * settings - main account/ current fork
   * **resolve testrpc bug where accounts don't get updated**
   * reset filters once a frontend disconnects
+
+## Changelog
+
+ * make use of original web3 object as a fork provider
+     with this metamask works for forking chains
 
 # Screenshots
 
