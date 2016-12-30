@@ -9769,9 +9769,16 @@
 	    return c.c.onion;
 	  }).flatten();
 
+	  var web3$ = ctype$.map(function (c) {
+	    return c.c.web3$;
+	  }).filter(function (c) {
+	    return !!c;
+	  }).flatten();
+
 	  return {
 	    DOM: view$,
-	    onion: reducer$
+	    onion: reducer$,
+	    web3$: web3$
 	  };
 	};
 
@@ -9820,6 +9827,19 @@
 	    return sinks.onion;
 	  })).compose((0, _cycleOnionify.mix)(_xstream2.default.merge));
 
+	  var web3$ = stage$.compose((0, _cycleOnionify.pick)(function (sinks) {
+	    return sinks.web3$;
+	  })).compose((0, _cycleOnionify.mix)(_xstream2.default.merge)).fold(function (parent, cmd) {
+	    return {
+	      cmd: _lodash2.default.assign(cmd, { id: parent.id + 1 }),
+	      id: parent.id + 1
+	    };
+	  }, { cmd: {}, id: 0 }).filter(function (e) {
+	    return e.id > 0;
+	  }).map(function (e) {
+	    return e.cmd;
+	  });
+
 	  var vdom$ = _xstream2.default.combine(tabNavView$, tabStageView$).map(function (_ref8) {
 	    var _ref9 = _slicedToArray(_ref8, 2),
 	        tabs = _ref9[0],
@@ -9853,7 +9873,8 @@
 
 	  return {
 	    DOM: vdom$,
-	    onion: _xstream2.default.merge(selectReducer$, tabStageReducers$)
+	    onion: _xstream2.default.merge(selectReducer$, tabStageReducers$),
+	    web3$: web3$
 	  };
 	};
 
@@ -9914,7 +9935,8 @@
 	  return {
 	    DOM: tabSinks.DOM,
 	    HTTP: memepool.HTTP,
-	    onion: reducer$
+	    onion: reducer$,
+	    web3$: tabSinks.web3$
 	  };
 	};
 
@@ -13027,18 +13049,6 @@
 	      onion = _ref2.onion;
 
 
-	  var listener = {
-	    next: function next(value) {
-	      console.log('The Stream gave me a value: ', value);
-	    },
-	    error: function error(err) {
-	      console.error('The Stream gave me an error: ', err);
-	    },
-	    complete: function complete() {
-	      console.log('The Stream told me it is done.');
-	    }
-	  };
-
 	  var click$ = DOM.select("button").events("click");
 
 	  var changes$ = DOM.select("input").events("change").map(function (e) {
@@ -13095,16 +13105,15 @@
 	      id: 1,
 	      method: fabi.constant ? "eth_call" : "eth_sendTransaction",
 	      params: [{
-	        from: "",
+	        from: "0xb007ed86a7198a7bfe97b4dcf291bceabe40852d", // TODO - dynamic
 	        to: address,
 	        gas: "0x76c0",
 	        gasPrice: "0x9184e72a000",
 	        value: "0x0",
-	        data: fabi.encodeInputs(params)
+	        data: "0x" + fabi.signature + fabi.encodeInputs(params)
 	      }]
 	    };
 	  });
-	  // .addListener(listener)
 
 	  var snapshot$ = _xstream2.default.combine(select$, onion.state$).map(function (_ref11) {
 	    var _ref12 = _slicedToArray(_ref11, 2),

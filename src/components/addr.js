@@ -59,18 +59,6 @@ var ABI = ({DOM, props}) => {
 
 export const AddrView = ({DOM, onion}) => {
 
-  var listener = {
-    next: (value) => {
-      console.log('The Stream gave me a value: ', value);
-    },
-    error: (err) => {
-      console.error('The Stream gave me an error: ', err);
-    },
-    complete: () => {
-      console.log('The Stream told me it is done.');
-    },
-  }
-
   const click$ = DOM
   .select("button")
   .events("click")
@@ -113,15 +101,14 @@ export const AddrView = ({DOM, onion}) => {
     id: 1,
     method: fabi.constant ? "eth_call" : "eth_sendTransaction",
     params: [{
-      from: "",
+      from: "0xb007ed86a7198a7bfe97b4dcf291bceabe40852d", // TODO - dynamic
       to: address,
       gas: "0x76c0",
       gasPrice: "0x9184e72a000",
       value: "0x0",
-      data: fabi.encodeInputs(params)
+      data: "0x"+fabi.signature+fabi.encodeInputs(params)
     }]
   }))
-  // .addListener(listener)
 
   const snapshot$ = xs.combine(select$, onion.state$)
   .map(([select, p]) => p.state.contract.abi.map(abi => ({

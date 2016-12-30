@@ -62,10 +62,25 @@ chrome.extension.onConnect.addListener(function (port) {
       })
     }
 
-    if( message.type === "start" ) {
-      engine = setUpEngine(sendToOrigWeb3(message.tabId))
-      console.log("init testrpc", port);
+    console.log(message);
+    switch(message && message.type) {
+      case "start":
+        engine = setUpEngine(sendToOrigWeb3(message.tabId))
+        console.log("init testrpc", port);
+        break;
+      case "DH_REQ":
+        console.log("DH REQ", message.req);
+        engine.sendAsync(message.req, (err, res) => {
+          console.log("DH RES", res);
+          port && port.postMessage({
+            type: "DH_RES",
+            res: res,
+            req: message.req
+          });
+        })
+        break;
     }
+
   }
 
   // if(debug >= 1) console.log("Adding Middleware", port);

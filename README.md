@@ -92,6 +92,7 @@ Main entrypoing for the dev-tools-panel view.
   * settings - main account/ current fork
   * **resolve testrpc bug where accounts don't get updated**
   * reset filters once a frontend disconnects
+  * address view - deploy new instances
 
 ## Changelog
 

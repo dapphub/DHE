@@ -59,9 +59,15 @@ var Stage = (sources) => {
   .map(c => c.c.onion)
   .flatten()
 
+  const web3$ = ctype$
+  .map(c => c.c.web3$)
+  .filter(c => !!c)
+  .flatten()
+
   return {
     DOM: view$,
-    onion: reducer$
+    onion: reducer$,
+    web3$
   };
 }
 
@@ -114,6 +120,16 @@ const Tabs = (sources) => {
     .compose(pick(sinks => sinks.onion))
     .compose(mix(xs.merge))
 
+  const web3$ = stage$
+    .compose(pick(sinks => sinks.web3$))
+    .compose(mix(xs.merge))
+    .fold((parent, cmd) => ({
+      cmd: _.assign(cmd, {id: parent.id + 1}),
+      id: parent.id + 1
+    }) ,{cmd: {}, id: 0})
+    .filter(e => e.id > 0)
+    .map(e => e.cmd)
+
   const vdom$ = xs.combine(tabNavView$, tabStageView$)
   .map(([tabs, view]) => div(".treeview", [
       div('.selectView', tabs),
@@ -140,7 +156,8 @@ const Tabs = (sources) => {
 
   return {
     DOM: vdom$,
-    onion: xs.merge(selectReducer$, tabStageReducers$)
+    onion: xs.merge(selectReducer$, tabStageReducers$),
+    web3$
   }
 
 }
@@ -203,6 +220,7 @@ export const DHExtension = (sources) => {
   return {
     DOM: tabSinks.DOM,
     HTTP: memepool.HTTP,
-    onion: reducer$
+    onion: reducer$,
+    web3$: tabSinks.web3$
   }
 }

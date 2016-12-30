@@ -59,7 +59,8 @@ function setUpEngine(sendToWeb3) {
   // var forkedProvider = new Web3.providers.HttpProvider("");
   // forkedProvider.sendAsync = web3.currentProvider.sendAsync;
   var gethApiDouble = new GethApiDouble({
-    fork: rerouter,
+    // fork: rerouter,
+    fork: "http://localhost:8545",
     db,
     mnemonic: "secret",
     // blocktime: 0.1

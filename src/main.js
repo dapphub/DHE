@@ -10,6 +10,14 @@ const tabId = chrome.devtools.inspectedWindow.tabId;
 
 const main = (sources) => {
 
+  sources.Sniffer
+  .filter(e => e.type === "DH_RES")
+  .addListener({
+    next: e => console.log(e),
+    error: e => console.log(e),
+    complete: e => console.log(e)
+  })
+
   const dhExtension = DHExtension(sources);
 
   var DH$ = dhExtension.DOM;
@@ -29,13 +37,16 @@ const main = (sources) => {
     return init ? dhView : initView;
   });
 
-  var sniffer$ = init$
+  const sniffer$ = init$
   .map(i => i ? ({type: "start", tabId}) : ({}))
+
+  const web3$ = dhExtension.web3$
+  .map(req => ({type: "DH_REQ", req}))
 
   var MV = {
     DOM: vdom$,
     HTTP: dhExtension.HTTP,
-    Sniffer: sniffer$,
+    Sniffer: xs.merge(sniffer$, web3$),
     onion: dhExtension.onion
   }
 
