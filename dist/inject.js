@@ -11,7 +11,7 @@ injectScript(chrome.extension.getURL('content.bundle.js'), 'html');
 
 //Listening to messages from DOM
 window.addEventListener("message", function(event) {
-  if(["WEB3_SNIFFER", "REQ"].indexOf(event.data.type) === -1) return null;
+  if(["WEB3_SNIFFER", "REQ", "FORK_RES"].indexOf(event.data.type) === -1) return null;
   chrome.extension.sendMessage(event.data);
 });
 

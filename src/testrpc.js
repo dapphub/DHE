@@ -30,7 +30,7 @@ level.prototype._batch = function () {
 }
 
 
-function setUpEngine() {
+function setUpEngine(sendToWeb3) {
   var engine = new ProviderEngine();
   engine._ready.setMaxListeners(30);
   // engine.addProvider(new SnifferSubprovider());
@@ -40,6 +40,18 @@ function setUpEngine() {
     db: level
   })
 
+  // this takes care of rerouting forked requests back
+  // into the browser.
+  var rerouter = {
+    sendAsync: (payload, callback) => {
+      sendToWeb3(payload, callback);
+    },
+    send: () => {
+      throw new Error("sync requests are not supported");
+    }
+  }
+
+
   // var sniffer = new SnifferSubprovider();
   // web3.currentProvider._providers.unshift(sniffer);
   // sniffer.setEngine(web3.currentProvider);
@@ -47,7 +59,7 @@ function setUpEngine() {
   // var forkedProvider = new Web3.providers.HttpProvider("");
   // forkedProvider.sendAsync = web3.currentProvider.sendAsync;
   var gethApiDouble = new GethApiDouble({
-    fork: "http://localhost:8545",
+    fork: rerouter,
     db,
     mnemonic: "secret",
     // blocktime: 0.1

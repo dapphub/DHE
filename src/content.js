@@ -41,27 +41,30 @@ var injectingMiddleware = function (web3) {
   web3.currentProvider.sendAsync = injectedDapphub.bind(web3.currentProvider);
   if(forkMode) {
     window.addEventListener("message", (msg) => {
-      if(["RES"].indexOf(msg.data.type) === -1) {
-        return null;
-      }
-
-      // console.log(Object.keys(cbBuffer));
-      if(Array.isArray(msg.data.res)) {
-        if(debug) console.log("<", msg.data.res[0].id);
-        // msg.data.res[0].id in cbBuffer &&
-        cbBuffer[msg.data.res[0].id](null, msg.data.res);
-        delete cbBuffer[msg.data.res[0].id];
-      } else {
-        if(debug) console.log("<", msg.data.res.id);
-        // msg.data.res[0].id in cbBuffer &&
-        // console.log("id", msg.data.res.id);
-        // msg.data.res.id in cbBuffer &&
-        cbBuffer[msg.data.res.id](null, msg.data.res);
-        delete cbBuffer[msg.data.res.id];
+      switch(msg.data.type) {
+        case "RES":
+          if(Array.isArray(msg.data.res)) {
+            if(debug) console.log("<", msg.data.res[0].id);
+            // msg.data.res[0].id in cbBuffer &&
+            cbBuffer[msg.data.res[0].id](null, msg.data.res);
+            delete cbBuffer[msg.data.res[0].id];
+          } else {
+            if(debug) console.log("<", msg.data.res.id);
+            // msg.data.res[0].id in cbBuffer &&
+            // console.log("id", msg.data.res.id);
+            // msg.data.res.id in cbBuffer &&
+            cbBuffer[msg.data.res.id](null, msg.data.res);
+            delete cbBuffer[msg.data.res.id];
+          }
+          break;
+        case "FORK_REQ":
+          _sendAsync(msg.data.req, (e, res) => {
+            window.postMessage({ type: "FORK_RES", res: res}, "*");
+          });
+          break;
       }
     })
   }
-
 }
 
 if(window.web3) {

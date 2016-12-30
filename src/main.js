@@ -6,6 +6,8 @@ import {makeHTTPDriver} from '@cycle/http';
 import onionify from 'cycle-onionify';
 require("./style.scss");
 
+const tabId = chrome.devtools.inspectedWindow.tabId;
+
 const main = (sources) => {
 
   const dhExtension = DHExtension(sources);
@@ -28,7 +30,7 @@ const main = (sources) => {
   });
 
   var sniffer$ = init$
-  .map(i => i ? ({type: "start"}) : ({}))
+  .map(i => i ? ({type: "start", tabId}) : ({}))
 
   var MV = {
     DOM: vdom$,
