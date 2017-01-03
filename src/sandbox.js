@@ -10,19 +10,29 @@ require("./style.scss");
 import {AddrView} from './components/addr.js';
 import {DHExtension} from './treeview.js';
 
-const Sniffer = () => xs
-.periodic(1000)
-.mapTo({
-  req: {
-  "jsonrpc":"2.0",
-  "method":"eth_call",
-  "params":[{
-    "data":"0x4579268a",
-    "to":"0xd43a1e8b374a17d5556ccca1c42353cc18b55b7a"
-  }],
-  "id":1
-},
-res: "0x123"})
+const FakeSniffer = (in$) => {
+
+  in$
+  .addListener({
+    next: e => console.log("sniffer", e),
+    error: e => console.log(e),
+    complete: e => console.log(e)
+  })
+
+  return xs
+  .periodic(1000)
+  .mapTo({
+    req: {
+      "jsonrpc":"2.0",
+      "method":"eth_call",
+      "params":[{
+        "data":"0x4579268a",
+        "to":"0xd43a1e8b374a17d5556ccca1c42353cc18b55b7a"
+      }],
+      "id":1
+    },
+    res: "0x123"})
+}
 
 const addr = "0xd43a1e8b374a17d5556ccca1c42353cc18b55b7a";
 
@@ -53,12 +63,12 @@ const main = (sources) => {
     // HTTP: memepool.HTTP,
     HTTP: dhex.HTTP,
     onion: dhex.onion,
-    Sniffer: xs.of()
+    Sniffer: dhex.web3$
   };
 }
 
 run(onionify(main), {
   DOM: makeDOMDriver('#app'),
   HTTP: makeHTTPDriver(),
-  Sniffer: Sniffer
+  Sniffer: FakeSniffer
 });

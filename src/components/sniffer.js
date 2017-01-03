@@ -36,7 +36,7 @@ var formatSniffLine = (data, memep = {}) => {
        tx = true;
      }
    } else {
-      
+
    }
 
    var line = [
@@ -138,6 +138,7 @@ export var Sniffer = (sources) => {
   .compose(sampleCombine(toggle$))
   .filter(([_, toggle]) => toggle)
   .map(([comm]) => function logReducer(parent) {
+    console.log(parent);
     const history = parent.history.concat(comm)
     return _.assign({}, parent, {history});
   })

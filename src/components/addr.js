@@ -2,19 +2,16 @@
 
 import {button, fieldset, legend, table, tbody, tr, td, thunk, div, span, ul, li, label, input, hr, h1, makeDOMDriver} from '@cycle/dom';
 import sampleCombine from 'xstream/extra/sampleCombine'
-import {json} from '../helper.js';
+import {json, member, componentSwitch} from '../helper.js';
 import isolate from '@cycle/isolate';
+import {Stage, TabNav, Tabs} from '../treeview.js';
+import {pick, mix} from 'cycle-onionify';
 import Collection from '@cycle/collection';
+import {isolateSource, isolateSink} from 'cycle-onionify';
 import xs from 'xstream';
+import _ from 'lodash';
 
-var ABI = ({DOM, props}) => {
-
-  const navBtns$ = props.map(p => div(".abiNavBtn", {
-    class: {
-      selected: p.selected
-    },
-    attrs: {ref: p.abi.signature}
-  }, `${p.abi.name}(${p.abi.inputs && p.abi.inputs.map(i => i.type).join(", ")})`));
+var ABI = ({DOM, onion}) => {
 
   const context = (name, content) => fieldset("", [
     legend(name),
@@ -26,7 +23,6 @@ var ABI = ({DOM, props}) => {
   const interfaceform = (interfaces) => interfaces
   .map((iface, index) =>
        tr("", [
-    // i
     td(".label", [label(iface.name || iface.type)]),
     td(".input", [input({attrs: {
       type: "text",
@@ -36,26 +32,32 @@ var ABI = ({DOM, props}) => {
   ])
   )
 
-  const mainView$ = props
-  .filter(p => p.selected)
+  const mainView$ = onion.state$
   .map(p => div(".objectView", [
     // Display Inputs
-    p.abi.inputs && p.abi.inputs.length > 0
-    ? context("Input", interfaceform(p.abi.inputs))
+    p.inputs && p.inputs.length > 0
+    ? context("Input", interfaceform(p.inputs))
     : div(),
     button("trigger"),
     // Display Outputs
-    p.abi.outputs && p.abi.outputs.length > 0
-    ? context("Output", interfaceform(p.abi.outputs))
+    p.outputs && p.outputs.length > 0
+    ? context("Output", interfaceform(p.outputs))
     : div()
   ]))
 
   return {
-    navBtns$,
-    mainView$
+    DOM: mainView$
   }
 }
 
+const TabNavView = ({DOM, onion}) => {
+  const view$ = onion.state$
+  .map(p =>  span(`${p.name}(${p.inputs && p.inputs.map(i => i.type).join(", ")})`))
+
+  return {
+    DOM: view$
+  }
+}
 
 export const AddrView = ({DOM, onion}) => {
 
@@ -86,6 +88,24 @@ export const AddrView = ({DOM, onion}) => {
   .compose(sampleCombine(sendState$))
   .map(([_, state]) => state)
 
+  const fabisOnion = isolateSource(onion, 'children')
+
+  const C = {
+    abi: isolate(ABI, 'state'),
+  };
+
+  const tabs = Tabs({
+    C,
+    TabNavView,
+    sinkNames: ["onion"],
+    classname: ".abiView"
+  })
+
+  const tab = tabs({
+    DOM: DOM,
+    onion: fabisOnion
+  })
+
   const currentFABI$ = xs.combine(select$, onion.state$)
   .filter(([s, _]) => s !== 0)
   .map(([select, p]) => ({
@@ -94,6 +114,15 @@ export const AddrView = ({DOM, onion}) => {
     address: p.state.address,
     p: p
   }))
+
+  const snapshot$ = xs.combine(select$, onion.state$)
+  .map(([select, p]) => p.state.contract.abi.map(abi => ({
+    id: abi.signature,
+    props: {
+      abi,
+      selected: select === abi.signature
+    }
+  })));
 
   const web3$ = sendEvent$
   .compose(sampleCombine(currentFABI$))
@@ -110,36 +139,9 @@ export const AddrView = ({DOM, onion}) => {
     }]
   }))
 
-  const snapshot$ = xs.combine(select$, onion.state$)
-  .map(([select, p]) => p.state.contract.abi.map(abi => ({
-    id: abi.signature,
-    props: {
-      abi,
-      selected: select === abi.signature
-    }
-  })));
-
-  const abiC$ = Collection.gather(isolate(ABI), {DOM}, snapshot$);
-
-  const abisView$ = Collection.pluck(abiC$, abi => abi.navBtns$);
-
-  const mainView$ = Collection
-  .merge(abiC$, abi => abi.mainView$)
-  .startWith(div("no"))
-
-  const vdom$ = xs.combine(onion.state$, abisView$, mainView$)
-  .map(([p, abis, view]) => {
-    return div(".abiView", [
-      div(".navigationView", abis),
-      div(".mainView", [
-        view
-      ])
-    ])
-  })
-
   return {
-    DOM: vdom$,
+    DOM: tab.DOM,
     web3$: web3$,
-    onion: xs.of()
+    onion: isolateSink(tab.onion, 'children')
   }
 }

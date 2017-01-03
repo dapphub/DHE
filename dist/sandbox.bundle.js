@@ -70,7 +70,20 @@
 
 	__webpack_require__(937);
 
-	var Sniffer = function Sniffer() {
+	var FakeSniffer = function FakeSniffer(in$) {
+
+	  in$.addListener({
+	    next: function next(e) {
+	      return console.log("sniffer", e);
+	    },
+	    error: function error(e) {
+	      return console.log(e);
+	    },
+	    complete: function complete(e) {
+	      return console.log(e);
+	    }
+	  });
+
 	  return _xstream2.default.periodic(1000).mapTo({
 	    req: {
 	      "jsonrpc": "2.0",
@@ -112,14 +125,14 @@
 	    // HTTP: memepool.HTTP,
 	    HTTP: dhex.HTTP,
 	    onion: dhex.onion,
-	    Sniffer: _xstream2.default.of()
+	    Sniffer: dhex.web3$
 	  };
 	};
 
 	(0, _xstreamRun.run)((0, _cycleOnionify2.default)(main), {
 	  DOM: (0, _dom.makeDOMDriver)('#app'),
 	  HTTP: (0, _http.makeHTTPDriver)(),
-	  Sniffer: Sniffer
+	  Sniffer: FakeSniffer
 	});
 
 /***/ },
@@ -9668,7 +9681,7 @@
 	Object.defineProperty(exports, "__esModule", {
 	  value: true
 	});
-	exports.DHExtension = undefined;
+	exports.DHExtension = exports.Tabs = exports.Stage = exports.TabNav = exports.MakeTabChildren = undefined;
 
 	var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
 
@@ -9706,175 +9719,188 @@
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-	var TabNav = function TabNav(_ref) {
-	  var DOM = _ref.DOM,
-	      onion = _ref.onion;
-
-
-	  var select$ = DOM.select('.navBtn').events('click').compose((0, _sampleCombine2.default)(onion.state$)).map(function (_ref2) {
-	    var _ref3 = _slicedToArray(_ref2, 2),
-	        _ = _ref3[0],
-	        state = _ref3[1];
-
-	    return { type: "SELECT", index: state.index };
-	  });
-
-	  var view$ = onion.state$.map(function (state) {
-	    return (0, _dom.div)({
-	      class: {
-	        navBtn: true,
-	        selected: state.selected
-	      },
-	      attrs: {
-	        ref: state.index
-	      }
-	    }, state.name);
-	  });
-
-	  return {
-	    DOM: view$,
-	    select$: select$
-	  };
-	};
-
-	var Stage = function Stage(sources) {
-
-	  var C = {
-	    addr: _addr.AddrView,
-	    sniffer: _sniffer.Sniffer
-	  };
-
-	  var ctype$ = sources.onion.state$.filter(function (state) {
-	    return state.selected;
-	  }).compose((0, _helper.componentSwitch)(function (state) {
-	    return state.type;
-	  }, C, sources));
-
-	  var view$ = _xstream2.default.combine(sources.onion.state$, ctype$.map(function (c) {
-	    return c.c.DOM;
-	  }).flatten()).filter(function (_ref4) {
-	    var _ref5 = _slicedToArray(_ref4, 1),
-	        s = _ref5[0];
-
-	    return s.selected;
-	  }).map(function (_ref6) {
-	    var _ref7 = _slicedToArray(_ref6, 2),
-	        _ = _ref7[0],
-	        v = _ref7[1];
-
-	    return v;
-	  });
-
-	  var reducer$ = ctype$.map(function (c) {
-	    return c.c.onion;
-	  }).flatten();
-
-	  var web3$ = ctype$.map(function (c) {
-	    return c.c.web3$;
-	  }).filter(function (c) {
-	    return !!c;
-	  }).flatten();
-
-	  return {
-	    DOM: view$,
-	    onion: reducer$,
-	    web3$: web3$
-	  };
-	};
-
-	var Tabs = function Tabs(sources) {
-
-	  var tabNav$ = sources.onion.state$.fold(function (parent, state) {
-	    var arr = new Array(state.length);
-	    state.forEach(function (e, i) {
-	      if (i in parent) {
-	        arr[i] = parent[i];
-	      } else {
-	        var filteredSources = _lodash2.default.assign({}, sources, {
-	          onion: (0, _cycleOnionify.isolateSource)(sources.onion, i),
-	          DOM: sources.DOM.isolateSource(sources.DOM, i + '_')
-	        });
-	        arr[i] = TabNav(filteredSources);
-	      }
-	    });
-	    return arr;
-	  }, []);
-
-	  var stage$ = sources.onion.state$.fold(function (parent, state) {
-	    var arr = new Array(state.length);
-	    state.forEach(function (e, i) {
-	      if (i in parent) {
-	        arr[i] = parent[i];
-	      } else {
-	        // let filteredSources = _.assign({}, sources, {
-	        //   onion: isolateOnionSource(sources.onion, i),
-	        // })
-	        arr[i] = (0, _isolate2.default)(Stage, i)(sources);
-	      }
-	    });
-	    return arr;
-	  }, []);
-
-	  var tabNavView$ = tabNav$.compose((0, _cycleOnionify.pick)(function (sinks, i) {
-	    return sources.DOM.isolateSink(sinks.DOM, i + '_');
-	  })).compose((0, _cycleOnionify.mix)(_xstream2.default.combine));
-
-	  var tabStageView$ = stage$.compose((0, _cycleOnionify.pick)(function (sinks) {
-	    return sinks.DOM;
-	  })).compose((0, _cycleOnionify.mix)(_xstream2.default.merge));
-
-	  var tabStageReducers$ = stage$.compose((0, _cycleOnionify.pick)(function (sinks) {
-	    return sinks.onion;
-	  })).compose((0, _cycleOnionify.mix)(_xstream2.default.merge));
-
-	  var web3$ = stage$.compose((0, _cycleOnionify.pick)(function (sinks) {
-	    return sinks.web3$;
-	  })).compose((0, _cycleOnionify.mix)(_xstream2.default.merge)).fold(function (parent, cmd) {
+	var MakeTabChildren = exports.MakeTabChildren = function MakeTabChildren(tabs, typef) {
+	  return tabs.map(function (t, i) {
 	    return {
-	      cmd: _lodash2.default.assign(cmd, { id: parent.id + 1 }),
-	      id: parent.id + 1
-	    };
-	  }, { cmd: {}, id: 0 }).filter(function (e) {
-	    return e.id > 0;
-	  }).map(function (e) {
-	    return e.cmd;
-	  });
-
-	  var vdom$ = _xstream2.default.combine(tabNavView$, tabStageView$).map(function (_ref8) {
-	    var _ref9 = _slicedToArray(_ref8, 2),
-	        tabs = _ref9[0],
-	        view = _ref9[1];
-
-	    return (0, _dom.div)(".treeview", [(0, _dom.div)('.selectView', tabs), (0, _dom.div)('.mainView', [view])]);
-	  });
-
-	  var selectReducer$ = tabNav$.compose((0, _cycleOnionify.pick)(function (sinks) {
-	    return sinks.select$;
-	  })).compose((0, _cycleOnionify.mix)(_xstream2.default.merge)).map(function (e) {
-	    return function selectReducer(parent) {
-	      var oldIndex = parent.findIndex(function (t) {
-	        return t.selected;
-	      });
-	      var newIndex = parent.findIndex(function (t) {
-	        return t.index === e.index;
-	      });
-
-	      if (oldIndex === newIndex) return parent;
-	      var tabs_ = parent.slice(0);
-	      tabs_[oldIndex] = _lodash2.default.assign({}, tabs_[oldIndex], {
-	        selected: false
-	      });
-	      tabs_[newIndex] = _lodash2.default.assign({}, tabs_[newIndex], {
-	        selected: true
-	      });
-	      return tabs_;
+	      index: i,
+	      state: t,
+	      selected: i === 0,
+	      type: typef && typef(t)
 	    };
 	  });
+	};
 
-	  return {
-	    DOM: vdom$,
-	    onion: _xstream2.default.merge(selectReducer$, tabStageReducers$),
-	    web3$: web3$
+	var TabNav = exports.TabNav = function TabNav(TabNavView) {
+	  return function (_ref) {
+	    var DOM = _ref.DOM,
+	        onion = _ref.onion;
+
+
+	    var select$ = DOM.select(".navBtn").events("click").compose((0, _sampleCombine2.default)(onion.state$)).map(function (_ref2) {
+	      var _ref3 = _slicedToArray(_ref2, 2),
+	          _ = _ref3[0],
+	          state = _ref3[1];
+
+	      return { type: "SELECT", index: state.index };
+	    });
+
+	    var tabView;
+	    if (TabNavView) {
+	      tabView = (0, _isolate2.default)(TabNavView, 'state')({ DOM: DOM, onion: onion });
+	    } else {
+	      tabView = { DOM: onion.state$.map(function (state) {
+	          return state.name || state.index;
+	        }) };
+	    }
+
+	    var view$ = _xstream2.default.combine(onion.state$, tabView.DOM).map(function (_ref4) {
+	      var _ref5 = _slicedToArray(_ref4, 2),
+	          p = _ref5[0],
+	          view = _ref5[1];
+
+	      return (0, _dom.div)(".navBtn", {
+	        class: {
+	          selected: p.selected
+	        },
+	        attrs: { ref: p.signature }
+	      }, [view]);
+	    });
+
+	    return {
+	      DOM: view$,
+	      select$: select$
+	    };
+	  };
+	};
+
+	var Stage = exports.Stage = function Stage(C, sinkNames) {
+	  return function (sources) {
+
+	    var ctype$ = sources.onion.state$.filter(function (state) {
+	      return state.selected;
+	    }).compose((0, _helper.componentSwitch)(function (state) {
+	      return state.type;
+	    }, C, sources));
+
+	    var filterSelected = function filterSelected(attr) {
+	      return function (in$) {
+	        return in$.map(function (c) {
+	          return c.c[attr] || _xstream2.default.of();
+	        }).flatten().compose((0, _sampleCombine2.default)(sources.onion.state$)).filter(function (_ref6) {
+	          var _ref7 = _slicedToArray(_ref6, 2),
+	              _ = _ref7[0],
+	              s = _ref7[1];
+
+	          return s.selected;
+	        }).map(function (_ref8) {
+	          var _ref9 = _slicedToArray(_ref8, 1),
+	              v = _ref9[0];
+
+	          return v;
+	        });
+	      };
+	    };
+
+	    var filterInstant = function filterInstant(attr) {
+	      return function (in$) {
+	        return _xstream2.default.combine(sources.onion.state$, in$.map(function (c) {
+	          return c.c[attr] || _xstream2.default.of();
+	        }).flatten()).filter(function (_ref10) {
+	          var _ref11 = _slicedToArray(_ref10, 1),
+	              s = _ref11[0];
+
+	          return s.selected;
+	        }).map(function (_ref12) {
+	          var _ref13 = _slicedToArray(_ref12, 2),
+	              _ = _ref13[0],
+	              v = _ref13[1];
+
+	          return v;
+	        });
+	      };
+	    };
+
+	    var sinkObjects = sinkNames.map(function (sink) {
+	      return ctype$.compose(filterSelected(sink));
+	    });
+
+	    var sinks = _lodash2.default.zipObject(sinkNames, sinkObjects);
+
+	    sinks.DOM = ctype$.compose(filterInstant("DOM"));
+
+	    return sinks;
+	  };
+	};
+
+	var Tabs = exports.Tabs = function Tabs(opt) {
+	  return function (sources) {
+
+	    var nav$ = sources.onion.state$.compose((0, _helper.member)(TabNav(opt.TabNavView), {
+	      DOM: sources.DOM.isolateSource(sources.DOM, 'tab'),
+	      onion: sources.onion
+	    }));
+
+	    var stage$ = sources.onion.state$.compose((0, _helper.member)(Stage(opt.C, opt.sinkNames), sources));
+
+	    var tabStageView$ = stage$.compose((0, _cycleOnionify.pick)(function (sinks) {
+	      return sinks.DOM;
+	    })).compose((0, _cycleOnionify.mix)(_xstream2.default.merge));
+
+	    var tabStageReducers$ = stage$.compose((0, _cycleOnionify.pick)(function (sinks) {
+	      return sinks.onion;
+	    })).compose((0, _cycleOnionify.mix)(_xstream2.default.merge));
+
+	    var tabNavView$ = nav$.compose((0, _cycleOnionify.pick)(function (sinks, i) {
+	      return sources.DOM.isolateSink(sinks.DOM);
+	    })).compose((0, _cycleOnionify.mix)(_xstream2.default.combine));
+
+	    var web3$ = stage$.compose((0, _cycleOnionify.pick)(function (sinks) {
+	      return sinks.web3$;
+	    })).compose((0, _cycleOnionify.mix)(_xstream2.default.merge));
+
+	    var sinkObjects = opt.sinkNames.map(function (sink) {
+	      return stage$.compose((0, _cycleOnionify.pick)(function (sinks) {
+	        return sinks[sink];
+	      })).compose((0, _cycleOnionify.mix)(_xstream2.default.merge));
+	    });
+
+	    var sinks = _lodash2.default.zipObject(opt.sinkNames, sinkObjects);
+
+	    var vdom$ = _xstream2.default.combine(tabNavView$, tabStageView$).map(function (_ref14) {
+	      var _ref15 = _slicedToArray(_ref14, 2),
+	          tabs = _ref15[0],
+	          view = _ref15[1];
+
+	      return (0, _dom.div)(opt.classname, [(0, _dom.div)('.selectView', tabs), (0, _dom.div)('.mainView', [view])]);
+	    });
+
+	    var selectReducer$ = nav$.compose((0, _cycleOnionify.pick)(function (sinks) {
+	      return sinks.select$;
+	    })).compose((0, _cycleOnionify.mix)(_xstream2.default.merge)).map(function (e) {
+	      return function selectReducer(parent) {
+	        var oldIndex = parent.findIndex(function (t) {
+	          return t.selected;
+	        });
+	        var newIndex = parent.findIndex(function (t) {
+	          return t.index === e.index;
+	        });
+
+	        if (oldIndex === newIndex) return parent;
+	        var tabs_ = parent.slice(0);
+	        tabs_[oldIndex] = _lodash2.default.assign({}, tabs_[oldIndex], {
+	          selected: false
+	        });
+	        tabs_[newIndex] = _lodash2.default.assign({}, tabs_[newIndex], {
+	          selected: true
+	        });
+	        return tabs_;
+	      };
+	    });
+
+	    return _lodash2.default.assign(sinks, {
+	      DOM: vdom$,
+	      onion: _xstream2.default.merge(selectReducer$, tabStageReducers$)
+	    });
 	  };
 	};
 
@@ -9899,7 +9925,10 @@
 	          name: state.addrs[addr].name,
 	          type: "addr",
 	          state: state.addrs[addr],
-	          selected: false
+	          selected: false,
+	          children: MakeTabChildren(state.addrs[addr].contract.abi, function () {
+	            return "abi";
+	          })
 	        };
 	      });
 
@@ -9909,7 +9938,27 @@
 	    };
 	  });
 
-	  var tabSinks = (0, _isolate2.default)(Tabs, 'tabs')(sources);
+	  var C = {
+	    addr: _addr.AddrView,
+	    sniffer: (0, _isolate2.default)(_sniffer.Sniffer, "state")
+	  };
+
+	  var tabSinks = (0, _isolate2.default)(Tabs({
+	    sinkNames: ["onion", "web3$"],
+	    C: C,
+	    classname: ".treeview"
+	  }), 'tabs')(sources);
+
+	  var web3$ = tabSinks.web3$.fold(function (parent, cmd) {
+	    return {
+	      cmd: _lodash2.default.assign(cmd, { id: parent.id + 1 }),
+	      id: parent.id + 1
+	    };
+	  }, { cmd: {}, id: 0 }).filter(function (e) {
+	    return e.id > 0;
+	  }).map(function (e) {
+	    return e.cmd;
+	  });
 
 	  var initState$ = _xstream2.default.of(function initStateReducer() {
 	    return {
@@ -9922,7 +9971,9 @@
 	        index: "tab2",
 	        name: "sniffer",
 	        type: "sniffer",
-	        history: [],
+	        state: {
+	          history: []
+	        },
 	        selected: false
 	      }],
 	      // stores all meta information
@@ -12652,6 +12703,7 @@
 	        comm = _ref8[0];
 
 	    return function logReducer(parent) {
+	      console.log(parent);
 	      var history = parent.history.concat(comm);
 	      return _.assign({}, parent, { history: history });
 	    };
@@ -12987,6 +13039,10 @@
 
 	var _isolate2 = _interopRequireDefault(_isolate);
 
+	var _treeview = __webpack_require__(824);
+
+	var _cycleOnionify = __webpack_require__(833);
+
 	var _collection = __webpack_require__(826);
 
 	var _collection2 = _interopRequireDefault(_collection);
@@ -12995,23 +13051,16 @@
 
 	var _xstream2 = _interopRequireDefault(_xstream);
 
+	var _lodash = __webpack_require__(927);
+
+	var _lodash2 = _interopRequireDefault(_lodash);
+
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 	var ABI = function ABI(_ref) {
 	  var DOM = _ref.DOM,
-	      props = _ref.props;
+	      onion = _ref.onion;
 
-
-	  var navBtns$ = props.map(function (p) {
-	    return (0, _dom.div)(".abiNavBtn", {
-	      class: {
-	        selected: p.selected
-	      },
-	      attrs: { ref: p.abi.signature }
-	    }, p.abi.name + '(' + (p.abi.inputs && p.abi.inputs.map(function (i) {
-	      return i.type;
-	    }).join(", ")) + ')');
-	  });
 
 	  var context = function context(name, content) {
 	    return (0, _dom.fieldset)("", [(0, _dom.legend)(name), (0, _dom.table)("", [(0, _dom.tbody)("", content)])]);
@@ -13019,34 +13068,44 @@
 
 	  var interfaceform = function interfaceform(interfaces) {
 	    return interfaces.map(function (iface, index) {
-	      return (0, _dom.tr)("", [
-	      // i
-	      (0, _dom.td)(".label", [(0, _dom.label)(iface.name || iface.type)]), (0, _dom.td)(".input", [(0, _dom.input)({ attrs: {
+	      return (0, _dom.tr)("", [(0, _dom.td)(".label", [(0, _dom.label)(iface.name || iface.type)]), (0, _dom.td)(".input", [(0, _dom.input)({ attrs: {
 	          type: "text",
 	          ref: index
 	        } })]), (0, _dom.td)("", ["::" + iface.type])]);
 	    });
 	  };
 
-	  var mainView$ = props.filter(function (p) {
-	    return p.selected;
-	  }).map(function (p) {
+	  var mainView$ = onion.state$.map(function (p) {
 	    return (0, _dom.div)(".objectView", [
 	    // Display Inputs
-	    p.abi.inputs && p.abi.inputs.length > 0 ? context("Input", interfaceform(p.abi.inputs)) : (0, _dom.div)(), (0, _dom.button)("trigger"),
+	    p.inputs && p.inputs.length > 0 ? context("Input", interfaceform(p.inputs)) : (0, _dom.div)(), (0, _dom.button)("trigger"),
 	    // Display Outputs
-	    p.abi.outputs && p.abi.outputs.length > 0 ? context("Output", interfaceform(p.abi.outputs)) : (0, _dom.div)()]);
+	    p.outputs && p.outputs.length > 0 ? context("Output", interfaceform(p.outputs)) : (0, _dom.div)()]);
 	  });
 
 	  return {
-	    navBtns$: navBtns$,
-	    mainView$: mainView$
+	    DOM: mainView$
 	  };
 	};
 
-	var AddrView = exports.AddrView = function AddrView(_ref2) {
+	var TabNavView = function TabNavView(_ref2) {
 	  var DOM = _ref2.DOM,
 	      onion = _ref2.onion;
+
+	  var view$ = onion.state$.map(function (p) {
+	    return (0, _dom.span)(p.name + '(' + (p.inputs && p.inputs.map(function (i) {
+	      return i.type;
+	    }).join(", ")) + ')');
+	  });
+
+	  return {
+	    DOM: view$
+	  };
+	};
+
+	var AddrView = exports.AddrView = function AddrView(_ref3) {
+	  var DOM = _ref3.DOM,
+	      onion = _ref3.onion;
 
 
 	  var click$ = DOM.select("button").events("click");
@@ -13066,24 +13125,42 @@
 	    return e === "reset" ? [] : (acc[e.index] = e.value) && acc;
 	  }, []);
 
-	  var sendEvent$ = click$.compose((0, _sampleCombine2.default)(sendState$)).map(function (_ref3) {
-	    var _ref4 = _slicedToArray(_ref3, 2),
-	        _ = _ref4[0],
-	        state = _ref4[1];
+	  var sendEvent$ = click$.compose((0, _sampleCombine2.default)(sendState$)).map(function (_ref4) {
+	    var _ref5 = _slicedToArray(_ref4, 2),
+	        _ = _ref5[0],
+	        state = _ref5[1];
 
 	    return state;
 	  });
 
-	  var currentFABI$ = _xstream2.default.combine(select$, onion.state$).filter(function (_ref5) {
-	    var _ref6 = _slicedToArray(_ref5, 2),
-	        s = _ref6[0],
-	        _ = _ref6[1];
+	  var fabisOnion = (0, _cycleOnionify.isolateSource)(onion, 'children');
+
+	  var C = {
+	    abi: (0, _isolate2.default)(ABI, 'state')
+	  };
+
+	  var tabs = (0, _treeview.Tabs)({
+	    C: C,
+	    TabNavView: TabNavView,
+	    sinkNames: ["onion"],
+	    classname: ".abiView"
+	  });
+
+	  var tab = tabs({
+	    DOM: DOM,
+	    onion: fabisOnion
+	  });
+
+	  var currentFABI$ = _xstream2.default.combine(select$, onion.state$).filter(function (_ref6) {
+	    var _ref7 = _slicedToArray(_ref6, 2),
+	        s = _ref7[0],
+	        _ = _ref7[1];
 
 	    return s !== 0;
-	  }).map(function (_ref7) {
-	    var _ref8 = _slicedToArray(_ref7, 2),
-	        select = _ref8[0],
-	        p = _ref8[1];
+	  }).map(function (_ref8) {
+	    var _ref9 = _slicedToArray(_ref8, 2),
+	        select = _ref9[0],
+	        p = _ref9[1];
 
 	    return {
 	      contract: p.state.contract,
@@ -13093,13 +13170,29 @@
 	    };
 	  });
 
-	  var web3$ = sendEvent$.compose((0, _sampleCombine2.default)(currentFABI$)).map(function (_ref9) {
-	    var _ref10 = _slicedToArray(_ref9, 2),
-	        params = _ref10[0],
-	        _ref10$ = _ref10[1],
-	        contract = _ref10$.contract,
-	        fabi = _ref10$.fabi,
-	        address = _ref10$.address;
+	  var snapshot$ = _xstream2.default.combine(select$, onion.state$).map(function (_ref10) {
+	    var _ref11 = _slicedToArray(_ref10, 2),
+	        select = _ref11[0],
+	        p = _ref11[1];
+
+	    return p.state.contract.abi.map(function (abi) {
+	      return {
+	        id: abi.signature,
+	        props: {
+	          abi: abi,
+	          selected: select === abi.signature
+	        }
+	      };
+	    });
+	  });
+
+	  var web3$ = sendEvent$.compose((0, _sampleCombine2.default)(currentFABI$)).map(function (_ref12) {
+	    var _ref13 = _slicedToArray(_ref12, 2),
+	        params = _ref13[0],
+	        _ref13$ = _ref13[1],
+	        contract = _ref13$.contract,
+	        fabi = _ref13$.fabi,
+	        address = _ref13$.address;
 
 	    return {
 	      id: 1,
@@ -13115,45 +13208,10 @@
 	    };
 	  });
 
-	  var snapshot$ = _xstream2.default.combine(select$, onion.state$).map(function (_ref11) {
-	    var _ref12 = _slicedToArray(_ref11, 2),
-	        select = _ref12[0],
-	        p = _ref12[1];
-
-	    return p.state.contract.abi.map(function (abi) {
-	      return {
-	        id: abi.signature,
-	        props: {
-	          abi: abi,
-	          selected: select === abi.signature
-	        }
-	      };
-	    });
-	  });
-
-	  var abiC$ = _collection2.default.gather((0, _isolate2.default)(ABI), { DOM: DOM }, snapshot$);
-
-	  var abisView$ = _collection2.default.pluck(abiC$, function (abi) {
-	    return abi.navBtns$;
-	  });
-
-	  var mainView$ = _collection2.default.merge(abiC$, function (abi) {
-	    return abi.mainView$;
-	  }).startWith((0, _dom.div)("no"));
-
-	  var vdom$ = _xstream2.default.combine(onion.state$, abisView$, mainView$).map(function (_ref13) {
-	    var _ref14 = _slicedToArray(_ref13, 3),
-	        p = _ref14[0],
-	        abis = _ref14[1],
-	        view = _ref14[2];
-
-	    return (0, _dom.div)(".abiView", [(0, _dom.div)(".navigationView", abis), (0, _dom.div)(".mainView", [view])]);
-	  });
-
 	  return {
-	    DOM: vdom$,
+	    DOM: tab.DOM,
 	    web3$: web3$,
-	    onion: _xstream2.default.of()
+	    onion: (0, _cycleOnionify.isolateSink)(tab.onion, 'children')
 	  };
 	};
 
@@ -65949,7 +66007,7 @@
 	exports.push([module.id, "@import url(https://fonts.googleapis.com/css?family=Source+Code+Pro);", ""]);
 
 	// module
-	exports.push([module.id, "@charset \"UTF-8\";\nbody {\n  margin: 0;\n  font-size: 12px;\n  font-size: calculateRem(12px);\n  background: #e7e7e7;\n  font-family: sans-serif;\n  color: #27243F; }\n  body #app {\n    height: 100%; }\n\nlegend {\n  color: #13111f;\n  letter-spacing: 1px; }\n\nlabel {\n  font-size: 12px;\n  font-size: calculateRem(12px); }\n\nfieldset {\n  margin: 1.2rem 0 0 0;\n  border: 1px solid #e7e7e7;\n  color: #3b375f; }\n\ninput {\n  border: 1px solid #e7e7e7;\n  color: #8D86C9;\n  display: inline-block;\n  width: 80%;\n  padding: 6px 10px;\n  margin: 6px 0; }\n\nbutton {\n  display: inline-block;\n  border: 1px solid #27243F;\n  background: #27243F;\n  color: #e7e7e7;\n  border-radius: 2px;\n  letter-spacing: 1px;\n  margin: 10px 0;\n  padding: 8px 28px;\n  text-transform: uppercase; }\n  button + button {\n    margin-left: 10px; }\n  button:disabled {\n    background: #a19bcd;\n    color: #ddd;\n    position: relative; }\n    button:disabled:after {\n      display: block;\n      position: absolute;\n      color: #333;\n      top: 0;\n      width: 460px;\n      content: 'cannot call non static functions via server.';\n      left: 100%;\n      text-align: left;\n      padding: 9px 18px; }\n\n.injectDappHub {\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  flex-direction: column;\n  height: 80%; }\n\n.treeview {\n  height: 100%;\n  display: flex;\n  flex-direction: row;\n  align-content: flex-start;\n  flex: 1; }\n  .treeview .selectView {\n    flex: 1;\n    overflow-y: auto;\n    position: relative;\n    background: #27243F;\n    color: #fff;\n    min-width: 15%;\n    width: 15%; }\n    .treeview .selectView .navBtn {\n      padding: 6px 15px;\n      font-size: 12px;\n      font-weight: 300;\n      letter-spacing: 1px;\n      background-color: #27243F;\n      color: #fff; }\n      .treeview .selectView .navBtn:hover {\n        background-color: #4f4980; }\n      .treeview .selectView .navBtn.selected {\n        border-left: 4px solid #725AC1;\n        background: #4f4980;\n        padding-left: 11px; }\n  .treeview .mainView {\n    flex: 8;\n    overflow: auto;\n    display: flex; }\n    .treeview .mainView .sniffer {\n      display: flex;\n      flex-direction: column;\n      font-family: monospace;\n      width: 100%;\n      overflow-wrap: break-word; }\n      .treeview .mainView .sniffer .controllBar {\n        border-bottom: 4px solid #ddd;\n        padding: 2px 6px; }\n        .treeview .mainView .sniffer .controllBar .record input {\n          display: none; }\n        .treeview .mainView .sniffer .controllBar .record::before {\n          content: \" \";\n          display: inline-block;\n          width: 12px;\n          height: 12px;\n          background: #bbb;\n          border-radius: 20px;\n          margin: 0px 7px 2px 3px;\n          vertical-align: middle; }\n        .treeview .mainView .sniffer .controllBar .record.checked::before {\n          background: #ff603b;\n          box-shadow: 0px 1px 4px 0px #ff603b; }\n      .treeview .mainView .sniffer ul {\n        padding: 0;\n        margin: 0;\n        overflow-y: auto; }\n        .treeview .mainView .sniffer ul li.sniffline {\n          cursor: default;\n          width: 100%;\n          list-style: none; }\n          .treeview .mainView .sniffer ul li.sniffline.call {\n            background: #cce1f0; }\n          .treeview .mainView .sniffer ul li.sniffline.tx {\n            background: #f7e5d2; }\n          .treeview .mainView .sniffer ul li.sniffline span.req {\n            padding: 4px 15px;\n            display: block;\n            border-bottom: 1px solid #cdcdcd; }\n            .treeview .mainView .sniffer ul li.sniffline span.req:hover, .treeview .mainView .sniffer ul li.sniffline span.req.open {\n              background: rgba(255, 255, 255, 0.3); }\n          .treeview .mainView .sniffer ul li.sniffline span.res {\n            display: block;\n            padding: 5px 35px;\n            background: rgba(0, 0, 0, 0.1);\n            white-space: pre-wrap; }\n          .treeview .mainView .sniffer ul li.sniffline::before {\n            content: \"\\25B8\";\n            font-size: 10px;\n            line-height: 10px;\n            float: left;\n            margin: 5px 10px; }\n          .treeview .mainView .sniffer ul li.sniffline.open::before {\n            content: \"\\25BE\"; }\n\n.objectView {\n  width: 100%; }\n\n.abiView {\n  display: flex;\n  width: 100%;\n  height: 100%; }\n  .abiView .navigationView {\n    flex: 3;\n    overflow-y: auto; }\n    .abiView .navigationView .abiNavBtn {\n      cursor: default;\n      font-weight: 100;\n      background: #fff;\n      font-weight: 400;\n      position: relative;\n      padding: 6px 15px; }\n      .abiView .navigationView .abiNavBtn.contract, .abiView .navigationView .abiNavBtn.objectInfo {\n        font-size: 18px;\n        padding: 10px;\n        background: #8D86C9;\n        color: #fff;\n        letter-spacing: 1px; }\n        .abiView .navigationView .abiNavBtn.contract.selected, .abiView .navigationView .abiNavBtn.objectInfo.selected {\n          border-left: 4px solid #f0a800;\n          padding-left: 11px; }\n        .abiView .navigationView .abiNavBtn.contract:hover, .abiView .navigationView .abiNavBtn.contract.selected, .abiView .navigationView .abiNavBtn.objectInfo:hover, .abiView .navigationView .abiNavBtn.objectInfo.selected {\n          background: #534d86; }\n        .abiView .navigationView .abiNavBtn.contract:before, .abiView .navigationView .abiNavBtn.objectInfo:before {\n          border-bottom: none; }\n      .abiView .navigationView .abiNavBtn.selected {\n        border-left: 4px solid #725AC1;\n        padding-left: 11px; }\n      .abiView .navigationView .abiNavBtn:hover {\n        background: rgba(255, 255, 255, 0.1); }\n      .abiView .navigationView .abiNavBtn:before {\n        content: \" \";\n        border-bottom: 1px dotted #e7e7e7;\n        display: block;\n        position: absolute;\n        bottom: 0;\n        right: 0;\n        width: 90%; }\n      .abiView .navigationView .abiNavBtn:hover {\n        background: #F8F7F5; }\n      .abiView .navigationView .abiNavBtn.selected {\n        border-left: 4px solid #725AC1;\n        background: #F8F7F5; }\n  .abiView .mainView {\n    flex: 6;\n    overflow-y: auto;\n    padding: 15px;\n    border-left: 1px solid #F8F7F5;\n    background: #fff; }\n    .abiView .mainView table {\n      width: 100%; }\n      .abiView .mainView table td {\n        margin: 6px 0; }\n      .abiView .mainView table td.input {\n        display: flex; }\n        .abiView .mainView table td.input > input {\n          flex: 1; }\n      .abiView .mainView table td.label {\n        text-align: right;\n        padding-right: 10px;\n        width: 18%; }\n      .abiView .mainView table td.type {\n        padding-left: 4px;\n        width: 15%; }\n\n.jsonDisplay {\n  white-space: pre;\n  font-family: monospace;\n  padding: 20px;\n  display: block; }\n", ""]);
+	exports.push([module.id, "@charset \"UTF-8\";\nbody {\n  margin: 0;\n  font-size: 12px;\n  font-size: calculateRem(12px);\n  background: #e7e7e7;\n  font-family: sans-serif;\n  color: #27243F; }\n  body #app {\n    height: 100%; }\n\nlegend {\n  color: #13111f;\n  letter-spacing: 1px; }\n\nlabel {\n  font-size: 12px;\n  font-size: calculateRem(12px); }\n\nfieldset {\n  margin: 1.2rem 0 0 0;\n  border: 1px solid #e7e7e7;\n  color: #3b375f; }\n\ninput {\n  border: 1px solid #e7e7e7;\n  color: #8D86C9;\n  display: inline-block;\n  width: 80%;\n  padding: 6px 10px;\n  margin: 6px 0; }\n\nbutton {\n  display: inline-block;\n  border: 1px solid #27243F;\n  background: #27243F;\n  color: #e7e7e7;\n  border-radius: 2px;\n  letter-spacing: 1px;\n  margin: 10px 0;\n  padding: 8px 28px;\n  text-transform: uppercase; }\n  button + button {\n    margin-left: 10px; }\n  button:disabled {\n    background: #a19bcd;\n    color: #ddd;\n    position: relative; }\n    button:disabled:after {\n      display: block;\n      position: absolute;\n      color: #333;\n      top: 0;\n      width: 460px;\n      content: 'cannot call non static functions via server.';\n      left: 100%;\n      text-align: left;\n      padding: 9px 18px; }\n\n.injectDappHub {\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  flex-direction: column;\n  height: 80%; }\n\n.treeview {\n  height: 100%;\n  display: flex;\n  flex-direction: row;\n  align-content: flex-start;\n  flex: 1; }\n  .treeview > .selectView {\n    flex: 1;\n    overflow-y: auto;\n    position: relative;\n    background: #27243F;\n    color: #fff;\n    min-width: 15%;\n    width: 15%; }\n    .treeview > .selectView > .navBtn {\n      padding: 6px 15px;\n      font-size: 12px;\n      font-weight: 300;\n      letter-spacing: 1px;\n      background-color: #27243F;\n      color: #fff; }\n      .treeview > .selectView > .navBtn:hover {\n        background-color: #4f4980; }\n      .treeview > .selectView > .navBtn.selected {\n        border-left: 4px solid #725AC1;\n        background: #4f4980;\n        padding-left: 11px; }\n  .treeview .mainView {\n    flex: 8;\n    overflow: auto;\n    display: flex; }\n    .treeview .mainView .sniffer {\n      display: flex;\n      flex-direction: column;\n      font-family: monospace;\n      width: 100%;\n      overflow-wrap: break-word; }\n      .treeview .mainView .sniffer .controllBar {\n        border-bottom: 4px solid #ddd;\n        padding: 2px 6px; }\n        .treeview .mainView .sniffer .controllBar .record input {\n          display: none; }\n        .treeview .mainView .sniffer .controllBar .record::before {\n          content: \" \";\n          display: inline-block;\n          width: 12px;\n          height: 12px;\n          background: #bbb;\n          border-radius: 20px;\n          margin: 0px 7px 2px 3px;\n          vertical-align: middle; }\n        .treeview .mainView .sniffer .controllBar .record.checked::before {\n          background: #ff603b;\n          box-shadow: 0px 1px 4px 0px #ff603b; }\n      .treeview .mainView .sniffer ul {\n        padding: 0;\n        margin: 0;\n        overflow-y: auto; }\n        .treeview .mainView .sniffer ul li.sniffline {\n          cursor: default;\n          width: 100%;\n          list-style: none; }\n          .treeview .mainView .sniffer ul li.sniffline.call {\n            background: #cce1f0; }\n          .treeview .mainView .sniffer ul li.sniffline.tx {\n            background: #f7e5d2; }\n          .treeview .mainView .sniffer ul li.sniffline span.req {\n            padding: 4px 15px;\n            display: block;\n            border-bottom: 1px solid #cdcdcd; }\n            .treeview .mainView .sniffer ul li.sniffline span.req:hover, .treeview .mainView .sniffer ul li.sniffline span.req.open {\n              background: rgba(255, 255, 255, 0.3); }\n          .treeview .mainView .sniffer ul li.sniffline span.res {\n            display: block;\n            padding: 5px 35px;\n            background: rgba(0, 0, 0, 0.1);\n            white-space: pre-wrap; }\n          .treeview .mainView .sniffer ul li.sniffline::before {\n            content: \"\\25B8\";\n            font-size: 10px;\n            line-height: 10px;\n            float: left;\n            margin: 5px 10px; }\n          .treeview .mainView .sniffer ul li.sniffline.open::before {\n            content: \"\\25BE\"; }\n\n.objectView {\n  width: 100%; }\n\n.abiView {\n  display: flex;\n  width: 100%;\n  height: 100%; }\n  .abiView .selectView {\n    flex: 3;\n    overflow-y: auto; }\n    .abiView .selectView .navBtn {\n      cursor: default;\n      font-weight: 100;\n      background: #fff;\n      font-weight: 400;\n      position: relative;\n      padding: 6px 15px; }\n      .abiView .selectView .navBtn.contract, .abiView .selectView .navBtn.objectInfo {\n        font-size: 18px;\n        padding: 10px;\n        background: #8D86C9;\n        color: #fff;\n        letter-spacing: 1px; }\n        .abiView .selectView .navBtn.contract.selected, .abiView .selectView .navBtn.objectInfo.selected {\n          border-left: 4px solid #f0a800;\n          padding-left: 11px; }\n        .abiView .selectView .navBtn.contract:hover, .abiView .selectView .navBtn.contract.selected, .abiView .selectView .navBtn.objectInfo:hover, .abiView .selectView .navBtn.objectInfo.selected {\n          background: #534d86; }\n        .abiView .selectView .navBtn.contract:before, .abiView .selectView .navBtn.objectInfo:before {\n          border-bottom: none; }\n      .abiView .selectView .navBtn.selected {\n        border-left: 4px solid #725AC1;\n        padding-left: 11px; }\n      .abiView .selectView .navBtn:hover {\n        background: rgba(255, 255, 255, 0.1); }\n      .abiView .selectView .navBtn:before {\n        content: \" \";\n        border-bottom: 1px dotted #e7e7e7;\n        display: block;\n        position: absolute;\n        bottom: 0;\n        right: 0;\n        width: 90%; }\n      .abiView .selectView .navBtn:hover {\n        background: #F8F7F5; }\n      .abiView .selectView .navBtn.selected {\n        border-left: 4px solid #725AC1;\n        background: #F8F7F5; }\n  .abiView .mainView {\n    flex: 6;\n    overflow-y: auto;\n    padding: 15px;\n    border-left: 1px solid #F8F7F5;\n    background: #fff; }\n    .abiView .mainView table {\n      width: 100%; }\n      .abiView .mainView table td {\n        margin: 6px 0; }\n      .abiView .mainView table td.input {\n        display: flex; }\n        .abiView .mainView table td.input > input {\n          flex: 1; }\n      .abiView .mainView table td.label {\n        text-align: right;\n        padding-right: 10px;\n        width: 18%; }\n      .abiView .mainView table td.type {\n        padding-left: 4px;\n        width: 15%; }\n\n.jsonDisplay {\n  white-space: pre;\n  font-family: monospace;\n  padding: 20px;\n  display: block; }\n", ""]);
 
 	// exports
 

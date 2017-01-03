@@ -9,28 +9,43 @@ import sampleCombine from 'xstream/extra/sampleCombine'
 import {Sniffer} from './components/sniffer.js';
 import {AddrView} from './components/addr.js';
 import {Memepool} from './memepool.js';
+import {member} from './helper.js';
 import {componentSwitch} from './helper.js';
 import {pick, mix, isolateSource as isolateOnionSource, isolateSink as isolateOnionSink} from 'cycle-onionify';
 import _ from 'lodash';
 
-var TabNav = ({DOM, onion}) => {
+export const MakeTabChildren = (tabs, typef) => {
+  return tabs
+  .map((t, i) => ({
+    index: i,
+    state: t,
+    selected: i === 0,
+    type: typef && typef(t)
+  }))
+}
+
+export const TabNav = TabNavView => ({DOM, onion}) => {
 
   const select$ = DOM
-  .select('.navBtn')
-  .events('click')
+  .select(".navBtn")
+  .events("click")
   .compose(sampleCombine(onion.state$))
   .map(([_, state]) => ({type: "SELECT", index: state.index}))
 
-  const view$ = onion.state$
-  .map(state => div({
+  var tabView;
+  if(TabNavView) {
+    tabView = isolate(TabNavView, 'state')({DOM, onion})
+  } else {
+    tabView = {DOM: onion.state$.map(state => state.name || state.index)}
+  }
+
+  const view$ = xs.combine(onion.state$, tabView.DOM)
+  .map(([p, view]) => div(".navBtn", {
     class: {
-      navBtn: true,
-      selected: state.selected
+      selected: p.selected
     },
-    attrs: {
-      ref: state.index
-    }
-  }, state.name))
+    attrs: {ref: p.signature}
+  }, [view]));
 
   return {
     DOM: view$,
@@ -38,79 +53,49 @@ var TabNav = ({DOM, onion}) => {
   }
 }
 
-var Stage = (sources) => {
-
-  const C = {
-    addr: AddrView,
-    sniffer: Sniffer
-  };
+export const Stage = (C, sinkNames) => (sources) => {
 
   const ctype$ = sources.onion.state$
   .filter(state => state.selected)
   .compose(componentSwitch(state => state.type, C, sources))
 
-  const view$ = xs.combine(sources.onion.state$, ctype$
-  .map(c => c.c.DOM)
-  .flatten())
-  .filter(([s]) => s.selected)
-  .map(([_, v]) => v)
+  const filterSelected = attr => in$ =>
+    in$
+    .map(c => c.c[attr] || xs.of())
+    .flatten()
+    .compose(sampleCombine(sources.onion.state$))
+    .filter(([_, s]) => s.selected)
+    .map(([v]) => v)
 
-  const reducer$ = ctype$
-  .map(c => c.c.onion)
-  .flatten()
+  const filterInstant = attr => in$ =>
+    xs.combine(sources.onion.state$, in$
+    .map(c => c.c[attr] || xs.of())
+    .flatten())
+    .filter(([s]) => s.selected)
+    .map(([_, v]) => v)
 
-  const web3$ = ctype$
-  .map(c => c.c.web3$)
-  .filter(c => !!c)
-  .flatten()
+  const sinkObjects = sinkNames
+  .map(sink => ctype$
+  .compose(filterSelected(sink)))
 
-  return {
-    DOM: view$,
-    onion: reducer$,
-    web3$
-  };
+  var sinks = _.zipObject(sinkNames, sinkObjects);
+
+  sinks.DOM = ctype$
+  .compose(filterInstant("DOM"))
+
+  return sinks;
 }
 
-const Tabs = (sources) => {
+export const Tabs = opt => (sources) => {
 
-  const tabNav$ = sources.onion.state$
-  .fold((parent, state) => {
-    let arr = new Array(state.length);
-    state.forEach((e,i) => {
-      if(i in parent) {
-        arr[i] = parent[i];
-      } else {
-        let filteredSources = _.assign({}, sources, {
-          onion: isolateOnionSource(sources.onion, i),
-          DOM: sources.DOM.isolateSource(sources.DOM, i + '_')
-        })
-        arr[i] = TabNav(filteredSources);
-      }
-    })
-    return arr;
-  }, [])
+  const nav$ = sources.onion.state$
+  .compose(member(TabNav(opt.TabNavView), {
+    DOM: sources.DOM.isolateSource(sources.DOM, 'tab'),
+    onion: sources.onion
+  }))
 
   const stage$ = sources.onion.state$
-  .fold((parent, state) => {
-    let arr = new Array(state.length);
-    state.forEach((e,i) => {
-      if(i in parent) {
-        arr[i] = parent[i];
-      } else {
-        // let filteredSources = _.assign({}, sources, {
-        //   onion: isolateOnionSource(sources.onion, i),
-        // })
-        arr[i] = isolate(Stage, i)(sources)
-      }
-    })
-    return arr;
-  }, [])
-
-  const tabNavView$ = tabNav$
-    .compose(pick((sinks, i) =>
-      sources.DOM.isolateSink(sinks.DOM, i + '_')
-    ))
-    .compose(mix(xs.combine))
+  .compose(member(Stage(opt.C, opt.sinkNames), sources))
 
   const tabStageView$ = stage$
     .compose(pick(sinks => sinks.DOM))
@@ -120,23 +105,30 @@ const Tabs = (sources) => {
     .compose(pick(sinks => sinks.onion))
     .compose(mix(xs.merge))
 
+  const tabNavView$ = nav$
+    .compose(pick((sinks, i) =>
+      sources.DOM.isolateSink(sinks.DOM)
+    ))
+    .compose(mix(xs.combine))
+
   const web3$ = stage$
     .compose(pick(sinks => sinks.web3$))
     .compose(mix(xs.merge))
-    .fold((parent, cmd) => ({
-      cmd: _.assign(cmd, {id: parent.id + 1}),
-      id: parent.id + 1
-    }) ,{cmd: {}, id: 0})
-    .filter(e => e.id > 0)
-    .map(e => e.cmd)
+
+  const sinkObjects = opt.sinkNames
+  .map(sink => stage$
+    .compose(pick(sinks => sinks[sink]))
+    .compose(mix(xs.merge)))
+
+  var sinks = _.zipObject(opt.sinkNames, sinkObjects);
 
   const vdom$ = xs.combine(tabNavView$, tabStageView$)
-  .map(([tabs, view]) => div(".treeview", [
+  .map(([tabs, view]) => div(opt.classname, [
       div('.selectView', tabs),
       div('.mainView', [view])
   ]));
 
-  const selectReducer$ = tabNav$
+  const selectReducer$ = nav$
   .compose(pick(sinks => sinks.select$))
   .compose(mix(xs.merge))
   .map(e => function selectReducer(parent){
@@ -154,11 +146,10 @@ const Tabs = (sources) => {
     return tabs_;
   })
 
-  return {
+  return _.assign(sinks, {
     DOM: vdom$,
     onion: xs.merge(selectReducer$, tabStageReducers$),
-    web3$
-  }
+  })
 
 }
 
@@ -181,7 +172,8 @@ export const DHExtension = (sources) => {
       name: state.addrs[addr].name,
       type: "addr",
       state: state.addrs[addr],
-      selected: false
+      selected: false,
+      children: MakeTabChildren(state.addrs[addr].contract.abi, () => "abi")
     }))
 
     return _.assign({}, parent, {
@@ -189,7 +181,24 @@ export const DHExtension = (sources) => {
     });
   })
 
-  const tabSinks = isolate(Tabs, 'tabs')(sources)
+  const C = {
+    addr: AddrView,
+    sniffer: isolate(Sniffer, "state")
+  };
+
+  const tabSinks = isolate(Tabs({
+    sinkNames: ["onion", "web3$"],
+    C,
+    classname: ".treeview"
+  }), 'tabs')(sources)
+
+  const web3$ = tabSinks.web3$
+    .fold((parent, cmd) => ({
+      cmd: _.assign(cmd, {id: parent.id + 1}),
+      id: parent.id + 1
+    }) ,{cmd: {}, id: 0})
+    .filter(e => e.id > 0)
+    .map(e => e.cmd)
 
   const initState$ = xs.of(function initStateReducer() {
     return {
@@ -202,7 +211,9 @@ export const DHExtension = (sources) => {
         index: "tab2",
         name: "sniffer",
         type: "sniffer",
-        history: [],
+        state: {
+          history: []
+        },
         selected: false
       }],
       // stores all meta information
