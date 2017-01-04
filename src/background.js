@@ -7,6 +7,8 @@ const debug = 1;
 
 var setUpEngine = require('./testrpc.js');
 var xs = require('xstream');
+const levelup = require('levelup');
+const level = require('level-js');
 var engine;
 
 // Handle request from devtools
@@ -62,10 +64,26 @@ chrome.extension.onConnect.addListener(function (port) {
       })
     }
 
-    console.log(message);
     switch(message && message.type) {
       case "start":
-        engine = setUpEngine(sendToOrigWeb3(message.tabId))
+        //TODO - better name for sendToWeb3
+        const sendToWeb3 = sendToOrigWeb3(message.tabId);
+        const db = levelup("/db", {
+          db: level
+        });
+        // this takes care of rerouting forked requests back
+        // into the browser.
+        const forkSource = {
+          sendAsync: (payload, callback) => {
+            sendToWeb3(payload, callback);
+          },
+          send: () => {
+            throw new Error("sync requests are not supported");
+          }
+        }
+
+        // TODO - switch between different fork sources
+        engine = setUpEngine({db, forkSource: undefined})
         console.log("init testrpc", port);
         break;
       case "DH_REQ":

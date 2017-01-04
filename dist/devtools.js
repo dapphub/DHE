@@ -17,6 +17,11 @@ chrome.devtools.panels.create("DappHub","chrome.png", "panel.html", function(pan
       HTTP: _window.makeHTTPDriver()
     });
 
+    // TODO - improve SnifferDriver
+    // * rename to Bridge/ DHEBridge
+    // * include isolateSource/isolateSink functions
+    // * allow filter on namespaces according to
+    //    https://github.com/cyclejs/cyclejs/blob/master/http/src/isolate.ts
     function sniffDriver(outgoing$) {
       outgoing$.addListener({
         next: outgoing => {

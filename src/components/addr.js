@@ -11,7 +11,16 @@ import {isolateSource, isolateSink} from 'cycle-onionify';
 import xs from 'xstream';
 import _ from 'lodash';
 
-var ABI = ({DOM, onion}) => {
+var ABI = ({DOM, onion, Sniffer}) => {
+
+  // TODO - handle errors well
+  const resp$ = Sniffer
+  .filter(e => e.type === "DH_RES")
+  .compose(sampleCombine(onion.state$))
+  .debug("26")
+  .filter(([resp, state]) => resp.req.params[0].data.slice(2,10) === state.signature)
+  .map(([resp, state]) => state.decodeOutputs(resp.res.result && resp.res.result.slice(2)))
+  .startWith([])
 
   const click$ = DOM
   .select("button")
@@ -36,6 +45,8 @@ var ABI = ({DOM, onion}) => {
     fabi: state
   }))
 
+
+
   const context = (name, content) => fieldset("", [
     legend(name),
     table("", [
@@ -43,28 +54,29 @@ var ABI = ({DOM, onion}) => {
     ])
   ]);
 
-  const interfaceform = (interfaces) => interfaces
+  const interfaceform = (interfaces, data = []) => interfaces
   .map((iface, index) =>
        tr("", [
     td(".label", [label(iface.name || iface.type)]),
     td(".input", [input({attrs: {
       type: "text",
+      value: index in data && data[index] || "",
       ref: index
     }})]),
     td("", ["::" + iface.type])
   ])
   )
 
-  const mainView$ = onion.state$
-  .map(p => div(".objectView", [
+  const mainView$ = xs.combine(onion.state$, resp$)
+  .map(([p, resp]) => div(".objectView", [
     // Display Inputs
     p.inputs && p.inputs.length > 0
     ? context("Input", interfaceform(p.inputs))
     : div(),
-    button("trigger"),
+    button(p.constant ? "call" : "trigger"),
     // Display Outputs
     p.outputs && p.outputs.length > 0
-    ? context("Output", interfaceform(p.outputs))
+    ? context("Output", interfaceform(p.outputs, resp))
     : div()
   ]))
 
@@ -83,7 +95,7 @@ const TabNavView = ({DOM, onion}) => {
   }
 }
 
-export const AddrView = ({DOM, onion}) => {
+export const AddrView = ({DOM, onion, Sniffer}) => {
 
   const fabisOnion = isolateSource(onion, 'children')
 
@@ -100,7 +112,8 @@ export const AddrView = ({DOM, onion}) => {
 
   const tab = tabs({
     DOM: DOM,
-    onion: fabisOnion
+    onion: fabisOnion,
+    Sniffer
   })
 
   const web3$ = tab.web3$

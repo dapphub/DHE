@@ -1,7 +1,7 @@
 import {run} from '@cycle/xstream-run';
 import {button, span, div, label, input, hr, h1, makeDOMDriver} from '@cycle/dom';
 import xs from 'xstream';
-import {DHExtension} from './treeview.js';
+import {DHExtension} from './components/dhe.js';
 import {makeHTTPDriver} from '@cycle/http';
 import onionify from 'cycle-onionify';
 require("./style.scss");

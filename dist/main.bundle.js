@@ -56,17 +56,17 @@
 
 	var _xstream2 = _interopRequireDefault(_xstream);
 
-	var _treeview = __webpack_require__(824);
+	var _dhe = __webpack_require__(824);
 
-	var _http = __webpack_require__(928);
+	var _http = __webpack_require__(832);
 
-	var _cycleOnionify = __webpack_require__(833);
+	var _cycleOnionify = __webpack_require__(830);
 
 	var _cycleOnionify2 = _interopRequireDefault(_cycleOnionify);
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-	__webpack_require__(937);
+	__webpack_require__(841);
 
 	var tabId = chrome.devtools.inspectedWindow.tabId;
 
@@ -86,7 +86,7 @@
 	    }
 	  });
 
-	  var dhExtension = (0, _treeview.DHExtension)(sources);
+	  var dhExtension = (0, _dhe.DHExtension)(sources);
 
 	  var DH$ = dhExtension.DOM;
 
@@ -9669,233 +9669,34 @@
 /* 824 */
 /***/ function(module, exports, __webpack_require__) {
 
-	"use strict";
+	'use strict';
 
 	Object.defineProperty(exports, "__esModule", {
 	  value: true
 	});
-	exports.DHExtension = exports.Tabs = exports.Stage = exports.TabNav = exports.MakeTabChildren = undefined;
-
-	var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
-
-	var _dom = __webpack_require__(709);
-
-	var _xstream = __webpack_require__(701);
-
-	var _xstream2 = _interopRequireDefault(_xstream);
+	exports.DHExtension = undefined;
 
 	var _isolate = __webpack_require__(825);
 
 	var _isolate2 = _interopRequireDefault(_isolate);
 
-	var _collection = __webpack_require__(826);
+	var _memepool = __webpack_require__(845);
 
-	var _collection2 = _interopRequireDefault(_collection);
+	var _addr = __webpack_require__(935);
 
-	var _sampleCombine = __webpack_require__(831);
+	var _sniffer = __webpack_require__(941);
 
-	var _sampleCombine2 = _interopRequireDefault(_sampleCombine);
+	var _xstream = __webpack_require__(701);
 
-	var _sniffer = __webpack_require__(832);
+	var _xstream2 = _interopRequireDefault(_xstream);
 
-	var _addr = __webpack_require__(836);
-
-	var _memepool = __webpack_require__(838);
-
-	var _helper = __webpack_require__(835);
-
-	var _cycleOnionify = __webpack_require__(833);
-
-	var _lodash = __webpack_require__(837);
+	var _lodash = __webpack_require__(826);
 
 	var _lodash2 = _interopRequireDefault(_lodash);
 
+	var _treeview = __webpack_require__(827);
+
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-	var MakeTabChildren = exports.MakeTabChildren = function MakeTabChildren(tabs, typef) {
-	  return tabs.map(function (t, i) {
-	    return {
-	      index: i,
-	      state: t,
-	      selected: i === 0,
-	      type: typef && typef(t)
-	    };
-	  });
-	};
-
-	var TabNav = exports.TabNav = function TabNav(TabNavView) {
-	  return function (_ref) {
-	    var DOM = _ref.DOM,
-	        onion = _ref.onion;
-
-
-	    var select$ = DOM.select(".navBtn").events("click").compose((0, _sampleCombine2.default)(onion.state$)).map(function (_ref2) {
-	      var _ref3 = _slicedToArray(_ref2, 2),
-	          _ = _ref3[0],
-	          state = _ref3[1];
-
-	      return { type: "SELECT", index: state.index };
-	    });
-
-	    var tabView;
-	    if (TabNavView) {
-	      tabView = (0, _isolate2.default)(TabNavView, 'state')({ DOM: DOM, onion: onion });
-	    } else {
-	      tabView = { DOM: onion.state$.map(function (state) {
-	          return state.name || state.index;
-	        }) };
-	    }
-
-	    var view$ = _xstream2.default.combine(onion.state$, tabView.DOM).map(function (_ref4) {
-	      var _ref5 = _slicedToArray(_ref4, 2),
-	          p = _ref5[0],
-	          view = _ref5[1];
-
-	      return (0, _dom.div)(".navBtn", {
-	        class: {
-	          selected: p.selected
-	        },
-	        attrs: { ref: p.signature }
-	      }, [view]);
-	    });
-
-	    return {
-	      DOM: view$,
-	      select$: select$
-	    };
-	  };
-	};
-
-	var Stage = exports.Stage = function Stage(C, sinkNames) {
-	  return function (sources) {
-
-	    var ctype$ = sources.onion.state$.filter(function (state) {
-	      return state.selected;
-	    }).compose((0, _helper.componentSwitch)(function (state) {
-	      return state.type;
-	    }, C, sources));
-
-	    var filterSelected = function filterSelected(attr) {
-	      return function (in$) {
-	        return in$.map(function (c) {
-	          return c.c[attr] || _xstream2.default.of();
-	        }).flatten().compose((0, _sampleCombine2.default)(sources.onion.state$)).filter(function (_ref6) {
-	          var _ref7 = _slicedToArray(_ref6, 2),
-	              _ = _ref7[0],
-	              s = _ref7[1];
-
-	          return s.selected;
-	        }).map(function (_ref8) {
-	          var _ref9 = _slicedToArray(_ref8, 1),
-	              v = _ref9[0];
-
-	          return v;
-	        });
-	      };
-	    };
-
-	    var filterInstant = function filterInstant(attr) {
-	      return function (in$) {
-	        return _xstream2.default.combine(sources.onion.state$, in$.map(function (c) {
-	          return c.c[attr] || _xstream2.default.of();
-	        }).flatten()).filter(function (_ref10) {
-	          var _ref11 = _slicedToArray(_ref10, 1),
-	              s = _ref11[0];
-
-	          return s.selected;
-	        }).map(function (_ref12) {
-	          var _ref13 = _slicedToArray(_ref12, 2),
-	              _ = _ref13[0],
-	              v = _ref13[1];
-
-	          return v;
-	        });
-	      };
-	    };
-
-	    var sinkObjects = sinkNames.map(function (sink) {
-	      return ctype$.compose(filterSelected(sink));
-	    });
-
-	    var sinks = _lodash2.default.zipObject(sinkNames, sinkObjects);
-
-	    sinks.DOM = ctype$.compose(filterInstant("DOM"));
-
-	    return sinks;
-	  };
-	};
-
-	var Tabs = exports.Tabs = function Tabs(opt) {
-	  return function (sources) {
-
-	    var nav$ = sources.onion.state$.compose((0, _helper.member)(TabNav(opt.TabNavView), {
-	      DOM: sources.DOM.isolateSource(sources.DOM, 'tab'),
-	      onion: sources.onion
-	    }));
-
-	    var stage$ = sources.onion.state$.compose((0, _helper.member)(Stage(opt.C, opt.sinkNames), sources));
-
-	    var tabStageView$ = stage$.compose((0, _cycleOnionify.pick)(function (sinks) {
-	      return sinks.DOM;
-	    })).compose((0, _cycleOnionify.mix)(_xstream2.default.merge));
-
-	    var tabStageReducers$ = stage$.compose((0, _cycleOnionify.pick)(function (sinks) {
-	      return sinks.onion;
-	    })).compose((0, _cycleOnionify.mix)(_xstream2.default.merge));
-
-	    var tabNavView$ = nav$.compose((0, _cycleOnionify.pick)(function (sinks, i) {
-	      return sources.DOM.isolateSink(sinks.DOM);
-	    })).compose((0, _cycleOnionify.mix)(_xstream2.default.combine));
-
-	    var web3$ = stage$.compose((0, _cycleOnionify.pick)(function (sinks) {
-	      return sinks.web3$;
-	    })).compose((0, _cycleOnionify.mix)(_xstream2.default.merge));
-
-	    var sinkObjects = opt.sinkNames.map(function (sink) {
-	      return stage$.compose((0, _cycleOnionify.pick)(function (sinks) {
-	        return sinks[sink];
-	      })).compose((0, _cycleOnionify.mix)(_xstream2.default.merge));
-	    });
-
-	    var sinks = _lodash2.default.zipObject(opt.sinkNames, sinkObjects);
-
-	    var vdom$ = _xstream2.default.combine(tabNavView$, tabStageView$).map(function (_ref14) {
-	      var _ref15 = _slicedToArray(_ref14, 2),
-	          tabs = _ref15[0],
-	          view = _ref15[1];
-
-	      return (0, _dom.div)(opt.classname, [(0, _dom.div)('.selectView', tabs), (0, _dom.div)('.mainView', [view])]);
-	    });
-
-	    var selectReducer$ = nav$.compose((0, _cycleOnionify.pick)(function (sinks) {
-	      return sinks.select$;
-	    })).compose((0, _cycleOnionify.mix)(_xstream2.default.merge)).map(function (e) {
-	      return function selectReducer(parent) {
-	        var oldIndex = parent.findIndex(function (t) {
-	          return t.selected;
-	        });
-	        var newIndex = parent.findIndex(function (t) {
-	          return t.index === e.index;
-	        });
-
-	        if (oldIndex === newIndex) return parent;
-	        var tabs_ = parent.slice(0);
-	        tabs_[oldIndex] = _lodash2.default.assign({}, tabs_[oldIndex], {
-	          selected: false
-	        });
-	        tabs_[newIndex] = _lodash2.default.assign({}, tabs_[newIndex], {
-	          selected: true
-	        });
-	        return tabs_;
-	      };
-	    });
-
-	    return _lodash2.default.assign(sinks, {
-	      DOM: vdom$,
-	      onion: _xstream2.default.merge(selectReducer$, tabStageReducers$)
-	    });
-	  };
-	};
 
 	var DHExtension = exports.DHExtension = function DHExtension(sources) {
 	  // Selected tab
@@ -9919,7 +9720,7 @@
 	          type: "addr",
 	          state: state.addrs[addr],
 	          selected: false,
-	          children: MakeTabChildren(state.addrs[addr].contract.abi, function () {
+	          children: (0, _treeview.MakeTabChildren)(state.addrs[addr].contract.abi, function () {
 	            return "abi";
 	          })
 	        };
@@ -9936,7 +9737,7 @@
 	    sniffer: (0, _isolate2.default)(_sniffer.Sniffer, "state")
 	  };
 
-	  var tabSinks = (0, _isolate2.default)(Tabs({
+	  var tabSinks = (0, _isolate2.default)((0, _treeview.Tabs)({
 	    sinkNames: ["onion", "web3$"],
 	    C: C,
 	    classname: ".treeview"
@@ -10081,3104 +9882,6 @@
 
 /***/ },
 /* 826 */
-/***/ function(module, exports, __webpack_require__) {
-
-	'use strict';
-
-	Object.defineProperty(exports, "__esModule", {
-	  value: true
-	});
-	exports.makeCollection = undefined;
-
-	var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
-
-	var _xstream = __webpack_require__(827);
-
-	var _xstream2 = _interopRequireDefault(_xstream);
-
-	var _delay = __webpack_require__(829);
-
-	var _delay2 = _interopRequireDefault(_delay);
-
-	var _dropRepeats = __webpack_require__(830);
-
-	var _dropRepeats2 = _interopRequireDefault(_dropRepeats);
-
-	var _isolate = __webpack_require__(825);
-
-	var _isolate2 = _interopRequireDefault(_isolate);
-
-	var _xstreamAdapter = __webpack_require__(708);
-
-	var _xstreamAdapter2 = _interopRequireDefault(_xstreamAdapter);
-
-	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-	function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
-
-	function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }
-
-	var noop = Function.prototype;
-
-	function isVtree(x) {
-	  return x && typeof x.sel === 'string';
-	}
-
-	var _id = 0;
-
-	function id() {
-	  return _id++;
-	}
-
-	function makeItem(component, sources) {
-	  var newId = id();
-
-	  var newItem = (0, _isolate2.default)(component, newId.toString())(sources);
-
-	  newItem._id = newId;
-	  newItem._name = component.name;
-
-	  return newItem;
-	}
-
-	function convert(stream, sourceSA, targetSA) {
-	  return targetSA.isValidStream(stream) ? stream : targetSA.adapt(stream, sourceSA.streamSubscribe);
-	}
-
-	function makeCollection() {
-	  var externalSA = arguments.length <= 0 || arguments[0] === undefined ? _xstreamAdapter2.default : arguments[0];
-
-	  function collection(options) {
-	    var items = arguments.length <= 1 || arguments[1] === undefined ? [] : arguments[1];
-	    var component = options.component;
-	    var sources = options.sources;
-	    var removeSelector = options.removeSelector;
-
-
-	    return {
-	      add: function add() {
-	        var additionalSources = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
-
-	        var newItem = makeItem(component, _extends({}, sources, additionalSources));
-	        var selectedSink = removeSelector(newItem) || _xstream2.default.empty();
-	        var removeSink = convert(selectedSink, externalSA, _xstreamAdapter2.default);
-	        newItem._remove$ = removeSink.take(1).mapTo(newItem);
-
-	        return collection(options, [].concat(_toConsumableArray(items), [newItem]));
-	      },
-	      remove: function remove(itemForRemoval) {
-	        return collection(options, items.filter(function (item) {
-	          return item !== itemForRemoval;
-	        }));
-	      },
-	      asArray: function asArray() {
-	        return items.slice(); // returns a copy of items to avoid mutation
-	      }
-	    };
-	  }
-
-	  function Collection(component) {
-	    var sources = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
-	    var sourceAdd$ = arguments.length <= 2 || arguments[2] === undefined ? _xstream2.default.empty() : arguments[2];
-	    var removeSelector = arguments.length <= 3 || arguments[3] === undefined ? noop : arguments[3];
-
-	    var removeProxy$ = _xstream2.default.create();
-	    var add$ = convert(sourceAdd$, externalSA, _xstreamAdapter2.default);
-	    var addReducer$ = add$.map(function (sourcesList) {
-	      return function (collection) {
-	        if (Array.isArray(sourcesList)) {
-	          // multiple items
-	          return sourcesList.reduce(function (collection, sources) {
-	            return collection.add(sources);
-	          }, collection);
-	        } else {
-	          // single item
-	          return collection.add(sourcesList);
-	        }
-	      };
-	    });
-	    var removeReducer$ = removeProxy$.map(function (item) {
-	      return function (collection) {
-	        return collection.remove(item);
-	      };
-	    });
-	    var reducer$ = _xstream2.default.merge(addReducer$, removeReducer$);
-
-	    var emptyCollection = collection({ component: component, sources: sources, removeSelector: removeSelector });
-	    var collection$ = reducer$.fold(function (collection, reducer) {
-	      return reducer(collection);
-	    }, emptyCollection).map(function (collection) {
-	      return collection.asArray();
-	    });
-
-	    var remove$ = Collection.merge(collection$, function (item) {
-	      return item._remove$;
-	    }, true);
-	    removeProxy$.imitate(remove$);
-
-	    return convert(collection$, _xstreamAdapter2.default, externalSA);
-	  }
-
-	  Collection.pluck = function pluck(sourceCollection$, pluckSelector) {
-	    var sinks = {};
-
-	    function sink$(item) {
-	      var key = item._id;
-
-	      if (sinks[key] === undefined) {
-	        var selectedSink = convert(pluckSelector(item), externalSA, _xstreamAdapter2.default);
-	        var sink = selectedSink.map(function (x) {
-	          return isVtree(x) && x.key == null ? _extends({}, x, { key: key }) : x;
-	        });
-	        sinks[key] = sink.remember();
-	      }
-
-	      return sinks[key];
-	    }
-
-	    var collection$ = convert(sourceCollection$, externalSA, _xstreamAdapter2.default);
-	    var outputCollection$ = collection$.map(function (items) {
-	      return items.map(function (item) {
-	        return sink$(item);
-	      });
-	    }).map(function (sinkStreams) {
-	      return _xstream2.default.combine.apply(_xstream2.default, _toConsumableArray(sinkStreams));
-	    }).flatten().startWith([]);
-	    return convert(outputCollection$, _xstreamAdapter2.default, externalSA);
-	  };
-
-	  Collection.merge = function merge(sourceCollection$, mergeSelector) {
-	    var internal = arguments.length <= 2 || arguments[2] === undefined ? false : arguments[2];
-
-	    var sinks = {};
-
-	    function sink$(item) {
-	      var key = item._id;
-
-	      if (sinks[key] === undefined) {
-	        var selectedSink = convert(mergeSelector(item), externalSA, _xstreamAdapter2.default);
-	        var sink = selectedSink.map(function (x) {
-	          return isVtree(x) && x.key == null ? _extends({}, x, { key: key }) : x;
-	        });
-	        // prevent sink from early completion and reinitialization
-	        sinks[key] = _xstream2.default.merge(sink, _xstream2.default.never());
-	      }
-
-	      return sinks[key];
-	    }
-
-	    var collection$ = convert(sourceCollection$, externalSA, _xstreamAdapter2.default);
-	    var outputCollection$ = collection$.map(function (items) {
-	      return items.map(function (item) {
-	        return sink$(item);
-	      });
-	    }).map(function (sinkStreams) {
-	      return _xstream2.default.merge.apply(_xstream2.default, _toConsumableArray(sinkStreams));
-	    }).flatten();
-	    return internal ? outputCollection$ : convert(outputCollection$, _xstreamAdapter2.default, externalSA);
-	  };
-
-	  // convert a stream of items' sources snapshots into a stream of collections
-	  Collection.gather = function gather(component, sources, sourceItems$) {
-	    var idAttribute = arguments.length <= 3 || arguments[3] === undefined ? 'id' : arguments[3];
-
-	    function makeDestroyable(component) {
-	      return function (sources) {
-	        return _extends({}, component(sources), {
-	          _destroy$: sources._destroy$
-	        });
-	      };
-	    }
-
-	    // finds items not present in previous snapshot
-	    function findNewItems(_ref, items) {
-	      var prevIds = _ref.prevIds;
-
-	      return {
-	        prevIds: items.map(function (item) {
-	          return item[idAttribute];
-	        }),
-	        addedItems: items.filter(function (item) {
-	          return prevIds.indexOf(item[idAttribute]) === -1;
-	        })
-	      };
-	    }
-
-	    function compareJSON(value, nextValue) {
-	      if (value === nextValue) {
-	        return true;
-	      }
-	      try {
-	        if (JSON.stringify(value) === JSON.stringify(nextValue)) {
-	          return true;
-	        }
-	      } catch (e) {}
-	      // if not equal or not serializable
-	      return false;
-	    }
-
-	    // turn a new item into a hash of source streams, tracking all the future updates
-	    function itemToSourceStreams(addedItem, itemsState$) {
-	      var itemStateInfinite$ = itemsState$.map(function (items) {
-	        return items.find(function (item) {
-	          return item[idAttribute] === addedItem[idAttribute];
-	        });
-	      });
-	      // if an item isn't present if a new snapshot, it shall be destroyed
-	      var _destroy$ = itemStateInfinite$.filter(function (item) {
-	        return !item;
-	      }).take(1);
-	      var itemState$ = itemStateInfinite$.endWhen(_destroy$.compose((0, _delay2.default)()));
-
-	      return Object.keys(addedItem).reduce(function (sources, key) {
-	        // skip idAttribute
-	        if (key === idAttribute) {
-	          return sources;
-	        }
-
-	        var stream$ = itemState$.map(function (state) {
-	          return state[key];
-	        }).startWith(addedItem[key])
-	        // skip the snapshot if the value didn't change
-	        .compose((0, _dropRepeats2.default)(compareJSON)).remember();
-
-	        return _extends({}, sources, _defineProperty({}, key, convert(stream$, _xstreamAdapter2.default, externalSA)));
-	      }, {
-	        _destroy$: _destroy$
-	      });
-	    }
-
-	    var items$ = convert(sourceItems$, externalSA, _xstreamAdapter2.default);
-	    var itemsState$ = items$.remember();
-
-	    var add$ = itemsState$
-	    // get the added items at each step
-	    .fold(findNewItems, { prevIds: [], addedItems: [] }).map(function (_ref2) {
-	      var addedItems = _ref2.addedItems;
-	      return addedItems;
-	    }).filter(function (addedItems) {
-	      return addedItems.length;
-	    }).map(function (addedItems) {
-	      return addedItems.map(function (item) {
-	        return itemToSourceStreams(item, itemsState$);
-	      });
-	    });
-
-	    return Collection(makeDestroyable(component), sources, add$, function (item) {
-	      return item._destroy$;
-	    });
-	  };
-
-	  return Collection;
-	}
-
-	var Collection = makeCollection();
-
-	exports.default = Collection;
-	exports.makeCollection = makeCollection;
-
-/***/ },
-/* 827 */
-/***/ function(module, exports, __webpack_require__) {
-
-	"use strict";
-	var core_1 = __webpack_require__(828);
-	exports.Stream = core_1.Stream;
-	exports.MemoryStream = core_1.MemoryStream;
-	Object.defineProperty(exports, "__esModule", { value: true });
-	exports.default = core_1.Stream;
-	//# sourceMappingURL=index.js.map
-
-/***/ },
-/* 828 */
-/***/ function(module, exports) {
-
-	"use strict";
-	var __extends = (this && this.__extends) || function (d, b) {
-	    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
-	    function __() { this.constructor = d; }
-	    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-	};
-	var NO = {};
-	function noop() { }
-	function copy(a) {
-	    var l = a.length;
-	    var b = Array(l);
-	    for (var i = 0; i < l; ++i) {
-	        b[i] = a[i];
-	    }
-	    return b;
-	}
-	exports.NO_IL = {
-	    _n: noop,
-	    _e: noop,
-	    _c: noop,
-	};
-	// mutates the input
-	function internalizeProducer(producer) {
-	    producer._start =
-	        function _start(il) {
-	            il.next = il._n;
-	            il.error = il._e;
-	            il.complete = il._c;
-	            this.start(il);
-	        };
-	    producer._stop = producer.stop;
-	}
-	function compose2(f1, f2) {
-	    return function composedFn(arg) {
-	        return f1(f2(arg));
-	    };
-	}
-	function and(f1, f2) {
-	    return function andFn(t) {
-	        return f1(t) && f2(t);
-	    };
-	}
-	var MergeProducer = (function () {
-	    function MergeProducer(insArr) {
-	        this.type = 'merge';
-	        this.insArr = insArr;
-	        this.out = NO;
-	        this.ac = 0;
-	    }
-	    MergeProducer.prototype._start = function (out) {
-	        this.out = out;
-	        var s = this.insArr;
-	        var L = s.length;
-	        this.ac = L;
-	        for (var i = 0; i < L; i++) {
-	            s[i]._add(this);
-	        }
-	    };
-	    MergeProducer.prototype._stop = function () {
-	        var s = this.insArr;
-	        var L = s.length;
-	        for (var i = 0; i < L; i++) {
-	            s[i]._remove(this);
-	        }
-	        this.out = NO;
-	    };
-	    MergeProducer.prototype._n = function (t) {
-	        var u = this.out;
-	        if (u === NO)
-	            return;
-	        u._n(t);
-	    };
-	    MergeProducer.prototype._e = function (err) {
-	        var u = this.out;
-	        if (u === NO)
-	            return;
-	        u._e(err);
-	    };
-	    MergeProducer.prototype._c = function () {
-	        if (--this.ac <= 0) {
-	            var u = this.out;
-	            if (u === NO)
-	                return;
-	            u._c();
-	        }
-	    };
-	    return MergeProducer;
-	}());
-	exports.MergeProducer = MergeProducer;
-	var CombineListener = (function () {
-	    function CombineListener(i, out, p) {
-	        this.i = i;
-	        this.out = out;
-	        this.p = p;
-	        p.ils.push(this);
-	    }
-	    CombineListener.prototype._n = function (t) {
-	        var p = this.p, out = this.out;
-	        if (!out)
-	            return;
-	        if (p.up(t, this.i)) {
-	            out._n(p.vals);
-	        }
-	    };
-	    CombineListener.prototype._e = function (err) {
-	        var out = this.out;
-	        if (!out)
-	            return;
-	        out._e(err);
-	    };
-	    CombineListener.prototype._c = function () {
-	        var p = this.p;
-	        if (!p.out)
-	            return;
-	        if (--p.Nc === 0) {
-	            p.out._c();
-	        }
-	    };
-	    return CombineListener;
-	}());
-	exports.CombineListener = CombineListener;
-	var CombineProducer = (function () {
-	    function CombineProducer(insArr) {
-	        this.type = 'combine';
-	        this.insArr = insArr;
-	        this.out = NO;
-	        this.ils = [];
-	        this.Nc = this.Nn = 0;
-	        this.vals = [];
-	    }
-	    CombineProducer.prototype.up = function (t, i) {
-	        var v = this.vals[i];
-	        var Nn = !this.Nn ? 0 : v === NO ? --this.Nn : this.Nn;
-	        this.vals[i] = t;
-	        return Nn === 0;
-	    };
-	    CombineProducer.prototype._start = function (out) {
-	        this.out = out;
-	        var s = this.insArr;
-	        var n = this.Nc = this.Nn = s.length;
-	        var vals = this.vals = new Array(n);
-	        if (n === 0) {
-	            out._n([]);
-	            out._c();
-	        }
-	        else {
-	            for (var i = 0; i < n; i++) {
-	                vals[i] = NO;
-	                s[i]._add(new CombineListener(i, out, this));
-	            }
-	        }
-	    };
-	    CombineProducer.prototype._stop = function () {
-	        var s = this.insArr;
-	        var n = s.length;
-	        for (var i = 0; i < n; i++) {
-	            s[i]._remove(this.ils[i]);
-	        }
-	        this.out = NO;
-	        this.ils = [];
-	        this.vals = [];
-	    };
-	    return CombineProducer;
-	}());
-	exports.CombineProducer = CombineProducer;
-	var FromArrayProducer = (function () {
-	    function FromArrayProducer(a) {
-	        this.type = 'fromArray';
-	        this.a = a;
-	    }
-	    FromArrayProducer.prototype._start = function (out) {
-	        var a = this.a;
-	        for (var i = 0, l = a.length; i < l; i++) {
-	            out._n(a[i]);
-	        }
-	        out._c();
-	    };
-	    FromArrayProducer.prototype._stop = function () {
-	    };
-	    return FromArrayProducer;
-	}());
-	exports.FromArrayProducer = FromArrayProducer;
-	var FromPromiseProducer = (function () {
-	    function FromPromiseProducer(p) {
-	        this.type = 'fromPromise';
-	        this.on = false;
-	        this.p = p;
-	    }
-	    FromPromiseProducer.prototype._start = function (out) {
-	        var prod = this;
-	        this.on = true;
-	        this.p.then(function (v) {
-	            if (prod.on) {
-	                out._n(v);
-	                out._c();
-	            }
-	        }, function (e) {
-	            out._e(e);
-	        }).then(null, function (err) {
-	            setTimeout(function () { throw err; });
-	        });
-	    };
-	    FromPromiseProducer.prototype._stop = function () {
-	        this.on = false;
-	    };
-	    return FromPromiseProducer;
-	}());
-	exports.FromPromiseProducer = FromPromiseProducer;
-	var PeriodicProducer = (function () {
-	    function PeriodicProducer(period) {
-	        this.type = 'periodic';
-	        this.period = period;
-	        this.intervalID = -1;
-	        this.i = 0;
-	    }
-	    PeriodicProducer.prototype._start = function (stream) {
-	        var self = this;
-	        function intervalHandler() { stream._n(self.i++); }
-	        this.intervalID = setInterval(intervalHandler, this.period);
-	    };
-	    PeriodicProducer.prototype._stop = function () {
-	        if (this.intervalID !== -1)
-	            clearInterval(this.intervalID);
-	        this.intervalID = -1;
-	        this.i = 0;
-	    };
-	    return PeriodicProducer;
-	}());
-	exports.PeriodicProducer = PeriodicProducer;
-	var DebugOperator = (function () {
-	    function DebugOperator(arg, ins) {
-	        this.type = 'debug';
-	        this.ins = ins;
-	        this.out = NO;
-	        this.s = noop;
-	        this.l = '';
-	        if (typeof arg === 'string') {
-	            this.l = arg;
-	        }
-	        else if (typeof arg === 'function') {
-	            this.s = arg;
-	        }
-	    }
-	    DebugOperator.prototype._start = function (out) {
-	        this.out = out;
-	        this.ins._add(this);
-	    };
-	    DebugOperator.prototype._stop = function () {
-	        this.ins._remove(this);
-	        this.out = NO;
-	    };
-	    DebugOperator.prototype._n = function (t) {
-	        var u = this.out;
-	        if (u === NO)
-	            return;
-	        var s = this.s, l = this.l;
-	        if (s !== noop) {
-	            try {
-	                s(t);
-	            }
-	            catch (e) {
-	                u._e(e);
-	            }
-	        }
-	        else if (l) {
-	            console.log(l + ':', t);
-	        }
-	        else {
-	            console.log(t);
-	        }
-	        u._n(t);
-	    };
-	    DebugOperator.prototype._e = function (err) {
-	        var u = this.out;
-	        if (u === NO)
-	            return;
-	        u._e(err);
-	    };
-	    DebugOperator.prototype._c = function () {
-	        var u = this.out;
-	        if (u === NO)
-	            return;
-	        u._c();
-	    };
-	    return DebugOperator;
-	}());
-	exports.DebugOperator = DebugOperator;
-	var DropOperator = (function () {
-	    function DropOperator(max, ins) {
-	        this.type = 'drop';
-	        this.ins = ins;
-	        this.out = NO;
-	        this.max = max;
-	        this.dropped = 0;
-	    }
-	    DropOperator.prototype._start = function (out) {
-	        this.out = out;
-	        this.dropped = 0;
-	        this.ins._add(this);
-	    };
-	    DropOperator.prototype._stop = function () {
-	        this.ins._remove(this);
-	        this.out = NO;
-	    };
-	    DropOperator.prototype._n = function (t) {
-	        var u = this.out;
-	        if (u === NO)
-	            return;
-	        if (this.dropped++ >= this.max)
-	            u._n(t);
-	    };
-	    DropOperator.prototype._e = function (err) {
-	        var u = this.out;
-	        if (u === NO)
-	            return;
-	        u._e(err);
-	    };
-	    DropOperator.prototype._c = function () {
-	        var u = this.out;
-	        if (u === NO)
-	            return;
-	        u._c();
-	    };
-	    return DropOperator;
-	}());
-	exports.DropOperator = DropOperator;
-	var OtherIL = (function () {
-	    function OtherIL(out, op) {
-	        this.out = out;
-	        this.op = op;
-	    }
-	    OtherIL.prototype._n = function (t) {
-	        this.op.end();
-	    };
-	    OtherIL.prototype._e = function (err) {
-	        this.out._e(err);
-	    };
-	    OtherIL.prototype._c = function () {
-	        this.op.end();
-	    };
-	    return OtherIL;
-	}());
-	var EndWhenOperator = (function () {
-	    function EndWhenOperator(o, ins) {
-	        this.type = 'endWhen';
-	        this.ins = ins;
-	        this.out = NO;
-	        this.o = o;
-	        this.oil = exports.NO_IL;
-	    }
-	    EndWhenOperator.prototype._start = function (out) {
-	        this.out = out;
-	        this.o._add(this.oil = new OtherIL(out, this));
-	        this.ins._add(this);
-	    };
-	    EndWhenOperator.prototype._stop = function () {
-	        this.ins._remove(this);
-	        this.o._remove(this.oil);
-	        this.out = NO;
-	        this.oil = exports.NO_IL;
-	    };
-	    EndWhenOperator.prototype.end = function () {
-	        var u = this.out;
-	        if (u === NO)
-	            return;
-	        u._c();
-	    };
-	    EndWhenOperator.prototype._n = function (t) {
-	        var u = this.out;
-	        if (u === NO)
-	            return;
-	        u._n(t);
-	    };
-	    EndWhenOperator.prototype._e = function (err) {
-	        var u = this.out;
-	        if (u === NO)
-	            return;
-	        u._e(err);
-	    };
-	    EndWhenOperator.prototype._c = function () {
-	        this.end();
-	    };
-	    return EndWhenOperator;
-	}());
-	exports.EndWhenOperator = EndWhenOperator;
-	var FilterOperator = (function () {
-	    function FilterOperator(passes, ins) {
-	        this.type = 'filter';
-	        this.ins = ins;
-	        this.out = NO;
-	        this.passes = passes;
-	    }
-	    FilterOperator.prototype._start = function (out) {
-	        this.out = out;
-	        this.ins._add(this);
-	    };
-	    FilterOperator.prototype._stop = function () {
-	        this.ins._remove(this);
-	        this.out = NO;
-	    };
-	    FilterOperator.prototype._n = function (t) {
-	        var u = this.out;
-	        if (u === NO)
-	            return;
-	        try {
-	            if (this.passes(t))
-	                u._n(t);
-	        }
-	        catch (e) {
-	            u._e(e);
-	        }
-	    };
-	    FilterOperator.prototype._e = function (err) {
-	        var u = this.out;
-	        if (u === NO)
-	            return;
-	        u._e(err);
-	    };
-	    FilterOperator.prototype._c = function () {
-	        var u = this.out;
-	        if (u === NO)
-	            return;
-	        u._c();
-	    };
-	    return FilterOperator;
-	}());
-	exports.FilterOperator = FilterOperator;
-	var FlattenListener = (function () {
-	    function FlattenListener(out, op) {
-	        this.out = out;
-	        this.op = op;
-	    }
-	    FlattenListener.prototype._n = function (t) {
-	        this.out._n(t);
-	    };
-	    FlattenListener.prototype._e = function (err) {
-	        this.out._e(err);
-	    };
-	    FlattenListener.prototype._c = function () {
-	        this.op.inner = NO;
-	        this.op.less();
-	    };
-	    return FlattenListener;
-	}());
-	var FlattenOperator = (function () {
-	    function FlattenOperator(ins) {
-	        this.type = 'flatten';
-	        this.ins = ins;
-	        this.out = NO;
-	        this.open = true;
-	        this.inner = NO;
-	        this.il = exports.NO_IL;
-	    }
-	    FlattenOperator.prototype._start = function (out) {
-	        this.out = out;
-	        this.open = true;
-	        this.inner = NO;
-	        this.il = exports.NO_IL;
-	        this.ins._add(this);
-	    };
-	    FlattenOperator.prototype._stop = function () {
-	        this.ins._remove(this);
-	        if (this.inner !== NO)
-	            this.inner._remove(this.il);
-	        this.out = NO;
-	        this.open = true;
-	        this.inner = NO;
-	        this.il = exports.NO_IL;
-	    };
-	    FlattenOperator.prototype.less = function () {
-	        var u = this.out;
-	        if (u === NO)
-	            return;
-	        if (!this.open && this.inner === NO)
-	            u._c();
-	    };
-	    FlattenOperator.prototype._n = function (s) {
-	        var u = this.out;
-	        if (u === NO)
-	            return;
-	        var _a = this, inner = _a.inner, il = _a.il;
-	        if (inner !== NO && il !== exports.NO_IL)
-	            inner._remove(il);
-	        (this.inner = s)._add(this.il = new FlattenListener(u, this));
-	    };
-	    FlattenOperator.prototype._e = function (err) {
-	        var u = this.out;
-	        if (u === NO)
-	            return;
-	        u._e(err);
-	    };
-	    FlattenOperator.prototype._c = function () {
-	        this.open = false;
-	        this.less();
-	    };
-	    return FlattenOperator;
-	}());
-	exports.FlattenOperator = FlattenOperator;
-	var FoldOperator = (function () {
-	    function FoldOperator(f, seed, ins) {
-	        this.type = 'fold';
-	        this.ins = ins;
-	        this.out = NO;
-	        this.f = f;
-	        this.acc = this.seed = seed;
-	    }
-	    FoldOperator.prototype._start = function (out) {
-	        this.out = out;
-	        this.acc = this.seed;
-	        out._n(this.acc);
-	        this.ins._add(this);
-	    };
-	    FoldOperator.prototype._stop = function () {
-	        this.ins._remove(this);
-	        this.out = NO;
-	        this.acc = this.seed;
-	    };
-	    FoldOperator.prototype._n = function (t) {
-	        var u = this.out;
-	        if (u === NO)
-	            return;
-	        try {
-	            u._n(this.acc = this.f(this.acc, t));
-	        }
-	        catch (e) {
-	            u._e(e);
-	        }
-	    };
-	    FoldOperator.prototype._e = function (err) {
-	        var u = this.out;
-	        if (u === NO)
-	            return;
-	        u._e(err);
-	    };
-	    FoldOperator.prototype._c = function () {
-	        var u = this.out;
-	        if (u === NO)
-	            return;
-	        u._c();
-	    };
-	    return FoldOperator;
-	}());
-	exports.FoldOperator = FoldOperator;
-	var LastOperator = (function () {
-	    function LastOperator(ins) {
-	        this.type = 'last';
-	        this.ins = ins;
-	        this.out = NO;
-	        this.has = false;
-	        this.val = NO;
-	    }
-	    LastOperator.prototype._start = function (out) {
-	        this.out = out;
-	        this.has = false;
-	        this.ins._add(this);
-	    };
-	    LastOperator.prototype._stop = function () {
-	        this.ins._remove(this);
-	        this.out = NO;
-	        this.val = NO;
-	    };
-	    LastOperator.prototype._n = function (t) {
-	        this.has = true;
-	        this.val = t;
-	    };
-	    LastOperator.prototype._e = function (err) {
-	        var u = this.out;
-	        if (u === NO)
-	            return;
-	        u._e(err);
-	    };
-	    LastOperator.prototype._c = function () {
-	        var u = this.out;
-	        if (u === NO)
-	            return;
-	        if (this.has) {
-	            u._n(this.val);
-	            u._c();
-	        }
-	        else {
-	            u._e('TODO show proper error');
-	        }
-	    };
-	    return LastOperator;
-	}());
-	exports.LastOperator = LastOperator;
-	var MapFlattenInner = (function () {
-	    function MapFlattenInner(out, op) {
-	        this.out = out;
-	        this.op = op;
-	    }
-	    MapFlattenInner.prototype._n = function (r) {
-	        this.out._n(r);
-	    };
-	    MapFlattenInner.prototype._e = function (err) {
-	        this.out._e(err);
-	    };
-	    MapFlattenInner.prototype._c = function () {
-	        this.op.inner = NO;
-	        this.op.less();
-	    };
-	    return MapFlattenInner;
-	}());
-	var MapFlattenOperator = (function () {
-	    function MapFlattenOperator(mapOp) {
-	        this.type = mapOp.type + "+flatten";
-	        this.ins = mapOp.ins;
-	        this.out = NO;
-	        this.mapOp = mapOp;
-	        this.inner = NO;
-	        this.il = exports.NO_IL;
-	        this.open = true;
-	    }
-	    MapFlattenOperator.prototype._start = function (out) {
-	        this.out = out;
-	        this.inner = NO;
-	        this.il = exports.NO_IL;
-	        this.open = true;
-	        this.mapOp.ins._add(this);
-	    };
-	    MapFlattenOperator.prototype._stop = function () {
-	        this.mapOp.ins._remove(this);
-	        if (this.inner !== NO)
-	            this.inner._remove(this.il);
-	        this.out = NO;
-	        this.inner = NO;
-	        this.il = exports.NO_IL;
-	    };
-	    MapFlattenOperator.prototype.less = function () {
-	        if (!this.open && this.inner === NO) {
-	            var u = this.out;
-	            if (u === NO)
-	                return;
-	            u._c();
-	        }
-	    };
-	    MapFlattenOperator.prototype._n = function (v) {
-	        var u = this.out;
-	        if (u === NO)
-	            return;
-	        var _a = this, inner = _a.inner, il = _a.il;
-	        var s;
-	        try {
-	            s = this.mapOp.project(v);
-	        }
-	        catch (e) {
-	            u._e(e);
-	            return;
-	        }
-	        if (inner !== NO && il !== exports.NO_IL)
-	            inner._remove(il);
-	        (this.inner = s)._add(this.il = new MapFlattenInner(u, this));
-	    };
-	    MapFlattenOperator.prototype._e = function (err) {
-	        var u = this.out;
-	        if (u === NO)
-	            return;
-	        u._e(err);
-	    };
-	    MapFlattenOperator.prototype._c = function () {
-	        this.open = false;
-	        this.less();
-	    };
-	    return MapFlattenOperator;
-	}());
-	exports.MapFlattenOperator = MapFlattenOperator;
-	var MapOperator = (function () {
-	    function MapOperator(project, ins) {
-	        this.type = 'map';
-	        this.ins = ins;
-	        this.out = NO;
-	        this.project = project;
-	    }
-	    MapOperator.prototype._start = function (out) {
-	        this.out = out;
-	        this.ins._add(this);
-	    };
-	    MapOperator.prototype._stop = function () {
-	        this.ins._remove(this);
-	        this.out = NO;
-	    };
-	    MapOperator.prototype._n = function (t) {
-	        var u = this.out;
-	        if (u === NO)
-	            return;
-	        try {
-	            u._n(this.project(t));
-	        }
-	        catch (e) {
-	            u._e(e);
-	        }
-	    };
-	    MapOperator.prototype._e = function (err) {
-	        var u = this.out;
-	        if (u === NO)
-	            return;
-	        u._e(err);
-	    };
-	    MapOperator.prototype._c = function () {
-	        var u = this.out;
-	        if (u === NO)
-	            return;
-	        u._c();
-	    };
-	    return MapOperator;
-	}());
-	exports.MapOperator = MapOperator;
-	var FilterMapOperator = (function (_super) {
-	    __extends(FilterMapOperator, _super);
-	    function FilterMapOperator(passes, project, ins) {
-	        _super.call(this, project, ins);
-	        this.type = 'filter+map';
-	        this.passes = passes;
-	    }
-	    FilterMapOperator.prototype._n = function (v) {
-	        if (this.passes(v)) {
-	            _super.prototype._n.call(this, v);
-	        }
-	        ;
-	    };
-	    return FilterMapOperator;
-	}(MapOperator));
-	exports.FilterMapOperator = FilterMapOperator;
-	var RememberOperator = (function () {
-	    function RememberOperator(ins) {
-	        this.type = 'remember';
-	        this.ins = ins;
-	        this.out = NO;
-	    }
-	    RememberOperator.prototype._start = function (out) {
-	        this.out = out;
-	        this.ins._add(out);
-	    };
-	    RememberOperator.prototype._stop = function () {
-	        this.ins._remove(this.out);
-	        this.out = NO;
-	    };
-	    return RememberOperator;
-	}());
-	exports.RememberOperator = RememberOperator;
-	var ReplaceErrorOperator = (function () {
-	    function ReplaceErrorOperator(fn, ins) {
-	        this.type = 'replaceError';
-	        this.ins = ins;
-	        this.out = NO;
-	        this.fn = fn;
-	    }
-	    ReplaceErrorOperator.prototype._start = function (out) {
-	        this.out = out;
-	        this.ins._add(this);
-	    };
-	    ReplaceErrorOperator.prototype._stop = function () {
-	        this.ins._remove(this);
-	        this.out = NO;
-	    };
-	    ReplaceErrorOperator.prototype._n = function (t) {
-	        var u = this.out;
-	        if (u === NO)
-	            return;
-	        u._n(t);
-	    };
-	    ReplaceErrorOperator.prototype._e = function (err) {
-	        var u = this.out;
-	        if (u === NO)
-	            return;
-	        try {
-	            this.ins._remove(this);
-	            (this.ins = this.fn(err))._add(this);
-	        }
-	        catch (e) {
-	            u._e(e);
-	        }
-	    };
-	    ReplaceErrorOperator.prototype._c = function () {
-	        var u = this.out;
-	        if (u === NO)
-	            return;
-	        u._c();
-	    };
-	    return ReplaceErrorOperator;
-	}());
-	exports.ReplaceErrorOperator = ReplaceErrorOperator;
-	var StartWithOperator = (function () {
-	    function StartWithOperator(ins, val) {
-	        this.type = 'startWith';
-	        this.ins = ins;
-	        this.out = NO;
-	        this.val = val;
-	    }
-	    StartWithOperator.prototype._start = function (out) {
-	        this.out = out;
-	        this.out._n(this.val);
-	        this.ins._add(out);
-	    };
-	    StartWithOperator.prototype._stop = function () {
-	        this.ins._remove(this.out);
-	        this.out = NO;
-	    };
-	    return StartWithOperator;
-	}());
-	exports.StartWithOperator = StartWithOperator;
-	var TakeOperator = (function () {
-	    function TakeOperator(max, ins) {
-	        this.type = 'take';
-	        this.ins = ins;
-	        this.out = NO;
-	        this.max = max;
-	        this.taken = 0;
-	    }
-	    TakeOperator.prototype._start = function (out) {
-	        this.out = out;
-	        this.taken = 0;
-	        if (this.max <= 0) {
-	            out._c();
-	        }
-	        else {
-	            this.ins._add(this);
-	        }
-	    };
-	    TakeOperator.prototype._stop = function () {
-	        this.ins._remove(this);
-	        this.out = NO;
-	    };
-	    TakeOperator.prototype._n = function (t) {
-	        var u = this.out;
-	        if (u === NO)
-	            return;
-	        if (this.taken++ < this.max - 1) {
-	            u._n(t);
-	        }
-	        else {
-	            u._n(t);
-	            u._c();
-	        }
-	    };
-	    TakeOperator.prototype._e = function (err) {
-	        var u = this.out;
-	        if (u === NO)
-	            return;
-	        u._e(err);
-	    };
-	    TakeOperator.prototype._c = function () {
-	        var u = this.out;
-	        if (u === NO)
-	            return;
-	        u._c();
-	    };
-	    return TakeOperator;
-	}());
-	exports.TakeOperator = TakeOperator;
-	var Stream = (function () {
-	    function Stream(producer) {
-	        this._prod = producer || NO;
-	        this._ils = [];
-	        this._stopID = NO;
-	        this._target = NO;
-	        this._err = NO;
-	    }
-	    Stream.prototype._n = function (t) {
-	        var a = this._ils;
-	        var L = a.length;
-	        if (L == 1)
-	            a[0]._n(t);
-	        else {
-	            var b = copy(a);
-	            for (var i = 0; i < L; i++)
-	                b[i]._n(t);
-	        }
-	    };
-	    Stream.prototype._e = function (err) {
-	        if (this._err !== NO)
-	            return;
-	        this._err = err;
-	        var a = this._ils;
-	        var L = a.length;
-	        if (L == 1)
-	            a[0]._e(err);
-	        else {
-	            var b = copy(a);
-	            for (var i = 0; i < L; i++)
-	                b[i]._e(err);
-	        }
-	        this._x();
-	    };
-	    Stream.prototype._c = function () {
-	        var a = this._ils;
-	        var L = a.length;
-	        if (L == 1)
-	            a[0]._c();
-	        else {
-	            var b = copy(a);
-	            for (var i = 0; i < L; i++)
-	                b[i]._c();
-	        }
-	        this._x();
-	    };
-	    Stream.prototype._x = function () {
-	        if (this._ils.length === 0)
-	            return;
-	        if (this._prod !== NO)
-	            this._prod._stop();
-	        this._err = NO;
-	        this._ils = [];
-	    };
-	    Stream.prototype._stopNow = function () {
-	        // WARNING: code that calls this method should
-	        // first check if this._prod is valid (not `NO`)
-	        this._prod._stop();
-	        this._err = NO;
-	        this._stopID = NO;
-	    };
-	    Stream.prototype._add = function (il) {
-	        var ta = this._target;
-	        if (ta !== NO)
-	            return ta._add(il);
-	        var a = this._ils;
-	        a.push(il);
-	        if (a.length === 1) {
-	            if (this._stopID !== NO) {
-	                clearTimeout(this._stopID);
-	                this._stopID = NO;
-	            }
-	            var p = this._prod;
-	            if (p !== NO)
-	                p._start(this);
-	        }
-	    };
-	    Stream.prototype._remove = function (il) {
-	        var _this = this;
-	        var ta = this._target;
-	        if (ta !== NO)
-	            return ta._remove(il);
-	        var a = this._ils;
-	        var i = a.indexOf(il);
-	        if (i > -1) {
-	            a.splice(i, 1);
-	            if (this._prod !== NO && a.length <= 0) {
-	                this._err = NO;
-	                this._stopID = setTimeout(function () { return _this._stopNow(); });
-	            }
-	            else if (a.length === 1) {
-	                this._pruneCycles();
-	            }
-	        }
-	    };
-	    // If all paths stemming from `this` stream eventually end at `this`
-	    // stream, then we remove the single listener of `this` stream, to
-	    // force it to end its execution and dispose resources. This method
-	    // assumes as a precondition that this._ils has just one listener.
-	    Stream.prototype._pruneCycles = function () {
-	        if (this._hasNoSinks(this, [])) {
-	            this._remove(this._ils[0]);
-	        }
-	    };
-	    // Checks whether *there is no* path starting from `x` that leads to an end
-	    // listener (sink) in the stream graph, following edges A->B where B is a
-	    // listener of A. This means these paths constitute a cycle somehow. Is given
-	    // a trace of all visited nodes so far.
-	    Stream.prototype._hasNoSinks = function (x, trace) {
-	        if (trace.indexOf(x) !== -1) {
-	            return true;
-	        }
-	        else if (x.out === this) {
-	            return true;
-	        }
-	        else if (x.out && x.out !== NO) {
-	            return this._hasNoSinks(x.out, trace.concat(x));
-	        }
-	        else if (x._ils) {
-	            for (var i = 0, N = x._ils.length; i < N; i++) {
-	                if (!this._hasNoSinks(x._ils[i], trace.concat(x))) {
-	                    return false;
-	                }
-	            }
-	            return true;
-	        }
-	        else {
-	            return false;
-	        }
-	    };
-	    Stream.prototype.ctor = function () {
-	        return this instanceof MemoryStream ? MemoryStream : Stream;
-	    };
-	    /**
-	     * Adds a Listener to the Stream.
-	     *
-	     * @param {Listener<T>} listener
-	     */
-	    Stream.prototype.addListener = function (listener) {
-	        if (typeof listener.next !== 'function'
-	            || typeof listener.error !== 'function'
-	            || typeof listener.complete !== 'function') {
-	            throw new Error('stream.addListener() requires all three next, error, ' +
-	                'and complete functions.');
-	        }
-	        listener._n = listener.next;
-	        listener._e = listener.error;
-	        listener._c = listener.complete;
-	        this._add(listener);
-	    };
-	    /**
-	     * Removes a Listener from the Stream, assuming the Listener was added to it.
-	     *
-	     * @param {Listener<T>} listener
-	     */
-	    Stream.prototype.removeListener = function (listener) {
-	        this._remove(listener);
-	    };
-	    /**
-	     * Creates a new Stream given a Producer.
-	     *
-	     * @factory true
-	     * @param {Producer} producer An optional Producer that dictates how to
-	     * start, generate events, and stop the Stream.
-	     * @return {Stream}
-	     */
-	    Stream.create = function (producer) {
-	        if (producer) {
-	            if (typeof producer.start !== 'function'
-	                || typeof producer.stop !== 'function') {
-	                throw new Error('producer requires both start and stop functions');
-	            }
-	            internalizeProducer(producer); // mutates the input
-	        }
-	        return new Stream(producer);
-	    };
-	    /**
-	     * Creates a new MemoryStream given a Producer.
-	     *
-	     * @factory true
-	     * @param {Producer} producer An optional Producer that dictates how to
-	     * start, generate events, and stop the Stream.
-	     * @return {MemoryStream}
-	     */
-	    Stream.createWithMemory = function (producer) {
-	        if (producer) {
-	            internalizeProducer(producer); // mutates the input
-	        }
-	        return new MemoryStream(producer);
-	    };
-	    /**
-	     * Creates a Stream that does nothing when started. It never emits any event.
-	     *
-	     * Marble diagram:
-	     *
-	     * ```text
-	     *          never
-	     * -----------------------
-	     * ```
-	     *
-	     * @factory true
-	     * @return {Stream}
-	     */
-	    Stream.never = function () {
-	        return new Stream({ _start: noop, _stop: noop });
-	    };
-	    /**
-	     * Creates a Stream that immediately emits the "complete" notification when
-	     * started, and that's it.
-	     *
-	     * Marble diagram:
-	     *
-	     * ```text
-	     * empty
-	     * -|
-	     * ```
-	     *
-	     * @factory true
-	     * @return {Stream}
-	     */
-	    Stream.empty = function () {
-	        return new Stream({
-	            _start: function (il) { il._c(); },
-	            _stop: noop,
-	        });
-	    };
-	    /**
-	     * Creates a Stream that immediately emits an "error" notification with the
-	     * value you passed as the `error` argument when the stream starts, and that's
-	     * it.
-	     *
-	     * Marble diagram:
-	     *
-	     * ```text
-	     * throw(X)
-	     * -X
-	     * ```
-	     *
-	     * @factory true
-	     * @param error The error event to emit on the created stream.
-	     * @return {Stream}
-	     */
-	    Stream.throw = function (error) {
-	        return new Stream({
-	            _start: function (il) { il._e(error); },
-	            _stop: noop,
-	        });
-	    };
-	    /**
-	     * Creates a Stream that immediately emits the arguments that you give to
-	     * *of*, then completes.
-	     *
-	     * Marble diagram:
-	     *
-	     * ```text
-	     * of(1,2,3)
-	     * 123|
-	     * ```
-	     *
-	     * @factory true
-	     * @param a The first value you want to emit as an event on the stream.
-	     * @param b The second value you want to emit as an event on the stream. One
-	     * or more of these values may be given as arguments.
-	     * @return {Stream}
-	     */
-	    Stream.of = function () {
-	        var items = [];
-	        for (var _i = 0; _i < arguments.length; _i++) {
-	            items[_i - 0] = arguments[_i];
-	        }
-	        return Stream.fromArray(items);
-	    };
-	    /**
-	     * Converts an array to a stream. The returned stream will emit synchronously
-	     * all the items in the array, and then complete.
-	     *
-	     * Marble diagram:
-	     *
-	     * ```text
-	     * fromArray([1,2,3])
-	     * 123|
-	     * ```
-	     *
-	     * @factory true
-	     * @param {Array} array The array to be converted as a stream.
-	     * @return {Stream}
-	     */
-	    Stream.fromArray = function (array) {
-	        return new Stream(new FromArrayProducer(array));
-	    };
-	    /**
-	     * Converts a promise to a stream. The returned stream will emit the resolved
-	     * value of the promise, and then complete. However, if the promise is
-	     * rejected, the stream will emit the corresponding error.
-	     *
-	     * Marble diagram:
-	     *
-	     * ```text
-	     * fromPromise( ----42 )
-	     * -----------------42|
-	     * ```
-	     *
-	     * @factory true
-	     * @param {Promise} promise The promise to be converted as a stream.
-	     * @return {Stream}
-	     */
-	    Stream.fromPromise = function (promise) {
-	        return new Stream(new FromPromiseProducer(promise));
-	    };
-	    /**
-	     * Creates a stream that periodically emits incremental numbers, every
-	     * `period` milliseconds.
-	     *
-	     * Marble diagram:
-	     *
-	     * ```text
-	     *     periodic(1000)
-	     * ---0---1---2---3---4---...
-	     * ```
-	     *
-	     * @factory true
-	     * @param {number} period The interval in milliseconds to use as a rate of
-	     * emission.
-	     * @return {Stream}
-	     */
-	    Stream.periodic = function (period) {
-	        return new Stream(new PeriodicProducer(period));
-	    };
-	    Stream.prototype._map = function (project) {
-	        var p = this._prod;
-	        var ctor = this.ctor();
-	        if (p instanceof FilterOperator) {
-	            return new ctor(new FilterMapOperator(p.passes, project, p.ins));
-	        }
-	        if (p instanceof FilterMapOperator) {
-	            return new ctor(new FilterMapOperator(p.passes, compose2(project, p.project), p.ins));
-	        }
-	        if (p instanceof MapOperator) {
-	            return new ctor(new MapOperator(compose2(project, p.project), p.ins));
-	        }
-	        return new ctor(new MapOperator(project, this));
-	    };
-	    /**
-	     * Transforms each event from the input Stream through a `project` function,
-	     * to get a Stream that emits those transformed events.
-	     *
-	     * Marble diagram:
-	     *
-	     * ```text
-	     * --1---3--5-----7------
-	     *    map(i => i * 10)
-	     * --10--30-50----70-----
-	     * ```
-	     *
-	     * @param {Function} project A function of type `(t: T) => U` that takes event
-	     * `t` of type `T` from the input Stream and produces an event of type `U`, to
-	     * be emitted on the output Stream.
-	     * @return {Stream}
-	     */
-	    Stream.prototype.map = function (project) {
-	        return this._map(project);
-	    };
-	    /**
-	     * It's like `map`, but transforms each input event to always the same
-	     * constant value on the output Stream.
-	     *
-	     * Marble diagram:
-	     *
-	     * ```text
-	     * --1---3--5-----7-----
-	     *       mapTo(10)
-	     * --10--10-10----10----
-	     * ```
-	     *
-	     * @param projectedValue A value to emit on the output Stream whenever the
-	     * input Stream emits any value.
-	     * @return {Stream}
-	     */
-	    Stream.prototype.mapTo = function (projectedValue) {
-	        var s = this.map(function () { return projectedValue; });
-	        var op = s._prod;
-	        op.type = op.type.replace('map', 'mapTo');
-	        return s;
-	    };
-	    /**
-	     * Only allows events that pass the test given by the `passes` argument.
-	     *
-	     * Each event from the input stream is given to the `passes` function. If the
-	     * function returns `true`, the event is forwarded to the output stream,
-	     * otherwise it is ignored and not forwarded.
-	     *
-	     * Marble diagram:
-	     *
-	     * ```text
-	     * --1---2--3-----4-----5---6--7-8--
-	     *     filter(i => i % 2 === 0)
-	     * ------2--------4---------6----8--
-	     * ```
-	     *
-	     * @param {Function} passes A function of type `(t: T) +> boolean` that takes
-	     * an event from the input stream and checks if it passes, by returning a
-	     * boolean.
-	     * @return {Stream}
-	     */
-	    Stream.prototype.filter = function (passes) {
-	        var p = this._prod;
-	        if (p instanceof FilterOperator) {
-	            return new Stream(new FilterOperator(and(p.passes, passes), p.ins));
-	        }
-	        return new Stream(new FilterOperator(passes, this));
-	    };
-	    /**
-	     * Lets the first `amount` many events from the input stream pass to the
-	     * output stream, then makes the output stream complete.
-	     *
-	     * Marble diagram:
-	     *
-	     * ```text
-	     * --a---b--c----d---e--
-	     *    take(3)
-	     * --a---b--c|
-	     * ```
-	     *
-	     * @param {number} amount How many events to allow from the input stream
-	     * before completing the output stream.
-	     * @return {Stream}
-	     */
-	    Stream.prototype.take = function (amount) {
-	        return new (this.ctor())(new TakeOperator(amount, this));
-	    };
-	    /**
-	     * Ignores the first `amount` many events from the input stream, and then
-	     * after that starts forwarding events from the input stream to the output
-	     * stream.
-	     *
-	     * Marble diagram:
-	     *
-	     * ```text
-	     * --a---b--c----d---e--
-	     *       drop(3)
-	     * --------------d---e--
-	     * ```
-	     *
-	     * @param {number} amount How many events to ignore from the input stream
-	     * before forwarding all events from the input stream to the output stream.
-	     * @return {Stream}
-	     */
-	    Stream.prototype.drop = function (amount) {
-	        return new Stream(new DropOperator(amount, this));
-	    };
-	    /**
-	     * When the input stream completes, the output stream will emit the last event
-	     * emitted by the input stream, and then will also complete.
-	     *
-	     * Marble diagram:
-	     *
-	     * ```text
-	     * --a---b--c--d----|
-	     *       last()
-	     * -----------------d|
-	     * ```
-	     *
-	     * @return {Stream}
-	     */
-	    Stream.prototype.last = function () {
-	        return new Stream(new LastOperator(this));
-	    };
-	    /**
-	     * Prepends the given `initial` value to the sequence of events emitted by the
-	     * input stream. The returned stream is a MemoryStream, which means it is
-	     * already `remember()`'d.
-	     *
-	     * Marble diagram:
-	     *
-	     * ```text
-	     * ---1---2-----3---
-	     *   startWith(0)
-	     * 0--1---2-----3---
-	     * ```
-	     *
-	     * @param initial The value or event to prepend.
-	     * @return {MemoryStream}
-	     */
-	    Stream.prototype.startWith = function (initial) {
-	        return new MemoryStream(new StartWithOperator(this, initial));
-	    };
-	    /**
-	     * Uses another stream to determine when to complete the current stream.
-	     *
-	     * When the given `other` stream emits an event or completes, the output
-	     * stream will complete. Before that happens, the output stream will behaves
-	     * like the input stream.
-	     *
-	     * Marble diagram:
-	     *
-	     * ```text
-	     * ---1---2-----3--4----5----6---
-	     *   endWhen( --------a--b--| )
-	     * ---1---2-----3--4--|
-	     * ```
-	     *
-	     * @param other Some other stream that is used to know when should the output
-	     * stream of this operator complete.
-	     * @return {Stream}
-	     */
-	    Stream.prototype.endWhen = function (other) {
-	        return new (this.ctor())(new EndWhenOperator(other, this));
-	    };
-	    /**
-	     * "Folds" the stream onto itself.
-	     *
-	     * Combines events from the past throughout
-	     * the entire execution of the input stream, allowing you to accumulate them
-	     * together. It's essentially like `Array.prototype.reduce`. The returned
-	     * stream is a MemoryStream, which means it is already `remember()`'d.
-	     *
-	     * The output stream starts by emitting the `seed` which you give as argument.
-	     * Then, when an event happens on the input stream, it is combined with that
-	     * seed value through the `accumulate` function, and the output value is
-	     * emitted on the output stream. `fold` remembers that output value as `acc`
-	     * ("accumulator"), and then when a new input event `t` happens, `acc` will be
-	     * combined with that to produce the new `acc` and so forth.
-	     *
-	     * Marble diagram:
-	     *
-	     * ```text
-	     * ------1-----1--2----1----1------
-	     *   fold((acc, x) => acc + x, 3)
-	     * 3-----4-----5--7----8----9------
-	     * ```
-	     *
-	     * @param {Function} accumulate A function of type `(acc: R, t: T) => R` that
-	     * takes the previous accumulated value `acc` and the incoming event from the
-	     * input stream and produces the new accumulated value.
-	     * @param seed The initial accumulated value, of type `R`.
-	     * @return {MemoryStream}
-	     */
-	    Stream.prototype.fold = function (accumulate, seed) {
-	        return new MemoryStream(new FoldOperator(accumulate, seed, this));
-	    };
-	    /**
-	     * Replaces an error with another stream.
-	     *
-	     * When (and if) an error happens on the input stream, instead of forwarding
-	     * that error to the output stream, *replaceError* will call the `replace`
-	     * function which returns the stream that the output stream will replicate.
-	     * And, in case that new stream also emits an error, `replace` will be called
-	     * again to get another stream to start replicating.
-	     *
-	     * Marble diagram:
-	     *
-	     * ```text
-	     * --1---2-----3--4-----X
-	     *   replaceError( () => --10--| )
-	     * --1---2-----3--4--------10--|
-	     * ```
-	     *
-	     * @param {Function} replace A function of type `(err) => Stream` that takes
-	     * the error that occurred on the input stream or on the previous replacement
-	     * stream and returns a new stream. The output stream will behave like the
-	     * stream that this function returns.
-	     * @return {Stream}
-	     */
-	    Stream.prototype.replaceError = function (replace) {
-	        return new (this.ctor())(new ReplaceErrorOperator(replace, this));
-	    };
-	    /**
-	     * Flattens a "stream of streams", handling only one nested stream at a time
-	     * (no concurrency).
-	     *
-	     * If the input stream is a stream that emits streams, then this operator will
-	     * return an output stream which is a flat stream: emits regular events. The
-	     * flattening happens without concurrency. It works like this: when the input
-	     * stream emits a nested stream, *flatten* will start imitating that nested
-	     * one. However, as soon as the next nested stream is emitted on the input
-	     * stream, *flatten* will forget the previous nested one it was imitating, and
-	     * will start imitating the new nested one.
-	     *
-	     * Marble diagram:
-	     *
-	     * ```text
-	     * --+--------+---------------
-	     *   \        \
-	     *    \       ----1----2---3--
-	     *    --a--b----c----d--------
-	     *           flatten
-	     * -----a--b------1----2---3--
-	     * ```
-	     *
-	     * @return {Stream}
-	     */
-	    Stream.prototype.flatten = function () {
-	        var p = this._prod;
-	        return new Stream(p instanceof MapOperator && !(p instanceof FilterMapOperator) ?
-	            new MapFlattenOperator(p) :
-	            new FlattenOperator(this));
-	    };
-	    /**
-	     * Passes the input stream to a custom operator, to produce an output stream.
-	     *
-	     * *compose* is a handy way of using an existing function in a chained style.
-	     * Instead of writing `outStream = f(inStream)` you can write
-	     * `outStream = inStream.compose(f)`.
-	     *
-	     * @param {function} operator A function that takes a stream as input and
-	     * returns a stream as well.
-	     * @return {Stream}
-	     */
-	    Stream.prototype.compose = function (operator) {
-	        return operator(this);
-	    };
-	    /**
-	     * Returns an output stream that behaves like the input stream, but also
-	     * remembers the most recent event that happens on the input stream, so that a
-	     * newly added listener will immediately receive that memorised event.
-	     *
-	     * @return {MemoryStream}
-	     */
-	    Stream.prototype.remember = function () {
-	        return new MemoryStream(new RememberOperator(this));
-	    };
-	    /**
-	     * Returns an output stream that identically behaves like the input stream,
-	     * but also runs a `spy` function fo each event, to help you debug your app.
-	     *
-	     * *debug* takes a `spy` function as argument, and runs that for each event
-	     * happening on the input stream. If you don't provide the `spy` argument,
-	     * then *debug* will just `console.log` each event. This helps you to
-	     * understand the flow of events through some operator chain.
-	     *
-	     * Please note that if the output stream has no listeners, then it will not
-	     * start, which means `spy` will never run because no actual event happens in
-	     * that case.
-	     *
-	     * Marble diagram:
-	     *
-	     * ```text
-	     * --1----2-----3-----4--
-	     *         debug
-	     * --1----2-----3-----4--
-	     * ```
-	     *
-	     * @param {function} labelOrSpy A string to use as the label when printing
-	     * debug information on the console, or a 'spy' function that takes an event
-	     * as argument, and does not need to return anything.
-	     * @return {Stream}
-	     */
-	    Stream.prototype.debug = function (labelOrSpy) {
-	        return new (this.ctor())(new DebugOperator(labelOrSpy, this));
-	    };
-	    /**
-	     * *imitate* changes this current Stream to emit the same events that the
-	     * `other` given Stream does. This method returns nothing.
-	     *
-	     * This method exists to allow one thing: **circular dependency of streams**.
-	     * For instance, let's imagine that for some reason you need to create a
-	     * circular dependency where stream `first$` depends on stream `second$`
-	     * which in turn depends on `first$`:
-	     *
-	     * <!-- skip-example -->
-	     * ```js
-	     * import delay from 'xstream/extra/delay'
-	     *
-	     * var first$ = second$.map(x => x * 10).take(3);
-	     * var second$ = first$.map(x => x + 1).startWith(1).compose(delay(100));
-	     * ```
-	     *
-	     * However, that is invalid JavaScript, because `second$` is undefined
-	     * on the first line. This is how *imitate* can help solve it:
-	     *
-	     * ```js
-	     * import delay from 'xstream/extra/delay'
-	     *
-	     * var secondProxy$ = xs.create();
-	     * var first$ = secondProxy$.map(x => x * 10).take(3);
-	     * var second$ = first$.map(x => x + 1).startWith(1).compose(delay(100));
-	     * secondProxy$.imitate(second$);
-	     * ```
-	     *
-	     * We create `secondProxy$` before the others, so it can be used in the
-	     * declaration of `first$`. Then, after both `first$` and `second$` are
-	     * defined, we hook `secondProxy$` with `second$` with `imitate()` to tell
-	     * that they are "the same". `imitate` will not trigger the start of any
-	     * stream, it just binds `secondProxy$` and `second$` together.
-	     *
-	     * The following is an example where `imitate()` is important in Cycle.js
-	     * applications. A parent component contains some child components. A child
-	     * has an action stream which is given to the parent to define its state:
-	     *
-	     * <!-- skip-example -->
-	     * ```js
-	     * const childActionProxy$ = xs.create();
-	     * const parent = Parent({...sources, childAction$: childActionProxy$});
-	     * const childAction$ = parent.state$.map(s => s.child.action$).flatten();
-	     * childActionProxy$.imitate(childAction$);
-	     * ```
-	     *
-	     * Note, though, that **`imitate()` does not support MemoryStreams**. If we
-	     * would attempt to imitate a MemoryStream in a circular dependency, we would
-	     * either get a race condition (where the symptom would be "nothing happens")
-	     * or an infinite cyclic emission of values. It's useful to think about
-	     * MemoryStreams as cells in a spreadsheet. It doesn't make any sense to
-	     * define a spreadsheet cell `A1` with a formula that depends on `B1` and
-	     * cell `B1` defined with a formula that depends on `A1`.
-	     *
-	     * If you find yourself wanting to use `imitate()` with a
-	     * MemoryStream, you should rework your code around `imitate()` to use a
-	     * Stream instead. Look for the stream in the circular dependency that
-	     * represents an event stream, and that would be a candidate for creating a
-	     * proxy Stream which then imitates the target Stream.
-	     *
-	     * @param {Stream} target The other stream to imitate on the current one. Must
-	     * not be a MemoryStream.
-	     */
-	    Stream.prototype.imitate = function (target) {
-	        if (target instanceof MemoryStream) {
-	            throw new Error('A MemoryStream was given to imitate(), but it only ' +
-	                'supports a Stream. Read more about this restriction here: ' +
-	                'https://github.com/staltz/xstream#faq');
-	        }
-	        this._target = target;
-	        for (var ils = this._ils, N = ils.length, i = 0; i < N; i++) {
-	            target._add(ils[i]);
-	        }
-	        this._ils = [];
-	    };
-	    /**
-	     * Forces the Stream to emit the given value to its listeners.
-	     *
-	     * As the name indicates, if you use this, you are most likely doing something
-	     * The Wrong Way. Please try to understand the reactive way before using this
-	     * method. Use it only when you know what you are doing.
-	     *
-	     * @param value The "next" value you want to broadcast to all listeners of
-	     * this Stream.
-	     */
-	    Stream.prototype.shamefullySendNext = function (value) {
-	        this._n(value);
-	    };
-	    /**
-	     * Forces the Stream to emit the given error to its listeners.
-	     *
-	     * As the name indicates, if you use this, you are most likely doing something
-	     * The Wrong Way. Please try to understand the reactive way before using this
-	     * method. Use it only when you know what you are doing.
-	     *
-	     * @param {any} error The error you want to broadcast to all the listeners of
-	     * this Stream.
-	     */
-	    Stream.prototype.shamefullySendError = function (error) {
-	        this._e(error);
-	    };
-	    /**
-	     * Forces the Stream to emit the "completed" event to its listeners.
-	     *
-	     * As the name indicates, if you use this, you are most likely doing something
-	     * The Wrong Way. Please try to understand the reactive way before using this
-	     * method. Use it only when you know what you are doing.
-	     */
-	    Stream.prototype.shamefullySendComplete = function () {
-	        this._c();
-	    };
-	    /**
-	     * Blends multiple streams together, emitting events from all of them
-	     * concurrently.
-	     *
-	     * *merge* takes multiple streams as arguments, and creates a stream that
-	     * behaves like each of the argument streams, in parallel.
-	     *
-	     * Marble diagram:
-	     *
-	     * ```text
-	     * --1----2-----3--------4---
-	     * ----a-----b----c---d------
-	     *            merge
-	     * --1-a--2--b--3-c---d--4---
-	     * ```
-	     *
-	     * @factory true
-	     * @param {Stream} stream1 A stream to merge together with other streams.
-	     * @param {Stream} stream2 A stream to merge together with other streams. Two
-	     * or more streams may be given as arguments.
-	     * @return {Stream}
-	     */
-	    Stream.merge = function merge() {
-	        var streams = [];
-	        for (var _i = 0; _i < arguments.length; _i++) {
-	            streams[_i - 0] = arguments[_i];
-	        }
-	        return new Stream(new MergeProducer(streams));
-	    };
-	    /**
-	     * Combines multiple input streams together to return a stream whose events
-	     * are arrays that collect the latest events from each input stream.
-	     *
-	     * *combine* internally remembers the most recent event from each of the input
-	     * streams. When any of the input streams emits an event, that event together
-	     * with all the other saved events are combined into an array. That array will
-	     * be emitted on the output stream. It's essentially a way of joining together
-	     * the events from multiple streams.
-	     *
-	     * Marble diagram:
-	     *
-	     * ```text
-	     * --1----2-----3--------4---
-	     * ----a-----b-----c--d------
-	     *          combine
-	     * ----1a-2a-2b-3b-3c-3d-4d--
-	     * ```
-	     *
-	     * @factory true
-	     * @param {Stream} stream1 A stream to combine together with other streams.
-	     * @param {Stream} stream2 A stream to combine together with other streams.
-	     * Multiple streams, not just two, may be given as arguments.
-	     * @return {Stream}
-	     */
-	    Stream.combine = function combine() {
-	        var streams = [];
-	        for (var _i = 0; _i < arguments.length; _i++) {
-	            streams[_i - 0] = arguments[_i];
-	        }
-	        return new Stream(new CombineProducer(streams));
-	    };
-	    return Stream;
-	}());
-	exports.Stream = Stream;
-	var MemoryStream = (function (_super) {
-	    __extends(MemoryStream, _super);
-	    function MemoryStream(producer) {
-	        _super.call(this, producer);
-	        this._has = false;
-	    }
-	    MemoryStream.prototype._n = function (x) {
-	        this._v = x;
-	        this._has = true;
-	        _super.prototype._n.call(this, x);
-	    };
-	    MemoryStream.prototype._add = function (il) {
-	        if (this._has) {
-	            il._n(this._v);
-	        }
-	        _super.prototype._add.call(this, il);
-	    };
-	    MemoryStream.prototype._stopNow = function () {
-	        this._has = false;
-	        _super.prototype._stopNow.call(this);
-	    };
-	    MemoryStream.prototype._x = function () {
-	        this._has = false;
-	        _super.prototype._x.call(this);
-	    };
-	    MemoryStream.prototype.map = function (project) {
-	        return this._map(project);
-	    };
-	    MemoryStream.prototype.mapTo = function (projectedValue) {
-	        return _super.prototype.mapTo.call(this, projectedValue);
-	    };
-	    MemoryStream.prototype.take = function (amount) {
-	        return _super.prototype.take.call(this, amount);
-	    };
-	    MemoryStream.prototype.endWhen = function (other) {
-	        return _super.prototype.endWhen.call(this, other);
-	    };
-	    MemoryStream.prototype.replaceError = function (replace) {
-	        return _super.prototype.replaceError.call(this, replace);
-	    };
-	    MemoryStream.prototype.remember = function () {
-	        return this;
-	    };
-	    MemoryStream.prototype.debug = function (labelOrSpy) {
-	        return _super.prototype.debug.call(this, labelOrSpy);
-	    };
-	    return MemoryStream;
-	}(Stream));
-	exports.MemoryStream = MemoryStream;
-	Object.defineProperty(exports, "__esModule", { value: true });
-	exports.default = Stream;
-	//# sourceMappingURL=core.js.map
-
-/***/ },
-/* 829 */
-/***/ function(module, exports, __webpack_require__) {
-
-	"use strict";
-	var core_1 = __webpack_require__(828);
-	var DelayOperator = (function () {
-	    function DelayOperator(dt, ins) {
-	        this.dt = dt;
-	        this.ins = ins;
-	        this.type = 'delay';
-	        this.out = null;
-	    }
-	    DelayOperator.prototype._start = function (out) {
-	        this.out = out;
-	        this.ins._add(this);
-	    };
-	    DelayOperator.prototype._stop = function () {
-	        this.ins._remove(this);
-	        this.out = null;
-	    };
-	    DelayOperator.prototype._n = function (t) {
-	        var u = this.out;
-	        if (!u)
-	            return;
-	        var id = setInterval(function () {
-	            u._n(t);
-	            clearInterval(id);
-	        }, this.dt);
-	    };
-	    DelayOperator.prototype._e = function (err) {
-	        var u = this.out;
-	        if (!u)
-	            return;
-	        var id = setInterval(function () {
-	            u._e(err);
-	            clearInterval(id);
-	        }, this.dt);
-	    };
-	    DelayOperator.prototype._c = function () {
-	        var u = this.out;
-	        if (!u)
-	            return;
-	        var id = setInterval(function () {
-	            u._c();
-	            clearInterval(id);
-	        }, this.dt);
-	    };
-	    return DelayOperator;
-	}());
-	/**
-	 * Delays periodic events by a given time period.
-	 *
-	 * Marble diagram:
-	 *
-	 * ```text
-	 * 1----2--3--4----5|
-	 *     delay(60)
-	 * ---1----2--3--4----5|
-	 * ```
-	 *
-	 * Example:
-	 *
-	 * ```js
-	 * import fromDiagram from 'xstream/extra/fromDiagram'
-	 * import delay from 'xstream/extra/delay'
-	 *
-	 * const stream = fromDiagram('1----2--3--4----5|')
-	 *  .compose(delay(60))
-	 *
-	 * stream.addListener({
-	 *   next: i => console.log(i),
-	 *   error: err => console.error(err),
-	 *   complete: () => console.log('completed')
-	 * })
-	 * ```
-	 *
-	 * ```text
-	 * > 1  (after 60 ms)
-	 * > 2  (after 160 ms)
-	 * > 3  (after 220 ms)
-	 * > 4  (after 280 ms)
-	 * > 5  (after 380 ms)
-	 * > completed
-	 * ```
-	 *
-	 * @param {number} period The amount of silence required in milliseconds.
-	 * @return {Stream}
-	 */
-	function delay(period) {
-	    return function delayOperator(ins) {
-	        return new core_1.Stream(new DelayOperator(period, ins));
-	    };
-	}
-	Object.defineProperty(exports, "__esModule", { value: true });
-	exports.default = delay;
-	//# sourceMappingURL=delay.js.map
-
-/***/ },
-/* 830 */
-/***/ function(module, exports, __webpack_require__) {
-
-	"use strict";
-	var core_1 = __webpack_require__(828);
-	var empty = {};
-	var DropRepeatsOperator = (function () {
-	    function DropRepeatsOperator(fn, ins) {
-	        this.fn = fn;
-	        this.ins = ins;
-	        this.type = 'dropRepeats';
-	        this.out = null;
-	        this.v = empty;
-	    }
-	    DropRepeatsOperator.prototype._start = function (out) {
-	        this.out = out;
-	        this.ins._add(this);
-	    };
-	    DropRepeatsOperator.prototype._stop = function () {
-	        this.ins._remove(this);
-	        this.out = null;
-	        this.v = empty;
-	    };
-	    DropRepeatsOperator.prototype.isEq = function (x, y) {
-	        return this.fn ? this.fn(x, y) : x === y;
-	    };
-	    DropRepeatsOperator.prototype._n = function (t) {
-	        var u = this.out;
-	        if (!u)
-	            return;
-	        var v = this.v;
-	        if (v !== empty && this.isEq(t, v))
-	            return;
-	        this.v = Array.isArray(t) ? t.slice() : t;
-	        u._n(t);
-	    };
-	    DropRepeatsOperator.prototype._e = function (err) {
-	        var u = this.out;
-	        if (!u)
-	            return;
-	        u._e(err);
-	    };
-	    DropRepeatsOperator.prototype._c = function () {
-	        var u = this.out;
-	        if (!u)
-	            return;
-	        u._c();
-	    };
-	    return DropRepeatsOperator;
-	}());
-	exports.DropRepeatsOperator = DropRepeatsOperator;
-	/**
-	 * Drops consecutive duplicate values in a stream.
-	 *
-	 * Marble diagram:
-	 *
-	 * ```text
-	 * --1--2--1--1--1--2--3--4--3--3|
-	 *     dropRepeats
-	 * --1--2--1--------2--3--4--3---|
-	 * ```
-	 *
-	 * Example:
-	 *
-	 * ```js
-	 * import dropRepeats from 'xstream/extra/dropRepeats'
-	 *
-	 * const stream = xs.of(1, 2, 1, 1, 1, 2, 3, 4, 3, 3)
-	 *   .compose(dropRepeats())
-	 *
-	 * stream.addListener({
-	 *   next: i => console.log(i),
-	 *   error: err => console.error(err),
-	 *   complete: () => console.log('completed')
-	 * })
-	 * ```
-	 *
-	 * ```text
-	 * > 1
-	 * > 2
-	 * > 1
-	 * > 2
-	 * > 3
-	 * > 4
-	 * > 3
-	 * > completed
-	 * ```
-	 *
-	 * Example with a custom isEqual function:
-	 *
-	 * ```js
-	 * import dropRepeats from 'xstream/extra/dropRepeats'
-	 *
-	 * const stream = xs.of('a', 'b', 'a', 'A', 'B', 'b')
-	 *   .compose(dropRepeats((x, y) => x.toLowerCase() === y.toLowerCase()))
-	 *
-	 * stream.addListener({
-	 *   next: i => console.log(i),
-	 *   error: err => console.error(err),
-	 *   complete: () => console.log('completed')
-	 * })
-	 * ```
-	 *
-	 * ```text
-	 * > a
-	 * > b
-	 * > a
-	 * > B
-	 * > completed
-	 * ```
-	 *
-	 * @param {Function} isEqual An optional function of type
-	 * `(x: T, y: T) => boolean` that takes an event from the input stream and
-	 * checks if it is equal to previous event, by returning a boolean.
-	 * @return {Stream}
-	 */
-	function dropRepeats(isEqual) {
-	    if (isEqual === void 0) { isEqual = null; }
-	    return function dropRepeatsOperator(ins) {
-	        return new core_1.Stream(new DropRepeatsOperator(isEqual, ins));
-	    };
-	}
-	Object.defineProperty(exports, "__esModule", { value: true });
-	exports.default = dropRepeats;
-	//# sourceMappingURL=dropRepeats.js.map
-
-/***/ },
-/* 831 */
-/***/ function(module, exports, __webpack_require__) {
-
-	"use strict";
-	var core_1 = __webpack_require__(702);
-	var NO = {};
-	var SampleCombineListener = (function () {
-	    function SampleCombineListener(i, p) {
-	        this.i = i;
-	        this.p = p;
-	        p.ils[i] = this;
-	    }
-	    SampleCombineListener.prototype._n = function (t) {
-	        var p = this.p;
-	        if (p.out === NO)
-	            return;
-	        p.up(t, this.i);
-	    };
-	    SampleCombineListener.prototype._e = function (err) {
-	        this.p._e(err);
-	    };
-	    SampleCombineListener.prototype._c = function () {
-	        this.p.down(this.i, this);
-	    };
-	    return SampleCombineListener;
-	}());
-	exports.SampleCombineListener = SampleCombineListener;
-	var SampleCombineOperator = (function () {
-	    function SampleCombineOperator(ins, streams) {
-	        this.type = 'sampleCombine';
-	        this.ins = ins;
-	        this.others = streams;
-	        this.out = NO;
-	        this.ils = [];
-	        this.Nn = 0;
-	        this.vals = [];
-	    }
-	    SampleCombineOperator.prototype._start = function (out) {
-	        this.out = out;
-	        var s = this.others;
-	        var n = this.Nn = s.length;
-	        var vals = this.vals = new Array(n);
-	        for (var i = 0; i < n; i++) {
-	            vals[i] = NO;
-	            s[i]._add(new SampleCombineListener(i, this));
-	        }
-	        this.ins._add(this);
-	    };
-	    SampleCombineOperator.prototype._stop = function () {
-	        var s = this.others;
-	        var n = s.length;
-	        var ils = this.ils;
-	        this.ins._remove(this);
-	        for (var i = 0; i < n; i++) {
-	            s[i]._remove(ils[i]);
-	        }
-	        this.out = NO;
-	        this.vals = [];
-	        this.ils = [];
-	    };
-	    SampleCombineOperator.prototype._n = function (t) {
-	        var out = this.out;
-	        if (out === NO)
-	            return;
-	        if (this.Nn > 0)
-	            return;
-	        out._n([t].concat(this.vals));
-	    };
-	    SampleCombineOperator.prototype._e = function (err) {
-	        var out = this.out;
-	        if (out === NO)
-	            return;
-	        out._e(err);
-	    };
-	    SampleCombineOperator.prototype._c = function () {
-	        var out = this.out;
-	        if (out === NO)
-	            return;
-	        out._c();
-	    };
-	    SampleCombineOperator.prototype.up = function (t, i) {
-	        var v = this.vals[i];
-	        if (this.Nn > 0 && v === NO) {
-	            this.Nn--;
-	        }
-	        this.vals[i] = t;
-	    };
-	    SampleCombineOperator.prototype.down = function (i, l) {
-	        this.others[i]._remove(l);
-	    };
-	    return SampleCombineOperator;
-	}());
-	exports.SampleCombineOperator = SampleCombineOperator;
-	var sampleCombine;
-	/**
-	 *
-	 * Combines a source stream with multiple other streams. The result stream
-	 * will emit the latest events from all input streams, but only when the
-	 * source stream emits.
-	 *
-	 * If the source, or any input stream, throws an error, the result stream
-	 * will propagate the error. If any input streams end, their final emitted
-	 * value will remain in the array of any subsequent events from the result
-	 * stream.
-	 *
-	 * The result stream will only complete upon completion of the source stream.
-	 *
-	 * Marble diagram:
-	 *
-	 * ```text
-	 * --1----2-----3--------4--- (source)
-	 * ----a-----b-----c--d------ (other)
-	 *      sampleCombine
-	 * -------2a----3b-------4d--
-	 * ```
-	 *
-	 * Examples:
-	 *
-	 * ```js
-	 * import sampleCombine from 'xstream/extra/sampleCombine'
-	 * import xs from 'xstream'
-	 *
-	 * const sampler = xs.periodic(1000).take(3)
-	 * const other = xs.periodic(100)
-	 *
-	 * const stream = sampler.compose(sampleCombine(other))
-	 *
-	 * stream.addListener({
-	 *   next: i => console.log(i),
-	 *   error: err => console.error(err),
-	 *   complete: () => console.log('completed')
-	 * })
-	 * ```
-	 *
-	 * ```text
-	 * > [0, 8]
-	 * > [1, 18]
-	 * > [2, 28]
-	 * ```
-	 *
-	 * ```js
-	 * import sampleCombine from 'xstream/extra/sampleCombine'
-	 * import xs from 'xstream'
-	 *
-	 * const sampler = xs.periodic(1000).take(3)
-	 * const other = xs.periodic(100).take(2)
-	 *
-	 * const stream = sampler.compose(sampleCombine(other))
-	 *
-	 * stream.addListener({
-	 *   next: i => console.log(i),
-	 *   error: err => console.error(err),
-	 *   complete: () => console.log('completed')
-	 * })
-	 * ```
-	 *
-	 * ```text
-	 * > [0, 1]
-	 * > [1, 1]
-	 * > [2, 1]
-	 * ```
-	 *
-	 * @param {...Stream} streams One or more streams to combine with the sampler
-	 * stream.
-	 * @return {Stream}
-	 */
-	sampleCombine = function sampleCombine() {
-	    var streams = [];
-	    for (var _i = 0; _i < arguments.length; _i++) {
-	        streams[_i - 0] = arguments[_i];
-	    }
-	    return function sampleCombineOperator(sampler) {
-	        return new core_1.Stream(new SampleCombineOperator(sampler, streams));
-	    };
-	};
-	Object.defineProperty(exports, "__esModule", { value: true });
-	exports.default = sampleCombine;
-	//# sourceMappingURL=sampleCombine.js.map
-
-/***/ },
-/* 832 */
-/***/ function(module, exports, __webpack_require__) {
-
-	"use strict";
-
-	Object.defineProperty(exports, "__esModule", {
-	  value: true
-	});
-	exports.Sniffer = undefined;
-
-	var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
-
-	var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
-
-	var _dom = __webpack_require__(709);
-
-	var _collection = __webpack_require__(826);
-
-	var _collection2 = _interopRequireDefault(_collection);
-
-	var _cycleOnionify = __webpack_require__(833);
-
-	var _isolate = __webpack_require__(825);
-
-	var _isolate2 = _interopRequireDefault(_isolate);
-
-	var _sampleCombine = __webpack_require__(831);
-
-	var _sampleCombine2 = _interopRequireDefault(_sampleCombine);
-
-	var _xstream = __webpack_require__(701);
-
-	var _xstream2 = _interopRequireDefault(_xstream);
-
-	var _helper = __webpack_require__(835);
-
-	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-	function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
-
-	var formatSniffLine = function formatSniffLine(data) {
-	  var memep = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
-
-
-	  var formattedInput = data.req.method + '(' + data.req.params.map(function (e) {
-	    return JSON.stringify(e);
-	  }).join(", ") + ')';
-	  var formattedOutput = JSON.stringify(data.res, false, 2);
-
-	  var call = false;
-	  var tx = false;
-	  if ((data.req.method === "eth_call" || data.req.method === "eth_sendTransaction") && data.req.params[0].to in memep.addrs) {
-	    var object = memep.addrs[data.req.params[0].to];
-	    var fsign = data.req.params[0].data.slice(2, 10);
-	    var fdata = data.req.params[0].data.slice(10);
-	    var fres = _typeof(data.res) === "object" ? data.res.result.slice(2) : data.res.slice(2);
-	    var fabi = object.contract.signatures_to_fabi[fsign];
-	    var fname = fabi.name;
-	    var finput = fabi.decodeInputs(fdata);
-	    var foutput = fabi.decodeOutputs(fres);
-	    formattedInput = object.contract.name + '(' + object.address + ').' + fname + '(' + finput.join(', ') + ')';
-	    formattedOutput = foutput.join(', ');
-	    if (data.req.method === "eth_call") {
-	      call = true;
-	    } else {
-	      tx = true;
-	    }
-	  } else {}
-
-	  var line = [(0, _dom.span)({
-	    class: {
-	      req: true,
-	      open: data.expanded
-	    },
-	    attrs: {
-	      _id: data.req.id
-	    }
-	  }, formattedInput)];
-	  if (data.expanded) {
-	    line.push((0, _dom.span)(".res", formattedOutput));
-	  }
-
-	  return (0, _dom.li)({
-	    class: _defineProperty({
-	      call: call,
-	      tx: tx,
-	      sniffline: true,
-	      open: data.expanded
-	    }, "id" + data.req.id, true)
-	  }, line);
-	};
-
-	var Line = function Line(sources) {
-	  var expanded$ = sources.DOM.select(".req").events("click");
-
-	  var vdom$ = _xstream2.default.combine(sources.onion.state$, sources.memepool$).map(function (_ref) {
-	    var _ref2 = _slicedToArray(_ref, 2),
-	        state = _ref2[0],
-	        memep = _ref2[1];
-
-	    return formatSniffLine(state, memep);
-	  });
-
-	  var reducer$ = expanded$.map(function (v) {
-	    return function lineExpandedReducer(parent) {
-	      return _.assign({}, parent, {
-	        expanded: !parent.expanded
-	      });
-	    };
-	  });
-
-	  return {
-	    DOM: vdom$,
-	    onion: reducer$
-	  };
-	};
-
-	var Children = function Children(sources) {
-
-	  var lineList$ = sources.onion.state$.compose((0, _helper.member)(Line, sources));
-
-	  var lines$ = lineList$.compose((0, _cycleOnionify.pick)(function (sinks) {
-	    return sinks.DOM;
-	  })).compose((0, _cycleOnionify.mix)(_xstream2.default.combine));
-
-	  var reducer$ = lineList$.compose((0, _cycleOnionify.pick)(function (sinks) {
-	    return sinks.onion;
-	  })).compose((0, _cycleOnionify.mix)(_xstream2.default.merge));
-
-	  return {
-	    DOM: lines$,
-	    onion: reducer$
-	  };
-	};
-
-	var Sniffer = exports.Sniffer = function Sniffer(sources) {
-
-	  var toggle$ = sources.DOM.select(".record input").events("change").map(function (e) {
-	    return e.target.checked;
-	  }).startWith(false);
-
-	  // Filter out uninteresting information
-	  var filter = ["eth_syncing", "eth_getFilterChanges"];
-	  var filtered$ = sources.Sniffer.filter(function (l) {
-	    return filter.indexOf(l.req.method) === -1;
-	  });
-
-	  var lines = (0, _isolate2.default)(Children, 'history')(sources);
-
-	  var vdom$ = _xstream2.default.combine(lines.DOM, toggle$).map(function (_ref3) {
-	    var _ref4 = _slicedToArray(_ref3, 2),
-	        lines = _ref4[0],
-	        toggled = _ref4[1];
-
-	    return (0, _dom.div)(".sniffer", [(0, _dom.div)(".controllBar", [(0, _dom.label)(".record", { class: { checked: toggled } }, [(0, _dom.input)({ attrs: { type: 'checkbox' } }), (0, _dom.span)("record")])]), (0, _dom.ul)("", lines)]);
-	  });
-
-	  var logReducer$ = filtered$.compose((0, _sampleCombine2.default)(toggle$)).filter(function (_ref5) {
-	    var _ref6 = _slicedToArray(_ref5, 2),
-	        _ = _ref6[0],
-	        toggle = _ref6[1];
-
-	    return toggle;
-	  }).map(function (_ref7) {
-	    var _ref8 = _slicedToArray(_ref7, 1),
-	        comm = _ref8[0];
-
-	    return function logReducer(parent) {
-	      console.log(parent);
-	      var history = parent.history.concat(comm);
-	      return _.assign({}, parent, { history: history });
-	    };
-	  });
-
-	  return {
-	    DOM: vdom$,
-	    onion: _xstream2.default.merge(logReducer$, lines.onion)
-	  };
-	};
-
-/***/ },
-/* 833 */
-/***/ function(module, exports, __webpack_require__) {
-
-	"use strict";
-	var xstream_1 = __webpack_require__(701);
-	var dropRepeats_1 = __webpack_require__(834);
-	function pick(selector) {
-	    if (typeof selector === 'string') {
-	        return function pickWithString(sinksArray$) {
-	            return sinksArray$.map(function (sinksArray) { return sinksArray.map(function (sinks) { return sinks[selector]; }); });
-	        };
-	    }
-	    else {
-	        return function pickWithFunction(sinksArray$) {
-	            return sinksArray$.map(function (sinksArray) { return sinksArray.map(selector); });
-	        };
-	    }
-	}
-	exports.pick = pick;
-	function mix(aggregator) {
-	    return function mixOperator(streamArray$) {
-	        return streamArray$
-	            .map(function (streamArray) { return aggregator.apply(void 0, streamArray); })
-	            .flatten();
-	    };
-	}
-	exports.mix = mix;
-	function updateArrayEntry(array, index, reducer) {
-	    var newVal = reducer(array[index]);
-	    if (typeof newVal === 'undefined') {
-	        return array.filter(function (val, i) { return i !== index; });
-	    }
-	    else if (newVal === array[index]) {
-	        return array;
-	    }
-	    else {
-	        return array.map(function (val, i) { return i === index ? newVal : val; });
-	    }
-	}
-	function isolateSource(source, scope) {
-	    return source.select(scope);
-	}
-	exports.isolateSource = isolateSource;
-	function isolateSink(reducer$, scope) {
-	    return reducer$.map(function (reducer) { return function (state) {
-	        var index = parseInt(scope);
-	        if (Array.isArray(state) && typeof index === 'number') {
-	            return updateArrayEntry(state, index, reducer);
-	        }
-	        else if (typeof state === 'undefined') {
-	            return (_a = {}, _a[scope] = reducer(void 0), _a);
-	        }
-	        else {
-	            var prevPiece = state[scope];
-	            var nextPiece = reducer(prevPiece);
-	            if (prevPiece === nextPiece) {
-	                return state;
-	            }
-	            else {
-	                return Object.assign({}, state, (_b = {}, _b[scope] = nextPiece, _b));
-	            }
-	        }
-	        var _a, _b;
-	    }; });
-	}
-	exports.isolateSink = isolateSink;
-	var StateSource = (function () {
-	    function StateSource(stream, name) {
-	        this.isolateSource = isolateSource;
-	        this.isolateSink = isolateSink;
-	        this._name = name;
-	        this.state$ = stream.remember();
-	        if (!name) {
-	            return;
-	        }
-	        this.state$._isCycleSource = name;
-	    }
-	    StateSource.prototype.select = function (scope) {
-	        return new StateSource(this.state$.map(function (state) { return state[scope]; }).filter(function (s) { return !!s; }), null);
-	    };
-	    return StateSource;
-	}());
-	exports.StateSource = StateSource;
-	function onionify(main, name) {
-	    if (name === void 0) { name = 'onion'; }
-	    return function augmentedMain(sources) {
-	        var reducerMimic$ = xstream_1.default.create();
-	        var state$ = reducerMimic$
-	            .fold(function (state, reducer) { return reducer(state); }, void 0)
-	            .drop(1)
-	            .compose(dropRepeats_1.default());
-	        sources[name] = new StateSource(state$, name);
-	        var sinks = main(sources);
-	        reducerMimic$.imitate(sinks[name]);
-	        return sinks;
-	    };
-	}
-	Object.defineProperty(exports, "__esModule", { value: true });
-	exports.default = onionify;
-	//# sourceMappingURL=index.js.map
-
-/***/ },
-/* 834 */
-/***/ function(module, exports, __webpack_require__) {
-
-	"use strict";
-	var core_1 = __webpack_require__(702);
-	var empty = {};
-	var DropRepeatsOperator = (function () {
-	    function DropRepeatsOperator(ins, fn) {
-	        this.ins = ins;
-	        this.fn = fn;
-	        this.type = 'dropRepeats';
-	        this.out = null;
-	        this.v = empty;
-	    }
-	    DropRepeatsOperator.prototype._start = function (out) {
-	        this.out = out;
-	        this.ins._add(this);
-	    };
-	    DropRepeatsOperator.prototype._stop = function () {
-	        this.ins._remove(this);
-	        this.out = null;
-	        this.v = empty;
-	    };
-	    DropRepeatsOperator.prototype.isEq = function (x, y) {
-	        return this.fn ? this.fn(x, y) : x === y;
-	    };
-	    DropRepeatsOperator.prototype._n = function (t) {
-	        var u = this.out;
-	        if (!u)
-	            return;
-	        var v = this.v;
-	        if (v !== empty && this.isEq(t, v))
-	            return;
-	        this.v = Array.isArray(t) ? t.slice() : t;
-	        u._n(t);
-	    };
-	    DropRepeatsOperator.prototype._e = function (err) {
-	        var u = this.out;
-	        if (!u)
-	            return;
-	        u._e(err);
-	    };
-	    DropRepeatsOperator.prototype._c = function () {
-	        var u = this.out;
-	        if (!u)
-	            return;
-	        u._c();
-	    };
-	    return DropRepeatsOperator;
-	}());
-	exports.DropRepeatsOperator = DropRepeatsOperator;
-	/**
-	 * Drops consecutive duplicate values in a stream.
-	 *
-	 * Marble diagram:
-	 *
-	 * ```text
-	 * --1--2--1--1--1--2--3--4--3--3|
-	 *     dropRepeats
-	 * --1--2--1--------2--3--4--3---|
-	 * ```
-	 *
-	 * Example:
-	 *
-	 * ```js
-	 * import dropRepeats from 'xstream/extra/dropRepeats'
-	 *
-	 * const stream = xs.of(1, 2, 1, 1, 1, 2, 3, 4, 3, 3)
-	 *   .compose(dropRepeats())
-	 *
-	 * stream.addListener({
-	 *   next: i => console.log(i),
-	 *   error: err => console.error(err),
-	 *   complete: () => console.log('completed')
-	 * })
-	 * ```
-	 *
-	 * ```text
-	 * > 1
-	 * > 2
-	 * > 1
-	 * > 2
-	 * > 3
-	 * > 4
-	 * > 3
-	 * > completed
-	 * ```
-	 *
-	 * Example with a custom isEqual function:
-	 *
-	 * ```js
-	 * import dropRepeats from 'xstream/extra/dropRepeats'
-	 *
-	 * const stream = xs.of('a', 'b', 'a', 'A', 'B', 'b')
-	 *   .compose(dropRepeats((x, y) => x.toLowerCase() === y.toLowerCase()))
-	 *
-	 * stream.addListener({
-	 *   next: i => console.log(i),
-	 *   error: err => console.error(err),
-	 *   complete: () => console.log('completed')
-	 * })
-	 * ```
-	 *
-	 * ```text
-	 * > a
-	 * > b
-	 * > a
-	 * > B
-	 * > completed
-	 * ```
-	 *
-	 * @param {Function} isEqual An optional function of type
-	 * `(x: T, y: T) => boolean` that takes an event from the input stream and
-	 * checks if it is equal to previous event, by returning a boolean.
-	 * @return {Stream}
-	 */
-	function dropRepeats(isEqual) {
-	    if (isEqual === void 0) { isEqual = void 0; }
-	    return function dropRepeatsOperator(ins) {
-	        return new core_1.Stream(new DropRepeatsOperator(ins, isEqual));
-	    };
-	}
-	Object.defineProperty(exports, "__esModule", { value: true });
-	exports.default = dropRepeats;
-	//# sourceMappingURL=dropRepeats.js.map
-
-/***/ },
-/* 835 */
-/***/ function(module, exports, __webpack_require__) {
-
-	'use strict';
-
-	Object.defineProperty(exports, "__esModule", {
-	  value: true
-	});
-	exports.componentSwitch = exports.member = exports.json = undefined;
-
-	var _dom = __webpack_require__(709);
-
-	var _isolate = __webpack_require__(825);
-
-	var _isolate2 = _interopRequireDefault(_isolate);
-
-	var _xstream = __webpack_require__(701);
-
-	var _xstream2 = _interopRequireDefault(_xstream);
-
-	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-	var json = exports.json = function json(_json) {
-	  return (0, _dom.span)(".jsonDisplay", JSON.stringify(_json, false, 2));
-	};
-
-	var member = exports.member = function member(C, sources) {
-	  return function (in$) {
-	    return in$.fold(function (parent, state) {
-	      var arr = new Array(state.length);
-	      state.forEach(function (e, i) {
-	        if (i in parent) {
-	          arr[i] = parent[i];
-	        } else {
-	          arr[i] = (0, _isolate2.default)(C, i)(sources);
-	        }
-	      });
-	      return arr;
-	    }, []);
-	  };
-	};
-
-	var componentSwitch = exports.componentSwitch = function componentSwitch(keyf, C, sources) {
-	  return function (in$) {
-	    return in$.fold(function (old, state) {
-	      // Remember Atom if the type didn't change
-	      if (old.type === keyf(state)) return old;
-	      // Default component in case nothing is found
-	      var _default = function _default() {
-	        return {
-	          DOM: _xstream2.default.of((0, _dom.div)("component not found")),
-	          onion: _xstream2.default.of()
-	        };
-	      };
-	      // List of components we can display atomically
-	      return {
-	        c: (C[keyf(state)] || _default)(sources),
-	        type: keyf(state)
-	      };
-	    }, {
-	      c: {
-	        DOM: _xstream2.default.of(),
-	        onion: _xstream2.default.of()
-	      },
-	      type: ""
-	    });
-	  };
-	};
-
-/***/ },
-/* 836 */
-/***/ function(module, exports, __webpack_require__) {
-
-	"use strict";
-
-	Object.defineProperty(exports, "__esModule", {
-	  value: true
-	});
-	exports.AddrView = undefined;
-
-	var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
-
-	var _dom = __webpack_require__(709);
-
-	var _sampleCombine = __webpack_require__(831);
-
-	var _sampleCombine2 = _interopRequireDefault(_sampleCombine);
-
-	var _helper = __webpack_require__(835);
-
-	var _isolate = __webpack_require__(825);
-
-	var _isolate2 = _interopRequireDefault(_isolate);
-
-	var _treeview = __webpack_require__(824);
-
-	var _cycleOnionify = __webpack_require__(833);
-
-	var _collection = __webpack_require__(826);
-
-	var _collection2 = _interopRequireDefault(_collection);
-
-	var _xstream = __webpack_require__(701);
-
-	var _xstream2 = _interopRequireDefault(_xstream);
-
-	var _lodash = __webpack_require__(837);
-
-	var _lodash2 = _interopRequireDefault(_lodash);
-
-	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-	var ABI = function ABI(_ref) {
-	  var DOM = _ref.DOM,
-	      onion = _ref.onion;
-
-
-	  var click$ = DOM.select("button").events("click");
-
-	  var changes$ = DOM.select("input").events("change").map(function (e) {
-	    return {
-	      index: e.target.getAttribute('ref'),
-	      value: e.target.value };
-	  });
-
-	  var sendState$ = changes$.fold(function (acc, e) {
-	    acc[e.index] = e.value;return acc;
-	  }, []);
-
-	  var sendEvent$ = click$.compose((0, _sampleCombine2.default)(sendState$)).map(function (_ref2) {
-	    var _ref3 = _slicedToArray(_ref2, 2),
-	        _ = _ref3[0],
-	        state = _ref3[1];
-
-	    return state;
-	  }).compose((0, _sampleCombine2.default)(onion.state$)).map(function (_ref4) {
-	    var _ref5 = _slicedToArray(_ref4, 2),
-	        value = _ref5[0],
-	        state = _ref5[1];
-
-	    return {
-	      value: value,
-	      fabi: state
-	    };
-	  });
-
-	  var context = function context(name, content) {
-	    return (0, _dom.fieldset)("", [(0, _dom.legend)(name), (0, _dom.table)("", [(0, _dom.tbody)("", content)])]);
-	  };
-
-	  var interfaceform = function interfaceform(interfaces) {
-	    return interfaces.map(function (iface, index) {
-	      return (0, _dom.tr)("", [(0, _dom.td)(".label", [(0, _dom.label)(iface.name || iface.type)]), (0, _dom.td)(".input", [(0, _dom.input)({ attrs: {
-	          type: "text",
-	          ref: index
-	        } })]), (0, _dom.td)("", ["::" + iface.type])]);
-	    });
-	  };
-
-	  var mainView$ = onion.state$.map(function (p) {
-	    return (0, _dom.div)(".objectView", [
-	    // Display Inputs
-	    p.inputs && p.inputs.length > 0 ? context("Input", interfaceform(p.inputs)) : (0, _dom.div)(), (0, _dom.button)("trigger"),
-	    // Display Outputs
-	    p.outputs && p.outputs.length > 0 ? context("Output", interfaceform(p.outputs)) : (0, _dom.div)()]);
-	  });
-
-	  return {
-	    DOM: mainView$,
-	    web3$: sendEvent$
-	  };
-	};
-
-	var TabNavView = function TabNavView(_ref6) {
-	  var DOM = _ref6.DOM,
-	      onion = _ref6.onion;
-
-	  var view$ = onion.state$.map(function (p) {
-	    return (0, _dom.span)(p.name + '(' + (p.inputs && p.inputs.map(function (i) {
-	      return i.type;
-	    }).join(", ")) + ')');
-	  });
-
-	  return {
-	    DOM: view$
-	  };
-	};
-
-	var AddrView = exports.AddrView = function AddrView(_ref7) {
-	  var DOM = _ref7.DOM,
-	      onion = _ref7.onion;
-
-
-	  var fabisOnion = (0, _cycleOnionify.isolateSource)(onion, 'children');
-
-	  var C = {
-	    abi: (0, _isolate2.default)(ABI, 'state')
-	  };
-
-	  var tabs = (0, _treeview.Tabs)({
-	    C: C,
-	    TabNavView: TabNavView,
-	    sinkNames: ["onion", "web3$"],
-	    classname: ".abiView"
-	  });
-
-	  var tab = tabs({
-	    DOM: DOM,
-	    onion: fabisOnion
-	  });
-
-	  var web3$ = tab.web3$.compose((0, _sampleCombine2.default)(onion.state$)).debug("state").map(function (_ref8) {
-	    var _ref9 = _slicedToArray(_ref8, 2),
-	        _ref9$ = _ref9[0],
-	        value = _ref9$.value,
-	        fabi = _ref9$.fabi,
-	        state = _ref9[1].state;
-
-	    return {
-	      id: 1,
-	      method: fabi.constant ? "eth_call" : "eth_sendTransaction",
-	      params: [{
-	        from: "0xb007ed86a7198a7bfe97b4dcf291bceabe40852d", // TODO - dynamic
-	        to: state.address,
-	        gas: "0x76c0",
-	        gasPrice: "0x9184e72a000",
-	        value: "0x0",
-	        data: "0x" + fabi.signature + fabi.encodeInputs(value)
-	      }]
-	    };
-	  });
-
-	  return {
-	    DOM: tab.DOM,
-	    web3$: web3$,
-	    onion: (0, _cycleOnionify.isolateSink)(tab.onion, 'children')
-	  };
-	};
-
-/***/ },
-/* 837 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var __WEBPACK_AMD_DEFINE_RESULT__;/* WEBPACK VAR INJECTION */(function(global, module) {/**
@@ -30250,7 +26953,2929 @@
 	/* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }()), __webpack_require__(65)(module)))
 
 /***/ },
+/* 827 */
+/***/ function(module, exports, __webpack_require__) {
+
+	"use strict";
+
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+	exports.Tabs = exports.Stage = exports.TabNav = exports.MakeTabChildren = undefined;
+
+	var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
+
+	var _dom = __webpack_require__(709);
+
+	var _xstream = __webpack_require__(701);
+
+	var _xstream2 = _interopRequireDefault(_xstream);
+
+	var _isolate = __webpack_require__(825);
+
+	var _isolate2 = _interopRequireDefault(_isolate);
+
+	var _sampleCombine = __webpack_require__(828);
+
+	var _sampleCombine2 = _interopRequireDefault(_sampleCombine);
+
+	var _helper = __webpack_require__(829);
+
+	var _cycleOnionify = __webpack_require__(830);
+
+	var _lodash = __webpack_require__(826);
+
+	var _lodash2 = _interopRequireDefault(_lodash);
+
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+	var MakeTabChildren = exports.MakeTabChildren = function MakeTabChildren(tabs, typef) {
+	  return tabs.map(function (t, i) {
+	    return {
+	      index: i,
+	      state: t,
+	      selected: i === 0,
+	      type: typef && typef(t)
+	    };
+	  });
+	};
+
+	var TabNav = exports.TabNav = function TabNav(TabNavView) {
+	  return function (_ref) {
+	    var DOM = _ref.DOM,
+	        onion = _ref.onion;
+
+
+	    var select$ = DOM.select(".navBtn").events("click").compose((0, _sampleCombine2.default)(onion.state$)).map(function (_ref2) {
+	      var _ref3 = _slicedToArray(_ref2, 2),
+	          _ = _ref3[0],
+	          state = _ref3[1];
+
+	      return { type: "SELECT", index: state.index };
+	    });
+
+	    var tabView;
+	    if (TabNavView) {
+	      tabView = (0, _isolate2.default)(TabNavView, 'state')({ DOM: DOM, onion: onion });
+	    } else {
+	      tabView = { DOM: onion.state$.map(function (state) {
+	          return state.name || state.index;
+	        }) };
+	    }
+
+	    var view$ = _xstream2.default.combine(onion.state$, tabView.DOM).map(function (_ref4) {
+	      var _ref5 = _slicedToArray(_ref4, 2),
+	          p = _ref5[0],
+	          view = _ref5[1];
+
+	      return (0, _dom.div)(".navBtn", {
+	        class: {
+	          selected: p.selected
+	        },
+	        attrs: { ref: p.signature }
+	      }, [view]);
+	    });
+
+	    return {
+	      DOM: view$,
+	      select$: select$
+	    };
+	  };
+	};
+
+	var Stage = exports.Stage = function Stage(C, sinkNames) {
+	  return function (sources) {
+
+	    var ctype$ = sources.onion.state$.filter(function (state) {
+	      return state.selected;
+	    }).compose((0, _helper.componentSwitch)(function (state) {
+	      return state.type;
+	    }, C, sources));
+
+	    var filterSelected = function filterSelected(attr) {
+	      return function (in$) {
+	        return in$.map(function (c) {
+	          return c.c[attr] || _xstream2.default.of();
+	        }).flatten().compose((0, _sampleCombine2.default)(sources.onion.state$)).filter(function (_ref6) {
+	          var _ref7 = _slicedToArray(_ref6, 2),
+	              _ = _ref7[0],
+	              s = _ref7[1];
+
+	          return s.selected;
+	        }).map(function (_ref8) {
+	          var _ref9 = _slicedToArray(_ref8, 1),
+	              v = _ref9[0];
+
+	          return v;
+	        });
+	      };
+	    };
+
+	    var filterInstant = function filterInstant(attr) {
+	      return function (in$) {
+	        return _xstream2.default.combine(sources.onion.state$, in$.map(function (c) {
+	          return c.c[attr] || _xstream2.default.of();
+	        }).flatten()).filter(function (_ref10) {
+	          var _ref11 = _slicedToArray(_ref10, 1),
+	              s = _ref11[0];
+
+	          return s.selected;
+	        }).map(function (_ref12) {
+	          var _ref13 = _slicedToArray(_ref12, 2),
+	              _ = _ref13[0],
+	              v = _ref13[1];
+
+	          return v;
+	        });
+	      };
+	    };
+
+	    var sinkObjects = sinkNames.map(function (sink) {
+	      return ctype$.compose(filterSelected(sink));
+	    });
+
+	    var sinks = _lodash2.default.zipObject(sinkNames, sinkObjects);
+
+	    sinks.DOM = ctype$.compose(filterInstant("DOM"));
+
+	    return sinks;
+	  };
+	};
+
+	var Tabs = exports.Tabs = function Tabs(opt) {
+	  return function (sources) {
+
+	    var nav$ = sources.onion.state$.compose((0, _helper.member)(TabNav(opt.TabNavView), {
+	      DOM: sources.DOM.isolateSource(sources.DOM, 'tab'),
+	      onion: sources.onion
+	    }));
+
+	    var stage$ = sources.onion.state$.compose((0, _helper.member)(Stage(opt.C, opt.sinkNames), sources));
+
+	    var tabStageView$ = stage$.compose((0, _cycleOnionify.pick)(function (sinks) {
+	      return sinks.DOM;
+	    })).compose((0, _cycleOnionify.mix)(_xstream2.default.merge));
+
+	    var tabStageReducers$ = stage$.compose((0, _cycleOnionify.pick)(function (sinks) {
+	      return sinks.onion;
+	    })).compose((0, _cycleOnionify.mix)(_xstream2.default.merge));
+
+	    var tabNavView$ = nav$.compose((0, _cycleOnionify.pick)(function (sinks, i) {
+	      return sources.DOM.isolateSink(sinks.DOM);
+	    })).compose((0, _cycleOnionify.mix)(_xstream2.default.combine));
+
+	    var web3$ = stage$.compose((0, _cycleOnionify.pick)(function (sinks) {
+	      return sinks.web3$;
+	    })).compose((0, _cycleOnionify.mix)(_xstream2.default.merge));
+
+	    var sinkObjects = opt.sinkNames.map(function (sink) {
+	      return stage$.compose((0, _cycleOnionify.pick)(function (sinks) {
+	        return sinks[sink];
+	      })).compose((0, _cycleOnionify.mix)(_xstream2.default.merge));
+	    });
+
+	    var sinks = _lodash2.default.zipObject(opt.sinkNames, sinkObjects);
+
+	    var vdom$ = _xstream2.default.combine(tabNavView$, tabStageView$).map(function (_ref14) {
+	      var _ref15 = _slicedToArray(_ref14, 2),
+	          tabs = _ref15[0],
+	          view = _ref15[1];
+
+	      return (0, _dom.div)(opt.classname, [(0, _dom.div)('.selectView', tabs), (0, _dom.div)('.mainView', [view])]);
+	    });
+
+	    var selectReducer$ = nav$.compose((0, _cycleOnionify.pick)(function (sinks) {
+	      return sinks.select$;
+	    })).compose((0, _cycleOnionify.mix)(_xstream2.default.merge)).map(function (e) {
+	      return function selectReducer(parent) {
+	        var oldIndex = parent.findIndex(function (t) {
+	          return t.selected;
+	        });
+	        var newIndex = parent.findIndex(function (t) {
+	          return t.index === e.index;
+	        });
+
+	        if (oldIndex === newIndex) return parent;
+	        var tabs_ = parent.slice(0);
+	        tabs_[oldIndex] = _lodash2.default.assign({}, tabs_[oldIndex], {
+	          selected: false
+	        });
+	        tabs_[newIndex] = _lodash2.default.assign({}, tabs_[newIndex], {
+	          selected: true
+	        });
+	        return tabs_;
+	      };
+	    });
+
+	    return _lodash2.default.assign(sinks, {
+	      DOM: vdom$,
+	      onion: _xstream2.default.merge(selectReducer$, tabStageReducers$)
+	    });
+	  };
+	};
+
+/***/ },
+/* 828 */
+/***/ function(module, exports, __webpack_require__) {
+
+	"use strict";
+	var core_1 = __webpack_require__(702);
+	var NO = {};
+	var SampleCombineListener = (function () {
+	    function SampleCombineListener(i, p) {
+	        this.i = i;
+	        this.p = p;
+	        p.ils[i] = this;
+	    }
+	    SampleCombineListener.prototype._n = function (t) {
+	        var p = this.p;
+	        if (p.out === NO)
+	            return;
+	        p.up(t, this.i);
+	    };
+	    SampleCombineListener.prototype._e = function (err) {
+	        this.p._e(err);
+	    };
+	    SampleCombineListener.prototype._c = function () {
+	        this.p.down(this.i, this);
+	    };
+	    return SampleCombineListener;
+	}());
+	exports.SampleCombineListener = SampleCombineListener;
+	var SampleCombineOperator = (function () {
+	    function SampleCombineOperator(ins, streams) {
+	        this.type = 'sampleCombine';
+	        this.ins = ins;
+	        this.others = streams;
+	        this.out = NO;
+	        this.ils = [];
+	        this.Nn = 0;
+	        this.vals = [];
+	    }
+	    SampleCombineOperator.prototype._start = function (out) {
+	        this.out = out;
+	        var s = this.others;
+	        var n = this.Nn = s.length;
+	        var vals = this.vals = new Array(n);
+	        for (var i = 0; i < n; i++) {
+	            vals[i] = NO;
+	            s[i]._add(new SampleCombineListener(i, this));
+	        }
+	        this.ins._add(this);
+	    };
+	    SampleCombineOperator.prototype._stop = function () {
+	        var s = this.others;
+	        var n = s.length;
+	        var ils = this.ils;
+	        this.ins._remove(this);
+	        for (var i = 0; i < n; i++) {
+	            s[i]._remove(ils[i]);
+	        }
+	        this.out = NO;
+	        this.vals = [];
+	        this.ils = [];
+	    };
+	    SampleCombineOperator.prototype._n = function (t) {
+	        var out = this.out;
+	        if (out === NO)
+	            return;
+	        if (this.Nn > 0)
+	            return;
+	        out._n([t].concat(this.vals));
+	    };
+	    SampleCombineOperator.prototype._e = function (err) {
+	        var out = this.out;
+	        if (out === NO)
+	            return;
+	        out._e(err);
+	    };
+	    SampleCombineOperator.prototype._c = function () {
+	        var out = this.out;
+	        if (out === NO)
+	            return;
+	        out._c();
+	    };
+	    SampleCombineOperator.prototype.up = function (t, i) {
+	        var v = this.vals[i];
+	        if (this.Nn > 0 && v === NO) {
+	            this.Nn--;
+	        }
+	        this.vals[i] = t;
+	    };
+	    SampleCombineOperator.prototype.down = function (i, l) {
+	        this.others[i]._remove(l);
+	    };
+	    return SampleCombineOperator;
+	}());
+	exports.SampleCombineOperator = SampleCombineOperator;
+	var sampleCombine;
+	/**
+	 *
+	 * Combines a source stream with multiple other streams. The result stream
+	 * will emit the latest events from all input streams, but only when the
+	 * source stream emits.
+	 *
+	 * If the source, or any input stream, throws an error, the result stream
+	 * will propagate the error. If any input streams end, their final emitted
+	 * value will remain in the array of any subsequent events from the result
+	 * stream.
+	 *
+	 * The result stream will only complete upon completion of the source stream.
+	 *
+	 * Marble diagram:
+	 *
+	 * ```text
+	 * --1----2-----3--------4--- (source)
+	 * ----a-----b-----c--d------ (other)
+	 *      sampleCombine
+	 * -------2a----3b-------4d--
+	 * ```
+	 *
+	 * Examples:
+	 *
+	 * ```js
+	 * import sampleCombine from 'xstream/extra/sampleCombine'
+	 * import xs from 'xstream'
+	 *
+	 * const sampler = xs.periodic(1000).take(3)
+	 * const other = xs.periodic(100)
+	 *
+	 * const stream = sampler.compose(sampleCombine(other))
+	 *
+	 * stream.addListener({
+	 *   next: i => console.log(i),
+	 *   error: err => console.error(err),
+	 *   complete: () => console.log('completed')
+	 * })
+	 * ```
+	 *
+	 * ```text
+	 * > [0, 8]
+	 * > [1, 18]
+	 * > [2, 28]
+	 * ```
+	 *
+	 * ```js
+	 * import sampleCombine from 'xstream/extra/sampleCombine'
+	 * import xs from 'xstream'
+	 *
+	 * const sampler = xs.periodic(1000).take(3)
+	 * const other = xs.periodic(100).take(2)
+	 *
+	 * const stream = sampler.compose(sampleCombine(other))
+	 *
+	 * stream.addListener({
+	 *   next: i => console.log(i),
+	 *   error: err => console.error(err),
+	 *   complete: () => console.log('completed')
+	 * })
+	 * ```
+	 *
+	 * ```text
+	 * > [0, 1]
+	 * > [1, 1]
+	 * > [2, 1]
+	 * ```
+	 *
+	 * @param {...Stream} streams One or more streams to combine with the sampler
+	 * stream.
+	 * @return {Stream}
+	 */
+	sampleCombine = function sampleCombine() {
+	    var streams = [];
+	    for (var _i = 0; _i < arguments.length; _i++) {
+	        streams[_i - 0] = arguments[_i];
+	    }
+	    return function sampleCombineOperator(sampler) {
+	        return new core_1.Stream(new SampleCombineOperator(sampler, streams));
+	    };
+	};
+	Object.defineProperty(exports, "__esModule", { value: true });
+	exports.default = sampleCombine;
+	//# sourceMappingURL=sampleCombine.js.map
+
+/***/ },
+/* 829 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+	exports.componentSwitch = exports.member = exports.json = undefined;
+
+	var _dom = __webpack_require__(709);
+
+	var _isolate = __webpack_require__(825);
+
+	var _isolate2 = _interopRequireDefault(_isolate);
+
+	var _xstream = __webpack_require__(701);
+
+	var _xstream2 = _interopRequireDefault(_xstream);
+
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+	var json = exports.json = function json(_json) {
+	  return (0, _dom.span)(".jsonDisplay", JSON.stringify(_json, false, 2));
+	};
+
+	var member = exports.member = function member(C, sources) {
+	  return function (in$) {
+	    return in$.fold(function (parent, state) {
+	      var arr = new Array(state.length);
+	      state.forEach(function (e, i) {
+	        if (i in parent) {
+	          arr[i] = parent[i];
+	        } else {
+	          arr[i] = (0, _isolate2.default)(C, i)(sources);
+	        }
+	      });
+	      return arr;
+	    }, []);
+	  };
+	};
+
+	var componentSwitch = exports.componentSwitch = function componentSwitch(keyf, C, sources) {
+	  return function (in$) {
+	    return in$.fold(function (old, state) {
+	      // Remember Atom if the type didn't change
+	      if (old.type === keyf(state)) return old;
+	      // Default component in case nothing is found
+	      var _default = function _default() {
+	        return {
+	          DOM: _xstream2.default.of((0, _dom.div)("component not found")),
+	          onion: _xstream2.default.of()
+	        };
+	      };
+	      // List of components we can display atomically
+	      return {
+	        c: (C[keyf(state)] || _default)(sources),
+	        type: keyf(state)
+	      };
+	    }, {
+	      c: {
+	        DOM: _xstream2.default.of(),
+	        onion: _xstream2.default.of()
+	      },
+	      type: ""
+	    });
+	  };
+	};
+
+/***/ },
+/* 830 */
+/***/ function(module, exports, __webpack_require__) {
+
+	"use strict";
+	var xstream_1 = __webpack_require__(701);
+	var dropRepeats_1 = __webpack_require__(831);
+	function pick(selector) {
+	    if (typeof selector === 'string') {
+	        return function pickWithString(sinksArray$) {
+	            return sinksArray$.map(function (sinksArray) { return sinksArray.map(function (sinks) { return sinks[selector]; }); });
+	        };
+	    }
+	    else {
+	        return function pickWithFunction(sinksArray$) {
+	            return sinksArray$.map(function (sinksArray) { return sinksArray.map(selector); });
+	        };
+	    }
+	}
+	exports.pick = pick;
+	function mix(aggregator) {
+	    return function mixOperator(streamArray$) {
+	        return streamArray$
+	            .map(function (streamArray) { return aggregator.apply(void 0, streamArray); })
+	            .flatten();
+	    };
+	}
+	exports.mix = mix;
+	function updateArrayEntry(array, index, reducer) {
+	    var newVal = reducer(array[index]);
+	    if (typeof newVal === 'undefined') {
+	        return array.filter(function (val, i) { return i !== index; });
+	    }
+	    else if (newVal === array[index]) {
+	        return array;
+	    }
+	    else {
+	        return array.map(function (val, i) { return i === index ? newVal : val; });
+	    }
+	}
+	function isolateSource(source, scope) {
+	    return source.select(scope);
+	}
+	exports.isolateSource = isolateSource;
+	function isolateSink(reducer$, scope) {
+	    return reducer$.map(function (reducer) { return function (state) {
+	        var index = parseInt(scope);
+	        if (Array.isArray(state) && typeof index === 'number') {
+	            return updateArrayEntry(state, index, reducer);
+	        }
+	        else if (typeof state === 'undefined') {
+	            return (_a = {}, _a[scope] = reducer(void 0), _a);
+	        }
+	        else {
+	            var prevPiece = state[scope];
+	            var nextPiece = reducer(prevPiece);
+	            if (prevPiece === nextPiece) {
+	                return state;
+	            }
+	            else {
+	                return Object.assign({}, state, (_b = {}, _b[scope] = nextPiece, _b));
+	            }
+	        }
+	        var _a, _b;
+	    }; });
+	}
+	exports.isolateSink = isolateSink;
+	var StateSource = (function () {
+	    function StateSource(stream, name) {
+	        this.isolateSource = isolateSource;
+	        this.isolateSink = isolateSink;
+	        this._name = name;
+	        this.state$ = stream.remember();
+	        if (!name) {
+	            return;
+	        }
+	        this.state$._isCycleSource = name;
+	    }
+	    StateSource.prototype.select = function (scope) {
+	        return new StateSource(this.state$.map(function (state) { return state[scope]; }).filter(function (s) { return !!s; }), null);
+	    };
+	    return StateSource;
+	}());
+	exports.StateSource = StateSource;
+	function onionify(main, name) {
+	    if (name === void 0) { name = 'onion'; }
+	    return function augmentedMain(sources) {
+	        var reducerMimic$ = xstream_1.default.create();
+	        var state$ = reducerMimic$
+	            .fold(function (state, reducer) { return reducer(state); }, void 0)
+	            .drop(1)
+	            .compose(dropRepeats_1.default());
+	        sources[name] = new StateSource(state$, name);
+	        var sinks = main(sources);
+	        reducerMimic$.imitate(sinks[name]);
+	        return sinks;
+	    };
+	}
+	Object.defineProperty(exports, "__esModule", { value: true });
+	exports.default = onionify;
+	//# sourceMappingURL=index.js.map
+
+/***/ },
+/* 831 */
+/***/ function(module, exports, __webpack_require__) {
+
+	"use strict";
+	var core_1 = __webpack_require__(702);
+	var empty = {};
+	var DropRepeatsOperator = (function () {
+	    function DropRepeatsOperator(ins, fn) {
+	        this.ins = ins;
+	        this.fn = fn;
+	        this.type = 'dropRepeats';
+	        this.out = null;
+	        this.v = empty;
+	    }
+	    DropRepeatsOperator.prototype._start = function (out) {
+	        this.out = out;
+	        this.ins._add(this);
+	    };
+	    DropRepeatsOperator.prototype._stop = function () {
+	        this.ins._remove(this);
+	        this.out = null;
+	        this.v = empty;
+	    };
+	    DropRepeatsOperator.prototype.isEq = function (x, y) {
+	        return this.fn ? this.fn(x, y) : x === y;
+	    };
+	    DropRepeatsOperator.prototype._n = function (t) {
+	        var u = this.out;
+	        if (!u)
+	            return;
+	        var v = this.v;
+	        if (v !== empty && this.isEq(t, v))
+	            return;
+	        this.v = Array.isArray(t) ? t.slice() : t;
+	        u._n(t);
+	    };
+	    DropRepeatsOperator.prototype._e = function (err) {
+	        var u = this.out;
+	        if (!u)
+	            return;
+	        u._e(err);
+	    };
+	    DropRepeatsOperator.prototype._c = function () {
+	        var u = this.out;
+	        if (!u)
+	            return;
+	        u._c();
+	    };
+	    return DropRepeatsOperator;
+	}());
+	exports.DropRepeatsOperator = DropRepeatsOperator;
+	/**
+	 * Drops consecutive duplicate values in a stream.
+	 *
+	 * Marble diagram:
+	 *
+	 * ```text
+	 * --1--2--1--1--1--2--3--4--3--3|
+	 *     dropRepeats
+	 * --1--2--1--------2--3--4--3---|
+	 * ```
+	 *
+	 * Example:
+	 *
+	 * ```js
+	 * import dropRepeats from 'xstream/extra/dropRepeats'
+	 *
+	 * const stream = xs.of(1, 2, 1, 1, 1, 2, 3, 4, 3, 3)
+	 *   .compose(dropRepeats())
+	 *
+	 * stream.addListener({
+	 *   next: i => console.log(i),
+	 *   error: err => console.error(err),
+	 *   complete: () => console.log('completed')
+	 * })
+	 * ```
+	 *
+	 * ```text
+	 * > 1
+	 * > 2
+	 * > 1
+	 * > 2
+	 * > 3
+	 * > 4
+	 * > 3
+	 * > completed
+	 * ```
+	 *
+	 * Example with a custom isEqual function:
+	 *
+	 * ```js
+	 * import dropRepeats from 'xstream/extra/dropRepeats'
+	 *
+	 * const stream = xs.of('a', 'b', 'a', 'A', 'B', 'b')
+	 *   .compose(dropRepeats((x, y) => x.toLowerCase() === y.toLowerCase()))
+	 *
+	 * stream.addListener({
+	 *   next: i => console.log(i),
+	 *   error: err => console.error(err),
+	 *   complete: () => console.log('completed')
+	 * })
+	 * ```
+	 *
+	 * ```text
+	 * > a
+	 * > b
+	 * > a
+	 * > B
+	 * > completed
+	 * ```
+	 *
+	 * @param {Function} isEqual An optional function of type
+	 * `(x: T, y: T) => boolean` that takes an event from the input stream and
+	 * checks if it is equal to previous event, by returning a boolean.
+	 * @return {Stream}
+	 */
+	function dropRepeats(isEqual) {
+	    if (isEqual === void 0) { isEqual = void 0; }
+	    return function dropRepeatsOperator(ins) {
+	        return new core_1.Stream(new DropRepeatsOperator(ins, isEqual));
+	    };
+	}
+	Object.defineProperty(exports, "__esModule", { value: true });
+	exports.default = dropRepeats;
+	//# sourceMappingURL=dropRepeats.js.map
+
+/***/ },
+/* 832 */
+/***/ function(module, exports, __webpack_require__) {
+
+	"use strict";
+	/**
+	 * HTTP Driver factory.
+	 *
+	 * This is a function which, when called, returns a HTTP Driver for Cycle.js
+	 * apps. The driver is also a function, and it takes a stream of requests as
+	 * input, and outputs an HTTP Source, an object with some functions to query for
+	 * response streams.
+	 *
+	 * **Requests**. The stream of requests should emit either strings or objects.
+	 * If the stream emits strings, those should be the URL of the remote resource
+	 * over HTTP. If the stream emits objects, these should be instructions how
+	 * superagent should execute the request. These objects follow a structure
+	 * similar to superagent's request API itself. `request` object properties:
+	 *
+	 * - `url` *(String)*: the remote resource path. **required**
+	 * - `method` *(String)*: HTTP Method for the request (GET, POST, PUT, etc).
+	 * - `category` *(String)*: an optional and arbitrary key that may be used in
+	 * the HTTP Source when querying for the response. E.g.
+	 * `sources.http.select(category)`
+	 * - `query` *(Object)*: an object with the payload for `GET` or `POST`.
+	 * - `send` *(Object)*: an object with the payload for `POST`.
+	 * - `headers` *(Object)*: object specifying HTTP headers.
+	 * - `accept` *(String)*: the Accept header.
+	 * - `type` *(String)*: a short-hand for setting Content-Type.
+	 * - `user` *(String)*: username for authentication.
+	 * - `password` *(String)*: password for authentication.
+	 * - `field` *(Object)*: object where key/values are Form fields.
+	 * - `progress` *(Boolean)*: whether or not to detect and emit progress events
+	 * on the response Observable.
+	 * - `attach` *(Array)*: array of objects, where each object specifies `name`,
+	 * `path`, and `filename` of a resource to upload.
+	 * - `withCredentials` *(Boolean)*: enables the ability to send cookies from the
+	 * origin.
+	 * - `agent` *(Object)*: an object specifying `cert` and `key` for SSL
+	 * certificate authentication.
+	 * - `redirects` *(Number)*: number of redirects to follow.
+	 * - `lazy` *(Boolean)*: whether or not this request runs lazily, which means
+	 * the request happens if and only if its corresponding response stream from the
+	 * HTTP Source is subscribed to. By default this value is false: requests run
+	 * eagerly, even if their response is ignored by the application.
+	 *
+	 * **Responses**. A metastream is a stream that emits streams. The HTTP Source
+	 * manages response metastreams. These streams of responses have a `request`
+	 * field attached to them (to the stream object itself) indicating which request
+	 * (from the driver input) generated this response streams. The HTTP Source has
+	 * functions `filter()` and `select()`, but is not itself a stream. So you can
+	 * call `sources.HTTP.filter(request => request.url === X)` to get a new HTTP
+	 * Source object which is filtered for response streams that match the condition
+	 * given, and may call `sources.HTTP.select(category)` to get a metastream of
+	 * response that match the category key. With an HTTP Source, you can also call
+	 * `httpSource.select()` with no param to get the metastream. You should flatten
+	 * the metastream before consuming it, then the resulting response stream will
+	 * emit the response object received through superagent.
+	 *
+	 * @return {Function} the HTTP Driver function
+	 * @function makeHTTPDriver
+	 */
+	var http_driver_1 = __webpack_require__(833);
+	exports.makeHTTPDriver = http_driver_1.makeHTTPDriver;
+	//# sourceMappingURL=index.js.map
+
+/***/ },
+/* 833 */
+/***/ function(module, exports, __webpack_require__) {
+
+	"use strict";
+	var xstream_1 = __webpack_require__(701);
+	var MainHTTPSource_1 = __webpack_require__(834);
+	var xstream_adapter_1 = __webpack_require__(708);
+	var superagent = __webpack_require__(836);
+	function preprocessReqOptions(reqOptions) {
+	    reqOptions.withCredentials = reqOptions.withCredentials || false;
+	    reqOptions.redirects = typeof reqOptions.redirects === 'number' ? reqOptions.redirects : 5;
+	    reqOptions.method = reqOptions.method || "get";
+	    return reqOptions;
+	}
+	function optionsToSuperagent(rawReqOptions) {
+	    var reqOptions = preprocessReqOptions(rawReqOptions);
+	    if (typeof reqOptions.url !== "string") {
+	        throw new Error("Please provide a `url` property in the request options.");
+	    }
+	    var lowerCaseMethod = (reqOptions.method || 'GET').toLowerCase();
+	    var sanitizedMethod = lowerCaseMethod === "delete" ? "del" : lowerCaseMethod;
+	    var request = superagent[sanitizedMethod](reqOptions.url);
+	    if (typeof request.redirects === "function") {
+	        request = request.redirects(reqOptions.redirects);
+	    }
+	    if (reqOptions.type) {
+	        request = request.type(reqOptions.type);
+	    }
+	    if (reqOptions.send) {
+	        request = request.send(reqOptions.send);
+	    }
+	    if (reqOptions.accept) {
+	        request = request.accept(reqOptions.accept);
+	    }
+	    if (reqOptions.query) {
+	        request = request.query(reqOptions.query);
+	    }
+	    if (reqOptions.withCredentials) {
+	        request = request.withCredentials();
+	    }
+	    if (reqOptions.agent) {
+	        request = request.key(reqOptions.agent.key);
+	        request = request.cert(reqOptions.agent.cert);
+	    }
+	    if (typeof reqOptions.user === 'string' && typeof reqOptions.password === 'string') {
+	        request = request.auth(reqOptions.user, reqOptions.password);
+	    }
+	    if (reqOptions.headers) {
+	        for (var key in reqOptions.headers) {
+	            if (reqOptions.headers.hasOwnProperty(key)) {
+	                request = request.set(key, reqOptions.headers[key]);
+	            }
+	        }
+	    }
+	    if (reqOptions.field) {
+	        for (var key in reqOptions.field) {
+	            if (reqOptions.field.hasOwnProperty(key)) {
+	                request = request.field(key, reqOptions.field[key]);
+	            }
+	        }
+	    }
+	    if (reqOptions.attach) {
+	        for (var i = reqOptions.attach.length - 1; i >= 0; i--) {
+	            var a = reqOptions.attach[i];
+	            request = request.attach(a.name, a.path, a.filename);
+	        }
+	    }
+	    return request;
+	}
+	exports.optionsToSuperagent = optionsToSuperagent;
+	function createResponse$(reqInput) {
+	    return xstream_1.default.create({
+	        start: function startResponseStream(listener) {
+	            try {
+	                var reqOptions_1 = normalizeRequestInput(reqInput);
+	                this.request = optionsToSuperagent(reqOptions_1);
+	                if (reqOptions_1.progress) {
+	                    this.request = this.request.on('progress', function (res) {
+	                        res.request = reqOptions_1;
+	                        listener.next(res);
+	                    });
+	                }
+	                this.request.end(function (err, res) {
+	                    if (err) {
+	                        listener.error(err);
+	                    }
+	                    else {
+	                        res.request = reqOptions_1;
+	                        listener.next(res);
+	                        listener.complete();
+	                    }
+	                });
+	            }
+	            catch (err) {
+	                listener.error(err);
+	            }
+	        },
+	        stop: function stopResponseStream() {
+	            if (this.request && this.request.abort) {
+	                this.request.abort();
+	            }
+	        },
+	    });
+	}
+	exports.createResponse$ = createResponse$;
+	function softNormalizeRequestInput(reqInput) {
+	    var reqOptions;
+	    try {
+	        reqOptions = normalizeRequestInput(reqInput);
+	    }
+	    catch (err) {
+	        reqOptions = { url: 'Error', _error: err };
+	    }
+	    return reqOptions;
+	}
+	function normalizeRequestInput(reqOptions) {
+	    if (typeof reqOptions === 'string') {
+	        return { url: reqOptions };
+	    }
+	    else if (typeof reqOptions === 'object') {
+	        return reqOptions;
+	    }
+	    else {
+	        throw new Error("Observable of requests given to HTTP Driver must emit " +
+	            "either URL strings or objects with parameters.");
+	    }
+	}
+	function makeRequestInputToResponse$(runStreamAdapter) {
+	    return function requestInputToResponse$(reqInput) {
+	        var response$ = createResponse$(reqInput).remember();
+	        var reqOptions = softNormalizeRequestInput(reqInput);
+	        if (!reqOptions.lazy) {
+	            response$.addListener({ next: function () { }, error: function () { }, complete: function () { } });
+	        }
+	        response$ = (runStreamAdapter) ?
+	            runStreamAdapter.adapt(response$, xstream_adapter_1.default.streamSubscribe) :
+	            response$;
+	        Object.defineProperty(response$, 'request', {
+	            value: reqOptions,
+	            writable: false,
+	        });
+	        return response$;
+	    };
+	}
+	function makeHTTPDriver() {
+	    function httpDriver(request$, runSA, name) {
+	        var response$$ = request$
+	            .map(makeRequestInputToResponse$(runSA));
+	        var httpSource = new MainHTTPSource_1.MainHTTPSource(response$$, runSA, name, []);
+	        response$$.addListener({ next: function () { }, error: function () { }, complete: function () { } });
+	        return httpSource;
+	    }
+	    httpDriver.streamAdapter = xstream_adapter_1.default;
+	    return httpDriver;
+	}
+	exports.makeHTTPDriver = makeHTTPDriver;
+	//# sourceMappingURL=http-driver.js.map
+
+/***/ },
+/* 834 */
+/***/ function(module, exports, __webpack_require__) {
+
+	"use strict";
+	var isolate_1 = __webpack_require__(835);
+	var xstream_adapter_1 = __webpack_require__(708);
+	var MainHTTPSource = (function () {
+	    function MainHTTPSource(_res$$, runStreamAdapter, _name, _namespace) {
+	        if (_namespace === void 0) { _namespace = []; }
+	        this._res$$ = _res$$;
+	        this.runStreamAdapter = runStreamAdapter;
+	        this._name = _name;
+	        this._namespace = _namespace;
+	        this.isolateSource = isolate_1.isolateSource;
+	        this.isolateSink = isolate_1.isolateSink;
+	    }
+	    MainHTTPSource.prototype.filter = function (predicate) {
+	        var filteredResponse$$ = this._res$$.filter(function (r$) { return predicate(r$.request); });
+	        return new MainHTTPSource(filteredResponse$$, this.runStreamAdapter, this._name, this._namespace);
+	    };
+	    MainHTTPSource.prototype.select = function (category) {
+	        var res$$ = this._res$$;
+	        if (category) {
+	            res$$ = this._res$$
+	                .filter(function (res$) { return res$.request && res$.request.category === category; });
+	        }
+	        var out = this.runStreamAdapter.adapt(res$$, xstream_adapter_1.default.streamSubscribe);
+	        out._isCycleSource = this._name;
+	        return out;
+	    };
+	    return MainHTTPSource;
+	}());
+	exports.MainHTTPSource = MainHTTPSource;
+	//# sourceMappingURL=MainHTTPSource.js.map
+
+/***/ },
+/* 835 */
+/***/ function(module, exports) {
+
+	"use strict";
+	function isolateSource(httpSource, scope) {
+	    return httpSource.filter(function (request) {
+	        return Array.isArray(request._namespace) &&
+	            request._namespace.indexOf(scope) !== -1;
+	    });
+	}
+	exports.isolateSource = isolateSource;
+	function isolateSink(request$, scope) {
+	    return request$.map(function (req) {
+	        if (typeof req === 'string') {
+	            return { url: req, _namespace: [scope] };
+	        }
+	        req._namespace = req._namespace || [];
+	        req._namespace.push(scope);
+	        return req;
+	    });
+	}
+	exports.isolateSink = isolateSink;
+	//# sourceMappingURL=isolate.js.map
+
+/***/ },
+/* 836 */
+/***/ function(module, exports, __webpack_require__) {
+
+	/**
+	 * Root reference for iframes.
+	 */
+
+	var root;
+	if (typeof window !== 'undefined') { // Browser window
+	  root = window;
+	} else if (typeof self !== 'undefined') { // Web Worker
+	  root = self;
+	} else { // Other environments
+	  console.warn("Using browser-only version of superagent in non-browser environment");
+	  root = this;
+	}
+
+	var Emitter = __webpack_require__(837);
+	var requestBase = __webpack_require__(838);
+	var isObject = __webpack_require__(839);
+
+	/**
+	 * Noop.
+	 */
+
+	function noop(){};
+
+	/**
+	 * Expose `request`.
+	 */
+
+	var request = module.exports = __webpack_require__(840).bind(null, Request);
+
+	/**
+	 * Determine XHR.
+	 */
+
+	request.getXHR = function () {
+	  if (root.XMLHttpRequest
+	      && (!root.location || 'file:' != root.location.protocol
+	          || !root.ActiveXObject)) {
+	    return new XMLHttpRequest;
+	  } else {
+	    try { return new ActiveXObject('Microsoft.XMLHTTP'); } catch(e) {}
+	    try { return new ActiveXObject('Msxml2.XMLHTTP.6.0'); } catch(e) {}
+	    try { return new ActiveXObject('Msxml2.XMLHTTP.3.0'); } catch(e) {}
+	    try { return new ActiveXObject('Msxml2.XMLHTTP'); } catch(e) {}
+	  }
+	  throw Error("Browser-only verison of superagent could not find XHR");
+	};
+
+	/**
+	 * Removes leading and trailing whitespace, added to support IE.
+	 *
+	 * @param {String} s
+	 * @return {String}
+	 * @api private
+	 */
+
+	var trim = ''.trim
+	  ? function(s) { return s.trim(); }
+	  : function(s) { return s.replace(/(^\s*|\s*$)/g, ''); };
+
+	/**
+	 * Serialize the given `obj`.
+	 *
+	 * @param {Object} obj
+	 * @return {String}
+	 * @api private
+	 */
+
+	function serialize(obj) {
+	  if (!isObject(obj)) return obj;
+	  var pairs = [];
+	  for (var key in obj) {
+	    pushEncodedKeyValuePair(pairs, key, obj[key]);
+	  }
+	  return pairs.join('&');
+	}
+
+	/**
+	 * Helps 'serialize' with serializing arrays.
+	 * Mutates the pairs array.
+	 *
+	 * @param {Array} pairs
+	 * @param {String} key
+	 * @param {Mixed} val
+	 */
+
+	function pushEncodedKeyValuePair(pairs, key, val) {
+	  if (val != null) {
+	    if (Array.isArray(val)) {
+	      val.forEach(function(v) {
+	        pushEncodedKeyValuePair(pairs, key, v);
+	      });
+	    } else if (isObject(val)) {
+	      for(var subkey in val) {
+	        pushEncodedKeyValuePair(pairs, key + '[' + subkey + ']', val[subkey]);
+	      }
+	    } else {
+	      pairs.push(encodeURIComponent(key)
+	        + '=' + encodeURIComponent(val));
+	    }
+	  } else if (val === null) {
+	    pairs.push(encodeURIComponent(key));
+	  }
+	}
+
+	/**
+	 * Expose serialization method.
+	 */
+
+	 request.serializeObject = serialize;
+
+	 /**
+	  * Parse the given x-www-form-urlencoded `str`.
+	  *
+	  * @param {String} str
+	  * @return {Object}
+	  * @api private
+	  */
+
+	function parseString(str) {
+	  var obj = {};
+	  var pairs = str.split('&');
+	  var pair;
+	  var pos;
+
+	  for (var i = 0, len = pairs.length; i < len; ++i) {
+	    pair = pairs[i];
+	    pos = pair.indexOf('=');
+	    if (pos == -1) {
+	      obj[decodeURIComponent(pair)] = '';
+	    } else {
+	      obj[decodeURIComponent(pair.slice(0, pos))] =
+	        decodeURIComponent(pair.slice(pos + 1));
+	    }
+	  }
+
+	  return obj;
+	}
+
+	/**
+	 * Expose parser.
+	 */
+
+	request.parseString = parseString;
+
+	/**
+	 * Default MIME type map.
+	 *
+	 *     superagent.types.xml = 'application/xml';
+	 *
+	 */
+
+	request.types = {
+	  html: 'text/html',
+	  json: 'application/json',
+	  xml: 'application/xml',
+	  urlencoded: 'application/x-www-form-urlencoded',
+	  'form': 'application/x-www-form-urlencoded',
+	  'form-data': 'application/x-www-form-urlencoded'
+	};
+
+	/**
+	 * Default serialization map.
+	 *
+	 *     superagent.serialize['application/xml'] = function(obj){
+	 *       return 'generated xml here';
+	 *     };
+	 *
+	 */
+
+	 request.serialize = {
+	   'application/x-www-form-urlencoded': serialize,
+	   'application/json': JSON.stringify
+	 };
+
+	 /**
+	  * Default parsers.
+	  *
+	  *     superagent.parse['application/xml'] = function(str){
+	  *       return { object parsed from str };
+	  *     };
+	  *
+	  */
+
+	request.parse = {
+	  'application/x-www-form-urlencoded': parseString,
+	  'application/json': JSON.parse
+	};
+
+	/**
+	 * Parse the given header `str` into
+	 * an object containing the mapped fields.
+	 *
+	 * @param {String} str
+	 * @return {Object}
+	 * @api private
+	 */
+
+	function parseHeader(str) {
+	  var lines = str.split(/\r?\n/);
+	  var fields = {};
+	  var index;
+	  var line;
+	  var field;
+	  var val;
+
+	  lines.pop(); // trailing CRLF
+
+	  for (var i = 0, len = lines.length; i < len; ++i) {
+	    line = lines[i];
+	    index = line.indexOf(':');
+	    field = line.slice(0, index).toLowerCase();
+	    val = trim(line.slice(index + 1));
+	    fields[field] = val;
+	  }
+
+	  return fields;
+	}
+
+	/**
+	 * Check if `mime` is json or has +json structured syntax suffix.
+	 *
+	 * @param {String} mime
+	 * @return {Boolean}
+	 * @api private
+	 */
+
+	function isJSON(mime) {
+	  return /[\/+]json\b/.test(mime);
+	}
+
+	/**
+	 * Return the mime type for the given `str`.
+	 *
+	 * @param {String} str
+	 * @return {String}
+	 * @api private
+	 */
+
+	function type(str){
+	  return str.split(/ *; */).shift();
+	};
+
+	/**
+	 * Return header field parameters.
+	 *
+	 * @param {String} str
+	 * @return {Object}
+	 * @api private
+	 */
+
+	function params(str){
+	  return str.split(/ *; */).reduce(function(obj, str){
+	    var parts = str.split(/ *= */),
+	        key = parts.shift(),
+	        val = parts.shift();
+
+	    if (key && val) obj[key] = val;
+	    return obj;
+	  }, {});
+	};
+
+	/**
+	 * Initialize a new `Response` with the given `xhr`.
+	 *
+	 *  - set flags (.ok, .error, etc)
+	 *  - parse header
+	 *
+	 * Examples:
+	 *
+	 *  Aliasing `superagent` as `request` is nice:
+	 *
+	 *      request = superagent;
+	 *
+	 *  We can use the promise-like API, or pass callbacks:
+	 *
+	 *      request.get('/').end(function(res){});
+	 *      request.get('/', function(res){});
+	 *
+	 *  Sending data can be chained:
+	 *
+	 *      request
+	 *        .post('/user')
+	 *        .send({ name: 'tj' })
+	 *        .end(function(res){});
+	 *
+	 *  Or passed to `.send()`:
+	 *
+	 *      request
+	 *        .post('/user')
+	 *        .send({ name: 'tj' }, function(res){});
+	 *
+	 *  Or passed to `.post()`:
+	 *
+	 *      request
+	 *        .post('/user', { name: 'tj' })
+	 *        .end(function(res){});
+	 *
+	 * Or further reduced to a single call for simple cases:
+	 *
+	 *      request
+	 *        .post('/user', { name: 'tj' }, function(res){});
+	 *
+	 * @param {XMLHTTPRequest} xhr
+	 * @param {Object} options
+	 * @api private
+	 */
+
+	function Response(req, options) {
+	  options = options || {};
+	  this.req = req;
+	  this.xhr = this.req.xhr;
+	  // responseText is accessible only if responseType is '' or 'text' and on older browsers
+	  this.text = ((this.req.method !='HEAD' && (this.xhr.responseType === '' || this.xhr.responseType === 'text')) || typeof this.xhr.responseType === 'undefined')
+	     ? this.xhr.responseText
+	     : null;
+	  this.statusText = this.req.xhr.statusText;
+	  this._setStatusProperties(this.xhr.status);
+	  this.header = this.headers = parseHeader(this.xhr.getAllResponseHeaders());
+	  // getAllResponseHeaders sometimes falsely returns "" for CORS requests, but
+	  // getResponseHeader still works. so we get content-type even if getting
+	  // other headers fails.
+	  this.header['content-type'] = this.xhr.getResponseHeader('content-type');
+	  this._setHeaderProperties(this.header);
+	  this.body = this.req.method != 'HEAD'
+	    ? this._parseBody(this.text ? this.text : this.xhr.response)
+	    : null;
+	}
+
+	/**
+	 * Get case-insensitive `field` value.
+	 *
+	 * @param {String} field
+	 * @return {String}
+	 * @api public
+	 */
+
+	Response.prototype.get = function(field){
+	  return this.header[field.toLowerCase()];
+	};
+
+	/**
+	 * Set header related properties:
+	 *
+	 *   - `.type` the content type without params
+	 *
+	 * A response of "Content-Type: text/plain; charset=utf-8"
+	 * will provide you with a `.type` of "text/plain".
+	 *
+	 * @param {Object} header
+	 * @api private
+	 */
+
+	Response.prototype._setHeaderProperties = function(header){
+	  // content-type
+	  var ct = this.header['content-type'] || '';
+	  this.type = type(ct);
+
+	  // params
+	  var obj = params(ct);
+	  for (var key in obj) this[key] = obj[key];
+	};
+
+	/**
+	 * Parse the given body `str`.
+	 *
+	 * Used for auto-parsing of bodies. Parsers
+	 * are defined on the `superagent.parse` object.
+	 *
+	 * @param {String} str
+	 * @return {Mixed}
+	 * @api private
+	 */
+
+	Response.prototype._parseBody = function(str){
+	  var parse = request.parse[this.type];
+	  if (!parse && isJSON(this.type)) {
+	    parse = request.parse['application/json'];
+	  }
+	  return parse && str && (str.length || str instanceof Object)
+	    ? parse(str)
+	    : null;
+	};
+
+	/**
+	 * Set flags such as `.ok` based on `status`.
+	 *
+	 * For example a 2xx response will give you a `.ok` of __true__
+	 * whereas 5xx will be __false__ and `.error` will be __true__. The
+	 * `.clientError` and `.serverError` are also available to be more
+	 * specific, and `.statusType` is the class of error ranging from 1..5
+	 * sometimes useful for mapping respond colors etc.
+	 *
+	 * "sugar" properties are also defined for common cases. Currently providing:
+	 *
+	 *   - .noContent
+	 *   - .badRequest
+	 *   - .unauthorized
+	 *   - .notAcceptable
+	 *   - .notFound
+	 *
+	 * @param {Number} status
+	 * @api private
+	 */
+
+	Response.prototype._setStatusProperties = function(status){
+	  // handle IE9 bug: http://stackoverflow.com/questions/10046972/msie-returns-status-code-of-1223-for-ajax-request
+	  if (status === 1223) {
+	    status = 204;
+	  }
+
+	  var type = status / 100 | 0;
+
+	  // status / class
+	  this.status = this.statusCode = status;
+	  this.statusType = type;
+
+	  // basics
+	  this.info = 1 == type;
+	  this.ok = 2 == type;
+	  this.clientError = 4 == type;
+	  this.serverError = 5 == type;
+	  this.error = (4 == type || 5 == type)
+	    ? this.toError()
+	    : false;
+
+	  // sugar
+	  this.accepted = 202 == status;
+	  this.noContent = 204 == status;
+	  this.badRequest = 400 == status;
+	  this.unauthorized = 401 == status;
+	  this.notAcceptable = 406 == status;
+	  this.notFound = 404 == status;
+	  this.forbidden = 403 == status;
+	};
+
+	/**
+	 * Return an `Error` representative of this response.
+	 *
+	 * @return {Error}
+	 * @api public
+	 */
+
+	Response.prototype.toError = function(){
+	  var req = this.req;
+	  var method = req.method;
+	  var url = req.url;
+
+	  var msg = 'cannot ' + method + ' ' + url + ' (' + this.status + ')';
+	  var err = new Error(msg);
+	  err.status = this.status;
+	  err.method = method;
+	  err.url = url;
+
+	  return err;
+	};
+
+	/**
+	 * Expose `Response`.
+	 */
+
+	request.Response = Response;
+
+	/**
+	 * Initialize a new `Request` with the given `method` and `url`.
+	 *
+	 * @param {String} method
+	 * @param {String} url
+	 * @api public
+	 */
+
+	function Request(method, url) {
+	  var self = this;
+	  this._query = this._query || [];
+	  this.method = method;
+	  this.url = url;
+	  this.header = {}; // preserves header name case
+	  this._header = {}; // coerces header names to lowercase
+	  this.on('end', function(){
+	    var err = null;
+	    var res = null;
+
+	    try {
+	      res = new Response(self);
+	    } catch(e) {
+	      err = new Error('Parser is unable to parse the response');
+	      err.parse = true;
+	      err.original = e;
+	      // issue #675: return the raw response if the response parsing fails
+	      err.rawResponse = self.xhr && self.xhr.responseText ? self.xhr.responseText : null;
+	      // issue #876: return the http status code if the response parsing fails
+	      err.statusCode = self.xhr && self.xhr.status ? self.xhr.status : null;
+	      return self.callback(err);
+	    }
+
+	    self.emit('response', res);
+
+	    var new_err;
+	    try {
+	      if (res.status < 200 || res.status >= 300) {
+	        new_err = new Error(res.statusText || 'Unsuccessful HTTP response');
+	        new_err.original = err;
+	        new_err.response = res;
+	        new_err.status = res.status;
+	      }
+	    } catch(e) {
+	      new_err = e; // #985 touching res may cause INVALID_STATE_ERR on old Android
+	    }
+
+	    // #1000 don't catch errors from the callback to avoid double calling it
+	    if (new_err) {
+	      self.callback(new_err, res);
+	    } else {
+	      self.callback(null, res);
+	    }
+	  });
+	}
+
+	/**
+	 * Mixin `Emitter` and `requestBase`.
+	 */
+
+	Emitter(Request.prototype);
+	for (var key in requestBase) {
+	  Request.prototype[key] = requestBase[key];
+	}
+
+	/**
+	 * Set Content-Type to `type`, mapping values from `request.types`.
+	 *
+	 * Examples:
+	 *
+	 *      superagent.types.xml = 'application/xml';
+	 *
+	 *      request.post('/')
+	 *        .type('xml')
+	 *        .send(xmlstring)
+	 *        .end(callback);
+	 *
+	 *      request.post('/')
+	 *        .type('application/xml')
+	 *        .send(xmlstring)
+	 *        .end(callback);
+	 *
+	 * @param {String} type
+	 * @return {Request} for chaining
+	 * @api public
+	 */
+
+	Request.prototype.type = function(type){
+	  this.set('Content-Type', request.types[type] || type);
+	  return this;
+	};
+
+	/**
+	 * Set responseType to `val`. Presently valid responseTypes are 'blob' and
+	 * 'arraybuffer'.
+	 *
+	 * Examples:
+	 *
+	 *      req.get('/')
+	 *        .responseType('blob')
+	 *        .end(callback);
+	 *
+	 * @param {String} val
+	 * @return {Request} for chaining
+	 * @api public
+	 */
+
+	Request.prototype.responseType = function(val){
+	  this._responseType = val;
+	  return this;
+	};
+
+	/**
+	 * Set Accept to `type`, mapping values from `request.types`.
+	 *
+	 * Examples:
+	 *
+	 *      superagent.types.json = 'application/json';
+	 *
+	 *      request.get('/agent')
+	 *        .accept('json')
+	 *        .end(callback);
+	 *
+	 *      request.get('/agent')
+	 *        .accept('application/json')
+	 *        .end(callback);
+	 *
+	 * @param {String} accept
+	 * @return {Request} for chaining
+	 * @api public
+	 */
+
+	Request.prototype.accept = function(type){
+	  this.set('Accept', request.types[type] || type);
+	  return this;
+	};
+
+	/**
+	 * Set Authorization field value with `user` and `pass`.
+	 *
+	 * @param {String} user
+	 * @param {String} pass
+	 * @param {Object} options with 'type' property 'auto' or 'basic' (default 'basic')
+	 * @return {Request} for chaining
+	 * @api public
+	 */
+
+	Request.prototype.auth = function(user, pass, options){
+	  if (!options) {
+	    options = {
+	      type: 'basic'
+	    }
+	  }
+
+	  switch (options.type) {
+	    case 'basic':
+	      var str = btoa(user + ':' + pass);
+	      this.set('Authorization', 'Basic ' + str);
+	    break;
+
+	    case 'auto':
+	      this.username = user;
+	      this.password = pass;
+	    break;
+	  }
+	  return this;
+	};
+
+	/**
+	* Add query-string `val`.
+	*
+	* Examples:
+	*
+	*   request.get('/shoes')
+	*     .query('size=10')
+	*     .query({ color: 'blue' })
+	*
+	* @param {Object|String} val
+	* @return {Request} for chaining
+	* @api public
+	*/
+
+	Request.prototype.query = function(val){
+	  if ('string' != typeof val) val = serialize(val);
+	  if (val) this._query.push(val);
+	  return this;
+	};
+
+	/**
+	 * Queue the given `file` as an attachment to the specified `field`,
+	 * with optional `filename`.
+	 *
+	 * ``` js
+	 * request.post('/upload')
+	 *   .attach('content', new Blob(['<a id="a"><b id="b">hey!</b></a>'], { type: "text/html"}))
+	 *   .end(callback);
+	 * ```
+	 *
+	 * @param {String} field
+	 * @param {Blob|File} file
+	 * @param {String} filename
+	 * @return {Request} for chaining
+	 * @api public
+	 */
+
+	Request.prototype.attach = function(field, file, filename){
+	  this._getFormData().append(field, file, filename || file.name);
+	  return this;
+	};
+
+	Request.prototype._getFormData = function(){
+	  if (!this._formData) {
+	    this._formData = new root.FormData();
+	  }
+	  return this._formData;
+	};
+
+	/**
+	 * Invoke the callback with `err` and `res`
+	 * and handle arity check.
+	 *
+	 * @param {Error} err
+	 * @param {Response} res
+	 * @api private
+	 */
+
+	Request.prototype.callback = function(err, res){
+	  var fn = this._callback;
+	  this.clearTimeout();
+	  fn(err, res);
+	};
+
+	/**
+	 * Invoke callback with x-domain error.
+	 *
+	 * @api private
+	 */
+
+	Request.prototype.crossDomainError = function(){
+	  var err = new Error('Request has been terminated\nPossible causes: the network is offline, Origin is not allowed by Access-Control-Allow-Origin, the page is being unloaded, etc.');
+	  err.crossDomain = true;
+
+	  err.status = this.status;
+	  err.method = this.method;
+	  err.url = this.url;
+
+	  this.callback(err);
+	};
+
+	/**
+	 * Invoke callback with timeout error.
+	 *
+	 * @api private
+	 */
+
+	Request.prototype._timeoutError = function(){
+	  var timeout = this._timeout;
+	  var err = new Error('timeout of ' + timeout + 'ms exceeded');
+	  err.timeout = timeout;
+	  this.callback(err);
+	};
+
+	/**
+	 * Compose querystring to append to req.url
+	 *
+	 * @api private
+	 */
+
+	Request.prototype._appendQueryString = function(){
+	  var query = this._query.join('&');
+	  if (query) {
+	    this.url += ~this.url.indexOf('?')
+	      ? '&' + query
+	      : '?' + query;
+	  }
+	};
+
+	/**
+	 * Initiate request, invoking callback `fn(res)`
+	 * with an instanceof `Response`.
+	 *
+	 * @param {Function} fn
+	 * @return {Request} for chaining
+	 * @api public
+	 */
+
+	Request.prototype.end = function(fn){
+	  var self = this;
+	  var xhr = this.xhr = request.getXHR();
+	  var timeout = this._timeout;
+	  var data = this._formData || this._data;
+
+	  // store callback
+	  this._callback = fn || noop;
+
+	  // state change
+	  xhr.onreadystatechange = function(){
+	    if (4 != xhr.readyState) return;
+
+	    // In IE9, reads to any property (e.g. status) off of an aborted XHR will
+	    // result in the error "Could not complete the operation due to error c00c023f"
+	    var status;
+	    try { status = xhr.status } catch(e) { status = 0; }
+
+	    if (0 == status) {
+	      if (self.timedout) return self._timeoutError();
+	      if (self._aborted) return;
+	      return self.crossDomainError();
+	    }
+	    self.emit('end');
+	  };
+
+	  // progress
+	  var handleProgress = function(direction, e) {
+	    if (e.total > 0) {
+	      e.percent = e.loaded / e.total * 100;
+	    }
+	    e.direction = direction;
+	    self.emit('progress', e);
+	  }
+	  if (this.hasListeners('progress')) {
+	    try {
+	      xhr.onprogress = handleProgress.bind(null, 'download');
+	      if (xhr.upload) {
+	        xhr.upload.onprogress = handleProgress.bind(null, 'upload');
+	      }
+	    } catch(e) {
+	      // Accessing xhr.upload fails in IE from a web worker, so just pretend it doesn't exist.
+	      // Reported here:
+	      // https://connect.microsoft.com/IE/feedback/details/837245/xmlhttprequest-upload-throws-invalid-argument-when-used-from-web-worker-context
+	    }
+	  }
+
+	  // timeout
+	  if (timeout && !this._timer) {
+	    this._timer = setTimeout(function(){
+	      self.timedout = true;
+	      self.abort();
+	    }, timeout);
+	  }
+
+	  // querystring
+	  this._appendQueryString();
+
+	  // initiate request
+	  if (this.username && this.password) {
+	    xhr.open(this.method, this.url, true, this.username, this.password);
+	  } else {
+	    xhr.open(this.method, this.url, true);
+	  }
+
+	  // CORS
+	  if (this._withCredentials) xhr.withCredentials = true;
+
+	  // body
+	  if ('GET' != this.method && 'HEAD' != this.method && 'string' != typeof data && !this._isHost(data)) {
+	    // serialize stuff
+	    var contentType = this._header['content-type'];
+	    var serialize = this._serializer || request.serialize[contentType ? contentType.split(';')[0] : ''];
+	    if (!serialize && isJSON(contentType)) serialize = request.serialize['application/json'];
+	    if (serialize) data = serialize(data);
+	  }
+
+	  // set header fields
+	  for (var field in this.header) {
+	    if (null == this.header[field]) continue;
+	    xhr.setRequestHeader(field, this.header[field]);
+	  }
+
+	  if (this._responseType) {
+	    xhr.responseType = this._responseType;
+	  }
+
+	  // send stuff
+	  this.emit('request', this);
+
+	  // IE11 xhr.send(undefined) sends 'undefined' string as POST payload (instead of nothing)
+	  // We need null here if data is undefined
+	  xhr.send(typeof data !== 'undefined' ? data : null);
+	  return this;
+	};
+
+
+	/**
+	 * Expose `Request`.
+	 */
+
+	request.Request = Request;
+
+	/**
+	 * GET `url` with optional callback `fn(res)`.
+	 *
+	 * @param {String} url
+	 * @param {Mixed|Function} [data] or fn
+	 * @param {Function} [fn]
+	 * @return {Request}
+	 * @api public
+	 */
+
+	request.get = function(url, data, fn){
+	  var req = request('GET', url);
+	  if ('function' == typeof data) fn = data, data = null;
+	  if (data) req.query(data);
+	  if (fn) req.end(fn);
+	  return req;
+	};
+
+	/**
+	 * HEAD `url` with optional callback `fn(res)`.
+	 *
+	 * @param {String} url
+	 * @param {Mixed|Function} [data] or fn
+	 * @param {Function} [fn]
+	 * @return {Request}
+	 * @api public
+	 */
+
+	request.head = function(url, data, fn){
+	  var req = request('HEAD', url);
+	  if ('function' == typeof data) fn = data, data = null;
+	  if (data) req.send(data);
+	  if (fn) req.end(fn);
+	  return req;
+	};
+
+	/**
+	 * OPTIONS query to `url` with optional callback `fn(res)`.
+	 *
+	 * @param {String} url
+	 * @param {Mixed|Function} [data] or fn
+	 * @param {Function} [fn]
+	 * @return {Request}
+	 * @api public
+	 */
+
+	request.options = function(url, data, fn){
+	  var req = request('OPTIONS', url);
+	  if ('function' == typeof data) fn = data, data = null;
+	  if (data) req.send(data);
+	  if (fn) req.end(fn);
+	  return req;
+	};
+
+	/**
+	 * DELETE `url` with optional callback `fn(res)`.
+	 *
+	 * @param {String} url
+	 * @param {Function} [fn]
+	 * @return {Request}
+	 * @api public
+	 */
+
+	function del(url, fn){
+	  var req = request('DELETE', url);
+	  if (fn) req.end(fn);
+	  return req;
+	};
+
+	request['del'] = del;
+	request['delete'] = del;
+
+	/**
+	 * PATCH `url` with optional `data` and callback `fn(res)`.
+	 *
+	 * @param {String} url
+	 * @param {Mixed} [data]
+	 * @param {Function} [fn]
+	 * @return {Request}
+	 * @api public
+	 */
+
+	request.patch = function(url, data, fn){
+	  var req = request('PATCH', url);
+	  if ('function' == typeof data) fn = data, data = null;
+	  if (data) req.send(data);
+	  if (fn) req.end(fn);
+	  return req;
+	};
+
+	/**
+	 * POST `url` with optional `data` and callback `fn(res)`.
+	 *
+	 * @param {String} url
+	 * @param {Mixed} [data]
+	 * @param {Function} [fn]
+	 * @return {Request}
+	 * @api public
+	 */
+
+	request.post = function(url, data, fn){
+	  var req = request('POST', url);
+	  if ('function' == typeof data) fn = data, data = null;
+	  if (data) req.send(data);
+	  if (fn) req.end(fn);
+	  return req;
+	};
+
+	/**
+	 * PUT `url` with optional `data` and callback `fn(res)`.
+	 *
+	 * @param {String} url
+	 * @param {Mixed|Function} [data] or fn
+	 * @param {Function} [fn]
+	 * @return {Request}
+	 * @api public
+	 */
+
+	request.put = function(url, data, fn){
+	  var req = request('PUT', url);
+	  if ('function' == typeof data) fn = data, data = null;
+	  if (data) req.send(data);
+	  if (fn) req.end(fn);
+	  return req;
+	};
+
+
+/***/ },
+/* 837 */
+/***/ function(module, exports, __webpack_require__) {
+
+	
+	/**
+	 * Expose `Emitter`.
+	 */
+
+	if (true) {
+	  module.exports = Emitter;
+	}
+
+	/**
+	 * Initialize a new `Emitter`.
+	 *
+	 * @api public
+	 */
+
+	function Emitter(obj) {
+	  if (obj) return mixin(obj);
+	};
+
+	/**
+	 * Mixin the emitter properties.
+	 *
+	 * @param {Object} obj
+	 * @return {Object}
+	 * @api private
+	 */
+
+	function mixin(obj) {
+	  for (var key in Emitter.prototype) {
+	    obj[key] = Emitter.prototype[key];
+	  }
+	  return obj;
+	}
+
+	/**
+	 * Listen on the given `event` with `fn`.
+	 *
+	 * @param {String} event
+	 * @param {Function} fn
+	 * @return {Emitter}
+	 * @api public
+	 */
+
+	Emitter.prototype.on =
+	Emitter.prototype.addEventListener = function(event, fn){
+	  this._callbacks = this._callbacks || {};
+	  (this._callbacks['$' + event] = this._callbacks['$' + event] || [])
+	    .push(fn);
+	  return this;
+	};
+
+	/**
+	 * Adds an `event` listener that will be invoked a single
+	 * time then automatically removed.
+	 *
+	 * @param {String} event
+	 * @param {Function} fn
+	 * @return {Emitter}
+	 * @api public
+	 */
+
+	Emitter.prototype.once = function(event, fn){
+	  function on() {
+	    this.off(event, on);
+	    fn.apply(this, arguments);
+	  }
+
+	  on.fn = fn;
+	  this.on(event, on);
+	  return this;
+	};
+
+	/**
+	 * Remove the given callback for `event` or all
+	 * registered callbacks.
+	 *
+	 * @param {String} event
+	 * @param {Function} fn
+	 * @return {Emitter}
+	 * @api public
+	 */
+
+	Emitter.prototype.off =
+	Emitter.prototype.removeListener =
+	Emitter.prototype.removeAllListeners =
+	Emitter.prototype.removeEventListener = function(event, fn){
+	  this._callbacks = this._callbacks || {};
+
+	  // all
+	  if (0 == arguments.length) {
+	    this._callbacks = {};
+	    return this;
+	  }
+
+	  // specific event
+	  var callbacks = this._callbacks['$' + event];
+	  if (!callbacks) return this;
+
+	  // remove all handlers
+	  if (1 == arguments.length) {
+	    delete this._callbacks['$' + event];
+	    return this;
+	  }
+
+	  // remove specific handler
+	  var cb;
+	  for (var i = 0; i < callbacks.length; i++) {
+	    cb = callbacks[i];
+	    if (cb === fn || cb.fn === fn) {
+	      callbacks.splice(i, 1);
+	      break;
+	    }
+	  }
+	  return this;
+	};
+
+	/**
+	 * Emit `event` with the given args.
+	 *
+	 * @param {String} event
+	 * @param {Mixed} ...
+	 * @return {Emitter}
+	 */
+
+	Emitter.prototype.emit = function(event){
+	  this._callbacks = this._callbacks || {};
+	  var args = [].slice.call(arguments, 1)
+	    , callbacks = this._callbacks['$' + event];
+
+	  if (callbacks) {
+	    callbacks = callbacks.slice(0);
+	    for (var i = 0, len = callbacks.length; i < len; ++i) {
+	      callbacks[i].apply(this, args);
+	    }
+	  }
+
+	  return this;
+	};
+
+	/**
+	 * Return array of callbacks for `event`.
+	 *
+	 * @param {String} event
+	 * @return {Array}
+	 * @api public
+	 */
+
+	Emitter.prototype.listeners = function(event){
+	  this._callbacks = this._callbacks || {};
+	  return this._callbacks['$' + event] || [];
+	};
+
+	/**
+	 * Check if this emitter has `event` handlers.
+	 *
+	 * @param {String} event
+	 * @return {Boolean}
+	 * @api public
+	 */
+
+	Emitter.prototype.hasListeners = function(event){
+	  return !! this.listeners(event).length;
+	};
+
+
+/***/ },
 /* 838 */
+/***/ function(module, exports, __webpack_require__) {
+
+	/**
+	 * Module of mixed-in functions shared between node and client code
+	 */
+	var isObject = __webpack_require__(839);
+
+	/**
+	 * Clear previous timeout.
+	 *
+	 * @return {Request} for chaining
+	 * @api public
+	 */
+
+	exports.clearTimeout = function _clearTimeout(){
+	  this._timeout = 0;
+	  clearTimeout(this._timer);
+	  return this;
+	};
+
+	/**
+	 * Override default response body parser
+	 *
+	 * This function will be called to convert incoming data into request.body
+	 *
+	 * @param {Function}
+	 * @api public
+	 */
+
+	exports.parse = function parse(fn){
+	  this._parser = fn;
+	  return this;
+	};
+
+	/**
+	 * Override default request body serializer
+	 *
+	 * This function will be called to convert data set via .send or .attach into payload to send
+	 *
+	 * @param {Function}
+	 * @api public
+	 */
+
+	exports.serialize = function serialize(fn){
+	  this._serializer = fn;
+	  return this;
+	};
+
+	/**
+	 * Set timeout to `ms`.
+	 *
+	 * @param {Number} ms
+	 * @return {Request} for chaining
+	 * @api public
+	 */
+
+	exports.timeout = function timeout(ms){
+	  this._timeout = ms;
+	  return this;
+	};
+
+	/**
+	 * Promise support
+	 *
+	 * @param {Function} resolve
+	 * @param {Function} reject
+	 * @return {Request}
+	 */
+
+	exports.then = function then(resolve, reject) {
+	  if (!this._fullfilledPromise) {
+	    var self = this;
+	    this._fullfilledPromise = new Promise(function(innerResolve, innerReject){
+	      self.end(function(err, res){
+	        if (err) innerReject(err); else innerResolve(res);
+	      });
+	    });
+	  }
+	  return this._fullfilledPromise.then(resolve, reject);
+	}
+
+	exports.catch = function(cb) {
+	  return this.then(undefined, cb);
+	};
+
+	/**
+	 * Allow for extension
+	 */
+
+	exports.use = function use(fn) {
+	  fn(this);
+	  return this;
+	}
+
+
+	/**
+	 * Get request header `field`.
+	 * Case-insensitive.
+	 *
+	 * @param {String} field
+	 * @return {String}
+	 * @api public
+	 */
+
+	exports.get = function(field){
+	  return this._header[field.toLowerCase()];
+	};
+
+	/**
+	 * Get case-insensitive header `field` value.
+	 * This is a deprecated internal API. Use `.get(field)` instead.
+	 *
+	 * (getHeader is no longer used internally by the superagent code base)
+	 *
+	 * @param {String} field
+	 * @return {String}
+	 * @api private
+	 * @deprecated
+	 */
+
+	exports.getHeader = exports.get;
+
+	/**
+	 * Set header `field` to `val`, or multiple fields with one object.
+	 * Case-insensitive.
+	 *
+	 * Examples:
+	 *
+	 *      req.get('/')
+	 *        .set('Accept', 'application/json')
+	 *        .set('X-API-Key', 'foobar')
+	 *        .end(callback);
+	 *
+	 *      req.get('/')
+	 *        .set({ Accept: 'application/json', 'X-API-Key': 'foobar' })
+	 *        .end(callback);
+	 *
+	 * @param {String|Object} field
+	 * @param {String} val
+	 * @return {Request} for chaining
+	 * @api public
+	 */
+
+	exports.set = function(field, val){
+	  if (isObject(field)) {
+	    for (var key in field) {
+	      this.set(key, field[key]);
+	    }
+	    return this;
+	  }
+	  this._header[field.toLowerCase()] = val;
+	  this.header[field] = val;
+	  return this;
+	};
+
+	/**
+	 * Remove header `field`.
+	 * Case-insensitive.
+	 *
+	 * Example:
+	 *
+	 *      req.get('/')
+	 *        .unset('User-Agent')
+	 *        .end(callback);
+	 *
+	 * @param {String} field
+	 */
+	exports.unset = function(field){
+	  delete this._header[field.toLowerCase()];
+	  delete this.header[field];
+	  return this;
+	};
+
+	/**
+	 * Write the field `name` and `val`, or multiple fields with one object
+	 * for "multipart/form-data" request bodies.
+	 *
+	 * ``` js
+	 * request.post('/upload')
+	 *   .field('foo', 'bar')
+	 *   .end(callback);
+	 *
+	 * request.post('/upload')
+	 *   .field({ foo: 'bar', baz: 'qux' })
+	 *   .end(callback);
+	 * ```
+	 *
+	 * @param {String|Object} name
+	 * @param {String|Blob|File|Buffer|fs.ReadStream} val
+	 * @return {Request} for chaining
+	 * @api public
+	 */
+	exports.field = function(name, val) {
+
+	  // name should be either a string or an object.
+	  if (null === name ||  undefined === name) {
+	    throw new Error('.field(name, val) name can not be empty');
+	  }
+
+	  if (isObject(name)) {
+	    for (var key in name) {
+	      this.field(key, name[key]);
+	    }
+	    return this;
+	  }
+
+	  // val should be defined now
+	  if (null === val || undefined === val) {
+	    throw new Error('.field(name, val) val can not be empty');
+	  }
+	  this._getFormData().append(name, val);
+	  return this;
+	};
+
+	/**
+	 * Abort the request, and clear potential timeout.
+	 *
+	 * @return {Request}
+	 * @api public
+	 */
+	exports.abort = function(){
+	  if (this._aborted) {
+	    return this;
+	  }
+	  this._aborted = true;
+	  this.xhr && this.xhr.abort(); // browser
+	  this.req && this.req.abort(); // node
+	  this.clearTimeout();
+	  this.emit('abort');
+	  return this;
+	};
+
+	/**
+	 * Enable transmission of cookies with x-domain requests.
+	 *
+	 * Note that for this to work the origin must not be
+	 * using "Access-Control-Allow-Origin" with a wildcard,
+	 * and also must set "Access-Control-Allow-Credentials"
+	 * to "true".
+	 *
+	 * @api public
+	 */
+
+	exports.withCredentials = function(){
+	  // This is browser-only functionality. Node side is no-op.
+	  this._withCredentials = true;
+	  return this;
+	};
+
+	/**
+	 * Set the max redirects to `n`. Does noting in browser XHR implementation.
+	 *
+	 * @param {Number} n
+	 * @return {Request} for chaining
+	 * @api public
+	 */
+
+	exports.redirects = function(n){
+	  this._maxRedirects = n;
+	  return this;
+	};
+
+	/**
+	 * Convert to a plain javascript object (not JSON string) of scalar properties.
+	 * Note as this method is designed to return a useful non-this value,
+	 * it cannot be chained.
+	 *
+	 * @return {Object} describing method, url, and data of this request
+	 * @api public
+	 */
+
+	exports.toJSON = function(){
+	  return {
+	    method: this.method,
+	    url: this.url,
+	    data: this._data,
+	    headers: this._header
+	  };
+	};
+
+	/**
+	 * Check if `obj` is a host object,
+	 * we don't want to serialize these :)
+	 *
+	 * TODO: future proof, move to compoent land
+	 *
+	 * @param {Object} obj
+	 * @return {Boolean}
+	 * @api private
+	 */
+
+	exports._isHost = function _isHost(obj) {
+	  var str = {}.toString.call(obj);
+
+	  switch (str) {
+	    case '[object File]':
+	    case '[object Blob]':
+	    case '[object FormData]':
+	      return true;
+	    default:
+	      return false;
+	  }
+	}
+
+	/**
+	 * Send `data` as the request body, defaulting the `.type()` to "json" when
+	 * an object is given.
+	 *
+	 * Examples:
+	 *
+	 *       // manual json
+	 *       request.post('/user')
+	 *         .type('json')
+	 *         .send('{"name":"tj"}')
+	 *         .end(callback)
+	 *
+	 *       // auto json
+	 *       request.post('/user')
+	 *         .send({ name: 'tj' })
+	 *         .end(callback)
+	 *
+	 *       // manual x-www-form-urlencoded
+	 *       request.post('/user')
+	 *         .type('form')
+	 *         .send('name=tj')
+	 *         .end(callback)
+	 *
+	 *       // auto x-www-form-urlencoded
+	 *       request.post('/user')
+	 *         .type('form')
+	 *         .send({ name: 'tj' })
+	 *         .end(callback)
+	 *
+	 *       // defaults to x-www-form-urlencoded
+	 *      request.post('/user')
+	 *        .send('name=tobi')
+	 *        .send('species=ferret')
+	 *        .end(callback)
+	 *
+	 * @param {String|Object} data
+	 * @return {Request} for chaining
+	 * @api public
+	 */
+
+	exports.send = function(data){
+	  var obj = isObject(data);
+	  var type = this._header['content-type'];
+
+	  // merge
+	  if (obj && isObject(this._data)) {
+	    for (var key in data) {
+	      this._data[key] = data[key];
+	    }
+	  } else if ('string' == typeof data) {
+	    // default to x-www-form-urlencoded
+	    if (!type) this.type('form');
+	    type = this._header['content-type'];
+	    if ('application/x-www-form-urlencoded' == type) {
+	      this._data = this._data
+	        ? this._data + '&' + data
+	        : data;
+	    } else {
+	      this._data = (this._data || '') + data;
+	    }
+	  } else {
+	    this._data = data;
+	  }
+
+	  if (!obj || this._isHost(data)) return this;
+
+	  // default to json
+	  if (!type) this.type('json');
+	  return this;
+	};
+
+
+/***/ },
+/* 839 */
+/***/ function(module, exports) {
+
+	/**
+	 * Check if `obj` is an object.
+	 *
+	 * @param {Object} obj
+	 * @return {Boolean}
+	 * @api private
+	 */
+
+	function isObject(obj) {
+	  return null !== obj && 'object' === typeof obj;
+	}
+
+	module.exports = isObject;
+
+
+/***/ },
+/* 840 */
+/***/ function(module, exports) {
+
+	// The node and browser modules expose versions of this with the
+	// appropriate constructor function bound as first argument
+	/**
+	 * Issue a request:
+	 *
+	 * Examples:
+	 *
+	 *    request('GET', '/users').end(callback)
+	 *    request('/users').end(callback)
+	 *    request('/users', callback)
+	 *
+	 * @param {String} method
+	 * @param {String|Function} url or callback
+	 * @return {Request}
+	 * @api public
+	 */
+
+	function request(RequestConstructor, method, url) {
+	  // callback
+	  if ('function' == typeof url) {
+	    return new RequestConstructor('GET', method).end(url);
+	  }
+
+	  // url first
+	  if (2 == arguments.length) {
+	    return new RequestConstructor('GET', method);
+	  }
+
+	  return new RequestConstructor(method, url);
+	}
+
+	module.exports = request;
+
+
+/***/ },
+/* 841 */
+/***/ function(module, exports, __webpack_require__) {
+
+	// style-loader: Adds some css to the DOM by adding a <style> tag
+
+	// load the styles
+	var content = __webpack_require__(842);
+	if(typeof content === 'string') content = [[module.id, content, '']];
+	// add the styles to the DOM
+	var update = __webpack_require__(844)(content, {});
+	if(content.locals) module.exports = content.locals;
+	// Hot Module Replacement
+	if(false) {
+		// When the styles change, update the <style> tags
+		if(!content.locals) {
+			module.hot.accept("!!./../node_modules/css-loader/index.js!./../node_modules/sass-loader/index.js!./style.scss", function() {
+				var newContent = require("!!./../node_modules/css-loader/index.js!./../node_modules/sass-loader/index.js!./style.scss");
+				if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
+				update(newContent);
+			});
+		}
+		// When the module is disposed, remove the <style> tags
+		module.hot.dispose(function() { update(); });
+	}
+
+/***/ },
+/* 842 */
+/***/ function(module, exports, __webpack_require__) {
+
+	exports = module.exports = __webpack_require__(843)();
+	// imports
+	exports.push([module.id, "@import url(https://fonts.googleapis.com/css?family=Lato:100,400,300,500);", ""]);
+	exports.push([module.id, "@import url(https://fonts.googleapis.com/css?family=Source+Code+Pro);", ""]);
+
+	// module
+	exports.push([module.id, "@charset \"UTF-8\";\nbody {\n  margin: 0;\n  font-size: 12px;\n  font-size: calculateRem(12px);\n  background: #e7e7e7;\n  font-family: sans-serif;\n  color: #27243F; }\n  body #app {\n    height: 100%; }\n\nlegend {\n  color: #13111f;\n  letter-spacing: 1px; }\n\nlabel {\n  font-size: 12px;\n  font-size: calculateRem(12px); }\n\nfieldset {\n  margin: 1.2rem 0 0 0;\n  border: 1px solid #e7e7e7;\n  color: #3b375f; }\n\ninput {\n  border: 1px solid #e7e7e7;\n  color: #8D86C9;\n  display: inline-block;\n  width: 80%;\n  padding: 6px 10px;\n  margin: 6px 0; }\n\nbutton {\n  display: inline-block;\n  border: 1px solid #27243F;\n  background: #27243F;\n  color: #e7e7e7;\n  border-radius: 2px;\n  letter-spacing: 1px;\n  margin: 10px 0;\n  padding: 8px 28px;\n  text-transform: uppercase; }\n  button + button {\n    margin-left: 10px; }\n  button:disabled {\n    background: #a19bcd;\n    color: #ddd;\n    position: relative; }\n    button:disabled:after {\n      display: block;\n      position: absolute;\n      color: #333;\n      top: 0;\n      width: 460px;\n      content: 'cannot call non static functions via server.';\n      left: 100%;\n      text-align: left;\n      padding: 9px 18px; }\n\n.injectDappHub {\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  flex-direction: column;\n  height: 80%; }\n\n.treeview {\n  height: 100%;\n  display: flex;\n  flex-direction: row;\n  align-content: flex-start;\n  flex: 1; }\n  .treeview > .selectView {\n    flex: 1;\n    overflow-y: auto;\n    position: relative;\n    background: #27243F;\n    color: #fff;\n    min-width: 15%;\n    width: 15%; }\n    .treeview > .selectView > .navBtn {\n      padding: 6px 15px;\n      font-size: 12px;\n      font-weight: 300;\n      letter-spacing: 1px;\n      background-color: #27243F;\n      color: #fff; }\n      .treeview > .selectView > .navBtn:hover {\n        background-color: #4f4980; }\n      .treeview > .selectView > .navBtn.selected {\n        border-left: 4px solid #725AC1;\n        background: #4f4980;\n        padding-left: 11px; }\n  .treeview .mainView {\n    flex: 8;\n    overflow: auto;\n    display: flex; }\n    .treeview .mainView .sniffer {\n      display: flex;\n      flex-direction: column;\n      font-family: monospace;\n      width: 100%;\n      overflow-wrap: break-word; }\n      .treeview .mainView .sniffer .controllBar {\n        border-bottom: 4px solid #ddd;\n        padding: 2px 6px; }\n        .treeview .mainView .sniffer .controllBar .record input {\n          display: none; }\n        .treeview .mainView .sniffer .controllBar .record::before {\n          content: \" \";\n          display: inline-block;\n          width: 12px;\n          height: 12px;\n          background: #bbb;\n          border-radius: 20px;\n          margin: 0px 7px 2px 3px;\n          vertical-align: middle; }\n        .treeview .mainView .sniffer .controllBar .record.checked::before {\n          background: #ff603b;\n          box-shadow: 0px 1px 4px 0px #ff603b; }\n      .treeview .mainView .sniffer ul {\n        padding: 0;\n        margin: 0;\n        overflow-y: auto; }\n        .treeview .mainView .sniffer ul li.sniffline {\n          cursor: default;\n          width: 100%;\n          list-style: none; }\n          .treeview .mainView .sniffer ul li.sniffline.call {\n            background: #cce1f0; }\n          .treeview .mainView .sniffer ul li.sniffline.tx {\n            background: #f7e5d2; }\n          .treeview .mainView .sniffer ul li.sniffline span.req {\n            padding: 4px 15px;\n            display: block;\n            border-bottom: 1px solid #cdcdcd; }\n            .treeview .mainView .sniffer ul li.sniffline span.req:hover, .treeview .mainView .sniffer ul li.sniffline span.req.open {\n              background: rgba(255, 255, 255, 0.3); }\n          .treeview .mainView .sniffer ul li.sniffline span.res {\n            display: block;\n            padding: 5px 35px;\n            background: rgba(0, 0, 0, 0.1);\n            white-space: pre-wrap; }\n          .treeview .mainView .sniffer ul li.sniffline::before {\n            content: \"\\25B8\";\n            font-size: 10px;\n            line-height: 10px;\n            float: left;\n            margin: 5px 10px; }\n          .treeview .mainView .sniffer ul li.sniffline.open::before {\n            content: \"\\25BE\"; }\n\n.objectView {\n  width: 100%; }\n\n.abiView {\n  display: flex;\n  width: 100%;\n  height: 100%; }\n  .abiView .selectView {\n    flex: 3;\n    overflow-y: auto; }\n    .abiView .selectView .navBtn {\n      cursor: default;\n      font-weight: 100;\n      background: #fff;\n      font-weight: 400;\n      position: relative;\n      padding: 6px 15px; }\n      .abiView .selectView .navBtn.contract, .abiView .selectView .navBtn.objectInfo {\n        font-size: 18px;\n        padding: 10px;\n        background: #8D86C9;\n        color: #fff;\n        letter-spacing: 1px; }\n        .abiView .selectView .navBtn.contract.selected, .abiView .selectView .navBtn.objectInfo.selected {\n          border-left: 4px solid #f0a800;\n          padding-left: 11px; }\n        .abiView .selectView .navBtn.contract:hover, .abiView .selectView .navBtn.contract.selected, .abiView .selectView .navBtn.objectInfo:hover, .abiView .selectView .navBtn.objectInfo.selected {\n          background: #534d86; }\n        .abiView .selectView .navBtn.contract:before, .abiView .selectView .navBtn.objectInfo:before {\n          border-bottom: none; }\n      .abiView .selectView .navBtn.selected {\n        border-left: 4px solid #725AC1;\n        padding-left: 11px; }\n      .abiView .selectView .navBtn:hover {\n        background: rgba(255, 255, 255, 0.1); }\n      .abiView .selectView .navBtn:before {\n        content: \" \";\n        border-bottom: 1px dotted #e7e7e7;\n        display: block;\n        position: absolute;\n        bottom: 0;\n        right: 0;\n        width: 90%; }\n      .abiView .selectView .navBtn:hover {\n        background: #F8F7F5; }\n      .abiView .selectView .navBtn.selected {\n        border-left: 4px solid #725AC1;\n        background: #F8F7F5; }\n  .abiView .mainView {\n    flex: 6;\n    overflow-y: auto;\n    padding: 15px;\n    border-left: 1px solid #F8F7F5;\n    background: #fff; }\n    .abiView .mainView table {\n      width: 100%; }\n      .abiView .mainView table td {\n        margin: 6px 0; }\n      .abiView .mainView table td.input {\n        display: flex; }\n        .abiView .mainView table td.input > input {\n          flex: 1; }\n      .abiView .mainView table td.label {\n        text-align: right;\n        padding-right: 10px;\n        width: 18%; }\n      .abiView .mainView table td.type {\n        padding-left: 4px;\n        width: 15%; }\n\n.jsonDisplay {\n  white-space: pre;\n  font-family: monospace;\n  padding: 20px;\n  display: block; }\n", ""]);
+
+	// exports
+
+
+/***/ },
+/* 843 */
+/***/ function(module, exports) {
+
+	/*
+		MIT License http://www.opensource.org/licenses/mit-license.php
+		Author Tobias Koppers @sokra
+	*/
+	// css base code, injected by the css-loader
+	module.exports = function() {
+		var list = [];
+
+		// return the list of modules as css string
+		list.toString = function toString() {
+			var result = [];
+			for(var i = 0; i < this.length; i++) {
+				var item = this[i];
+				if(item[2]) {
+					result.push("@media " + item[2] + "{" + item[1] + "}");
+				} else {
+					result.push(item[1]);
+				}
+			}
+			return result.join("");
+		};
+
+		// import a list of modules into the list
+		list.i = function(modules, mediaQuery) {
+			if(typeof modules === "string")
+				modules = [[null, modules, ""]];
+			var alreadyImportedModules = {};
+			for(var i = 0; i < this.length; i++) {
+				var id = this[i][0];
+				if(typeof id === "number")
+					alreadyImportedModules[id] = true;
+			}
+			for(i = 0; i < modules.length; i++) {
+				var item = modules[i];
+				// skip already imported module
+				// this implementation is not 100% perfect for weird media query combinations
+				//  when a module is imported multiple times with different media queries.
+				//  I hope this will never occur (Hey this way we have smaller bundles)
+				if(typeof item[0] !== "number" || !alreadyImportedModules[item[0]]) {
+					if(mediaQuery && !item[2]) {
+						item[2] = mediaQuery;
+					} else if(mediaQuery) {
+						item[2] = "(" + item[2] + ") and (" + mediaQuery + ")";
+					}
+					list.push(item);
+				}
+			}
+		};
+		return list;
+	};
+
+
+/***/ },
+/* 844 */
+/***/ function(module, exports, __webpack_require__) {
+
+	/*
+		MIT License http://www.opensource.org/licenses/mit-license.php
+		Author Tobias Koppers @sokra
+	*/
+	var stylesInDom = {},
+		memoize = function(fn) {
+			var memo;
+			return function () {
+				if (typeof memo === "undefined") memo = fn.apply(this, arguments);
+				return memo;
+			};
+		},
+		isOldIE = memoize(function() {
+			return /msie [6-9]\b/.test(window.navigator.userAgent.toLowerCase());
+		}),
+		getHeadElement = memoize(function () {
+			return document.head || document.getElementsByTagName("head")[0];
+		}),
+		singletonElement = null,
+		singletonCounter = 0,
+		styleElementsInsertedAtTop = [];
+
+	module.exports = function(list, options) {
+		if(false) {
+			if(typeof document !== "object") throw new Error("The style-loader cannot be used in a non-browser environment");
+		}
+
+		options = options || {};
+		// Force single-tag solution on IE6-9, which has a hard limit on the # of <style>
+		// tags it will allow on a page
+		if (typeof options.singleton === "undefined") options.singleton = isOldIE();
+
+		// By default, add <style> tags to the bottom of <head>.
+		if (typeof options.insertAt === "undefined") options.insertAt = "bottom";
+
+		var styles = listToStyles(list);
+		addStylesToDom(styles, options);
+
+		return function update(newList) {
+			var mayRemove = [];
+			for(var i = 0; i < styles.length; i++) {
+				var item = styles[i];
+				var domStyle = stylesInDom[item.id];
+				domStyle.refs--;
+				mayRemove.push(domStyle);
+			}
+			if(newList) {
+				var newStyles = listToStyles(newList);
+				addStylesToDom(newStyles, options);
+			}
+			for(var i = 0; i < mayRemove.length; i++) {
+				var domStyle = mayRemove[i];
+				if(domStyle.refs === 0) {
+					for(var j = 0; j < domStyle.parts.length; j++)
+						domStyle.parts[j]();
+					delete stylesInDom[domStyle.id];
+				}
+			}
+		};
+	}
+
+	function addStylesToDom(styles, options) {
+		for(var i = 0; i < styles.length; i++) {
+			var item = styles[i];
+			var domStyle = stylesInDom[item.id];
+			if(domStyle) {
+				domStyle.refs++;
+				for(var j = 0; j < domStyle.parts.length; j++) {
+					domStyle.parts[j](item.parts[j]);
+				}
+				for(; j < item.parts.length; j++) {
+					domStyle.parts.push(addStyle(item.parts[j], options));
+				}
+			} else {
+				var parts = [];
+				for(var j = 0; j < item.parts.length; j++) {
+					parts.push(addStyle(item.parts[j], options));
+				}
+				stylesInDom[item.id] = {id: item.id, refs: 1, parts: parts};
+			}
+		}
+	}
+
+	function listToStyles(list) {
+		var styles = [];
+		var newStyles = {};
+		for(var i = 0; i < list.length; i++) {
+			var item = list[i];
+			var id = item[0];
+			var css = item[1];
+			var media = item[2];
+			var sourceMap = item[3];
+			var part = {css: css, media: media, sourceMap: sourceMap};
+			if(!newStyles[id])
+				styles.push(newStyles[id] = {id: id, parts: [part]});
+			else
+				newStyles[id].parts.push(part);
+		}
+		return styles;
+	}
+
+	function insertStyleElement(options, styleElement) {
+		var head = getHeadElement();
+		var lastStyleElementInsertedAtTop = styleElementsInsertedAtTop[styleElementsInsertedAtTop.length - 1];
+		if (options.insertAt === "top") {
+			if(!lastStyleElementInsertedAtTop) {
+				head.insertBefore(styleElement, head.firstChild);
+			} else if(lastStyleElementInsertedAtTop.nextSibling) {
+				head.insertBefore(styleElement, lastStyleElementInsertedAtTop.nextSibling);
+			} else {
+				head.appendChild(styleElement);
+			}
+			styleElementsInsertedAtTop.push(styleElement);
+		} else if (options.insertAt === "bottom") {
+			head.appendChild(styleElement);
+		} else {
+			throw new Error("Invalid value for parameter 'insertAt'. Must be 'top' or 'bottom'.");
+		}
+	}
+
+	function removeStyleElement(styleElement) {
+		styleElement.parentNode.removeChild(styleElement);
+		var idx = styleElementsInsertedAtTop.indexOf(styleElement);
+		if(idx >= 0) {
+			styleElementsInsertedAtTop.splice(idx, 1);
+		}
+	}
+
+	function createStyleElement(options) {
+		var styleElement = document.createElement("style");
+		styleElement.type = "text/css";
+		insertStyleElement(options, styleElement);
+		return styleElement;
+	}
+
+	function createLinkElement(options) {
+		var linkElement = document.createElement("link");
+		linkElement.rel = "stylesheet";
+		insertStyleElement(options, linkElement);
+		return linkElement;
+	}
+
+	function addStyle(obj, options) {
+		var styleElement, update, remove;
+
+		if (options.singleton) {
+			var styleIndex = singletonCounter++;
+			styleElement = singletonElement || (singletonElement = createStyleElement(options));
+			update = applyToSingletonTag.bind(null, styleElement, styleIndex, false);
+			remove = applyToSingletonTag.bind(null, styleElement, styleIndex, true);
+		} else if(obj.sourceMap &&
+			typeof URL === "function" &&
+			typeof URL.createObjectURL === "function" &&
+			typeof URL.revokeObjectURL === "function" &&
+			typeof Blob === "function" &&
+			typeof btoa === "function") {
+			styleElement = createLinkElement(options);
+			update = updateLink.bind(null, styleElement);
+			remove = function() {
+				removeStyleElement(styleElement);
+				if(styleElement.href)
+					URL.revokeObjectURL(styleElement.href);
+			};
+		} else {
+			styleElement = createStyleElement(options);
+			update = applyToTag.bind(null, styleElement);
+			remove = function() {
+				removeStyleElement(styleElement);
+			};
+		}
+
+		update(obj);
+
+		return function updateStyle(newObj) {
+			if(newObj) {
+				if(newObj.css === obj.css && newObj.media === obj.media && newObj.sourceMap === obj.sourceMap)
+					return;
+				update(obj = newObj);
+			} else {
+				remove();
+			}
+		};
+	}
+
+	var replaceText = (function () {
+		var textStore = [];
+
+		return function (index, replacement) {
+			textStore[index] = replacement;
+			return textStore.filter(Boolean).join('\n');
+		};
+	})();
+
+	function applyToSingletonTag(styleElement, index, remove, obj) {
+		var css = remove ? "" : obj.css;
+
+		if (styleElement.styleSheet) {
+			styleElement.styleSheet.cssText = replaceText(index, css);
+		} else {
+			var cssNode = document.createTextNode(css);
+			var childNodes = styleElement.childNodes;
+			if (childNodes[index]) styleElement.removeChild(childNodes[index]);
+			if (childNodes.length) {
+				styleElement.insertBefore(cssNode, childNodes[index]);
+			} else {
+				styleElement.appendChild(cssNode);
+			}
+		}
+	}
+
+	function applyToTag(styleElement, obj) {
+		var css = obj.css;
+		var media = obj.media;
+
+		if(media) {
+			styleElement.setAttribute("media", media)
+		}
+
+		if(styleElement.styleSheet) {
+			styleElement.styleSheet.cssText = css;
+		} else {
+			while(styleElement.firstChild) {
+				styleElement.removeChild(styleElement.firstChild);
+			}
+			styleElement.appendChild(document.createTextNode(css));
+		}
+	}
+
+	function updateLink(linkElement, obj) {
+		var css = obj.css;
+		var sourceMap = obj.sourceMap;
+
+		if(sourceMap) {
+			// http://stackoverflow.com/a/26603875
+			css += "\n/*# sourceMappingURL=data:application/json;base64," + btoa(unescape(encodeURIComponent(JSON.stringify(sourceMap)))) + " */";
+		}
+
+		var blob = new Blob([css], { type: "text/css" });
+
+		var oldSrc = linkElement.href;
+
+		linkElement.href = URL.createObjectURL(blob);
+
+		if(oldSrc)
+			URL.revokeObjectURL(oldSrc);
+	}
+
+
+/***/ },
+/* 845 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
@@ -30264,11 +29889,11 @@
 
 	var _xstream2 = _interopRequireDefault(_xstream);
 
-	var _contract = __webpack_require__(839);
+	var _contract = __webpack_require__(846);
 
 	var _contract2 = _interopRequireDefault(_contract);
 
-	var _flattenSequentially = __webpack_require__(927);
+	var _flattenSequentially = __webpack_require__(934);
 
 	var _flattenSequentially2 = _interopRequireDefault(_flattenSequentially);
 
@@ -30339,7 +29964,7 @@
 	};
 
 /***/ },
-/* 839 */
+/* 846 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -30348,11 +29973,11 @@
 
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
-	var _ = __webpack_require__(840);
-	var sha3 = __webpack_require__(841);
-	var utils = __webpack_require__(876);
-	var LogTranslator = __webpack_require__(879);
-	var coder = __webpack_require__(881);
+	var _ = __webpack_require__(847);
+	var sha3 = __webpack_require__(848);
+	var utils = __webpack_require__(883);
+	var LogTranslator = __webpack_require__(886);
+	var coder = __webpack_require__(888);
 
 	var Contract = function () {
 	  _createClass(Contract, null, [{
@@ -30459,7 +30084,7 @@
 	module.exports = Contract;
 
 /***/ },
-/* 840 */
+/* 847 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var __WEBPACK_AMD_DEFINE_RESULT__;/* WEBPACK VAR INJECTION */(function(global, module) {/**
@@ -47484,7 +47109,7 @@
 	/* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }()), __webpack_require__(65)(module)))
 
 /***/ },
-/* 841 */
+/* 848 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/*
@@ -47509,8 +47134,8 @@
 	 * @date 2015
 	 */
 
-	var CryptoJS = __webpack_require__(842);
-	var sha3 = __webpack_require__(854);
+	var CryptoJS = __webpack_require__(849);
+	var sha3 = __webpack_require__(861);
 
 	module.exports = function (value, options) {
 	    if (options && options.encoding === 'hex') {
@@ -47528,13 +47153,13 @@
 
 
 /***/ },
-/* 842 */
+/* 849 */
 /***/ function(module, exports, __webpack_require__) {
 
 	;(function (root, factory, undef) {
 		if (true) {
 			// CommonJS
-			module.exports = exports = factory(__webpack_require__(843), __webpack_require__(844), __webpack_require__(845), __webpack_require__(846), __webpack_require__(847), __webpack_require__(848), __webpack_require__(849), __webpack_require__(850), __webpack_require__(851), __webpack_require__(852), __webpack_require__(853), __webpack_require__(854), __webpack_require__(855), __webpack_require__(856), __webpack_require__(857), __webpack_require__(858), __webpack_require__(859), __webpack_require__(860), __webpack_require__(861), __webpack_require__(862), __webpack_require__(863), __webpack_require__(864), __webpack_require__(865), __webpack_require__(866), __webpack_require__(867), __webpack_require__(868), __webpack_require__(869), __webpack_require__(870), __webpack_require__(871), __webpack_require__(872), __webpack_require__(873), __webpack_require__(874), __webpack_require__(875));
+			module.exports = exports = factory(__webpack_require__(850), __webpack_require__(851), __webpack_require__(852), __webpack_require__(853), __webpack_require__(854), __webpack_require__(855), __webpack_require__(856), __webpack_require__(857), __webpack_require__(858), __webpack_require__(859), __webpack_require__(860), __webpack_require__(861), __webpack_require__(862), __webpack_require__(863), __webpack_require__(864), __webpack_require__(865), __webpack_require__(866), __webpack_require__(867), __webpack_require__(868), __webpack_require__(869), __webpack_require__(870), __webpack_require__(871), __webpack_require__(872), __webpack_require__(873), __webpack_require__(874), __webpack_require__(875), __webpack_require__(876), __webpack_require__(877), __webpack_require__(878), __webpack_require__(879), __webpack_require__(880), __webpack_require__(881), __webpack_require__(882));
 		}
 		else if (typeof define === "function" && define.amd) {
 			// AMD
@@ -47551,7 +47176,7 @@
 	}));
 
 /***/ },
-/* 843 */
+/* 850 */
 /***/ function(module, exports, __webpack_require__) {
 
 	;(function (root, factory) {
@@ -48316,13 +47941,13 @@
 	}));
 
 /***/ },
-/* 844 */
+/* 851 */
 /***/ function(module, exports, __webpack_require__) {
 
 	;(function (root, factory) {
 		if (true) {
 			// CommonJS
-			module.exports = exports = factory(__webpack_require__(843));
+			module.exports = exports = factory(__webpack_require__(850));
 		}
 		else if (typeof define === "function" && define.amd) {
 			// AMD
@@ -48625,13 +48250,13 @@
 	}));
 
 /***/ },
-/* 845 */
+/* 852 */
 /***/ function(module, exports, __webpack_require__) {
 
 	;(function (root, factory) {
 		if (true) {
 			// CommonJS
-			module.exports = exports = factory(__webpack_require__(843));
+			module.exports = exports = factory(__webpack_require__(850));
 		}
 		else if (typeof define === "function" && define.amd) {
 			// AMD
@@ -48706,13 +48331,13 @@
 	}));
 
 /***/ },
-/* 846 */
+/* 853 */
 /***/ function(module, exports, __webpack_require__) {
 
 	;(function (root, factory) {
 		if (true) {
 			// CommonJS
-			module.exports = exports = factory(__webpack_require__(843));
+			module.exports = exports = factory(__webpack_require__(850));
 		}
 		else if (typeof define === "function" && define.amd) {
 			// AMD
@@ -48860,13 +48485,13 @@
 	}));
 
 /***/ },
-/* 847 */
+/* 854 */
 /***/ function(module, exports, __webpack_require__) {
 
 	;(function (root, factory) {
 		if (true) {
 			// CommonJS
-			module.exports = exports = factory(__webpack_require__(843));
+			module.exports = exports = factory(__webpack_require__(850));
 		}
 		else if (typeof define === "function" && define.amd) {
 			// AMD
@@ -49000,13 +48625,13 @@
 	}));
 
 /***/ },
-/* 848 */
+/* 855 */
 /***/ function(module, exports, __webpack_require__) {
 
 	;(function (root, factory) {
 		if (true) {
 			// CommonJS
-			module.exports = exports = factory(__webpack_require__(843));
+			module.exports = exports = factory(__webpack_require__(850));
 		}
 		else if (typeof define === "function" && define.amd) {
 			// AMD
@@ -49273,13 +48898,13 @@
 	}));
 
 /***/ },
-/* 849 */
+/* 856 */
 /***/ function(module, exports, __webpack_require__) {
 
 	;(function (root, factory) {
 		if (true) {
 			// CommonJS
-			module.exports = exports = factory(__webpack_require__(843));
+			module.exports = exports = factory(__webpack_require__(850));
 		}
 		else if (typeof define === "function" && define.amd) {
 			// AMD
@@ -49428,13 +49053,13 @@
 	}));
 
 /***/ },
-/* 850 */
+/* 857 */
 /***/ function(module, exports, __webpack_require__) {
 
 	;(function (root, factory) {
 		if (true) {
 			// CommonJS
-			module.exports = exports = factory(__webpack_require__(843));
+			module.exports = exports = factory(__webpack_require__(850));
 		}
 		else if (typeof define === "function" && define.amd) {
 			// AMD
@@ -49632,13 +49257,13 @@
 	}));
 
 /***/ },
-/* 851 */
+/* 858 */
 /***/ function(module, exports, __webpack_require__) {
 
 	;(function (root, factory, undef) {
 		if (true) {
 			// CommonJS
-			module.exports = exports = factory(__webpack_require__(843), __webpack_require__(850));
+			module.exports = exports = factory(__webpack_require__(850), __webpack_require__(857));
 		}
 		else if (typeof define === "function" && define.amd) {
 			// AMD
@@ -49717,13 +49342,13 @@
 	}));
 
 /***/ },
-/* 852 */
+/* 859 */
 /***/ function(module, exports, __webpack_require__) {
 
 	;(function (root, factory, undef) {
 		if (true) {
 			// CommonJS
-			module.exports = exports = factory(__webpack_require__(843), __webpack_require__(844));
+			module.exports = exports = factory(__webpack_require__(850), __webpack_require__(851));
 		}
 		else if (typeof define === "function" && define.amd) {
 			// AMD
@@ -50045,13 +49670,13 @@
 	}));
 
 /***/ },
-/* 853 */
+/* 860 */
 /***/ function(module, exports, __webpack_require__) {
 
 	;(function (root, factory, undef) {
 		if (true) {
 			// CommonJS
-			module.exports = exports = factory(__webpack_require__(843), __webpack_require__(844), __webpack_require__(852));
+			module.exports = exports = factory(__webpack_require__(850), __webpack_require__(851), __webpack_require__(859));
 		}
 		else if (typeof define === "function" && define.amd) {
 			// AMD
@@ -50133,13 +49758,13 @@
 	}));
 
 /***/ },
-/* 854 */
+/* 861 */
 /***/ function(module, exports, __webpack_require__) {
 
 	;(function (root, factory, undef) {
 		if (true) {
 			// CommonJS
-			module.exports = exports = factory(__webpack_require__(843), __webpack_require__(844));
+			module.exports = exports = factory(__webpack_require__(850), __webpack_require__(851));
 		}
 		else if (typeof define === "function" && define.amd) {
 			// AMD
@@ -50461,13 +50086,13 @@
 	}));
 
 /***/ },
-/* 855 */
+/* 862 */
 /***/ function(module, exports, __webpack_require__) {
 
 	;(function (root, factory) {
 		if (true) {
 			// CommonJS
-			module.exports = exports = factory(__webpack_require__(843));
+			module.exports = exports = factory(__webpack_require__(850));
 		}
 		else if (typeof define === "function" && define.amd) {
 			// AMD
@@ -50733,13 +50358,13 @@
 	}));
 
 /***/ },
-/* 856 */
+/* 863 */
 /***/ function(module, exports, __webpack_require__) {
 
 	;(function (root, factory) {
 		if (true) {
 			// CommonJS
-			module.exports = exports = factory(__webpack_require__(843));
+			module.exports = exports = factory(__webpack_require__(850));
 		}
 		else if (typeof define === "function" && define.amd) {
 			// AMD
@@ -50881,13 +50506,13 @@
 	}));
 
 /***/ },
-/* 857 */
+/* 864 */
 /***/ function(module, exports, __webpack_require__) {
 
 	;(function (root, factory, undef) {
 		if (true) {
 			// CommonJS
-			module.exports = exports = factory(__webpack_require__(843), __webpack_require__(849), __webpack_require__(856));
+			module.exports = exports = factory(__webpack_require__(850), __webpack_require__(856), __webpack_require__(863));
 		}
 		else if (typeof define === "function" && define.amd) {
 			// AMD
@@ -51031,13 +50656,13 @@
 	}));
 
 /***/ },
-/* 858 */
+/* 865 */
 /***/ function(module, exports, __webpack_require__) {
 
 	;(function (root, factory, undef) {
 		if (true) {
 			// CommonJS
-			module.exports = exports = factory(__webpack_require__(843), __webpack_require__(849), __webpack_require__(856));
+			module.exports = exports = factory(__webpack_require__(850), __webpack_require__(856), __webpack_require__(863));
 		}
 		else if (typeof define === "function" && define.amd) {
 			// AMD
@@ -51168,13 +50793,13 @@
 	}));
 
 /***/ },
-/* 859 */
+/* 866 */
 /***/ function(module, exports, __webpack_require__) {
 
 	;(function (root, factory) {
 		if (true) {
 			// CommonJS
-			module.exports = exports = factory(__webpack_require__(843));
+			module.exports = exports = factory(__webpack_require__(850));
 		}
 		else if (typeof define === "function" && define.amd) {
 			// AMD
@@ -52048,13 +51673,13 @@
 	}));
 
 /***/ },
-/* 860 */
+/* 867 */
 /***/ function(module, exports, __webpack_require__) {
 
 	;(function (root, factory, undef) {
 		if (true) {
 			// CommonJS
-			module.exports = exports = factory(__webpack_require__(843), __webpack_require__(859));
+			module.exports = exports = factory(__webpack_require__(850), __webpack_require__(866));
 		}
 		else if (typeof define === "function" && define.amd) {
 			// AMD
@@ -52131,13 +51756,13 @@
 	}));
 
 /***/ },
-/* 861 */
+/* 868 */
 /***/ function(module, exports, __webpack_require__) {
 
 	;(function (root, factory, undef) {
 		if (true) {
 			// CommonJS
-			module.exports = exports = factory(__webpack_require__(843), __webpack_require__(859));
+			module.exports = exports = factory(__webpack_require__(850), __webpack_require__(866));
 		}
 		else if (typeof define === "function" && define.amd) {
 			// AMD
@@ -52194,13 +51819,13 @@
 	}));
 
 /***/ },
-/* 862 */
+/* 869 */
 /***/ function(module, exports, __webpack_require__) {
 
 	;(function (root, factory, undef) {
 		if (true) {
 			// CommonJS
-			module.exports = exports = factory(__webpack_require__(843), __webpack_require__(859));
+			module.exports = exports = factory(__webpack_require__(850), __webpack_require__(866));
 		}
 		else if (typeof define === "function" && define.amd) {
 			// AMD
@@ -52315,13 +51940,13 @@
 	}));
 
 /***/ },
-/* 863 */
+/* 870 */
 /***/ function(module, exports, __webpack_require__) {
 
 	;(function (root, factory, undef) {
 		if (true) {
 			// CommonJS
-			module.exports = exports = factory(__webpack_require__(843), __webpack_require__(859));
+			module.exports = exports = factory(__webpack_require__(850), __webpack_require__(866));
 		}
 		else if (typeof define === "function" && define.amd) {
 			// AMD
@@ -52374,13 +51999,13 @@
 	}));
 
 /***/ },
-/* 864 */
+/* 871 */
 /***/ function(module, exports, __webpack_require__) {
 
 	;(function (root, factory, undef) {
 		if (true) {
 			// CommonJS
-			module.exports = exports = factory(__webpack_require__(843), __webpack_require__(859));
+			module.exports = exports = factory(__webpack_require__(850), __webpack_require__(866));
 		}
 		else if (typeof define === "function" && define.amd) {
 			// AMD
@@ -52419,13 +52044,13 @@
 	}));
 
 /***/ },
-/* 865 */
+/* 872 */
 /***/ function(module, exports, __webpack_require__) {
 
 	;(function (root, factory, undef) {
 		if (true) {
 			// CommonJS
-			module.exports = exports = factory(__webpack_require__(843), __webpack_require__(859));
+			module.exports = exports = factory(__webpack_require__(850), __webpack_require__(866));
 		}
 		else if (typeof define === "function" && define.amd) {
 			// AMD
@@ -52473,13 +52098,13 @@
 	}));
 
 /***/ },
-/* 866 */
+/* 873 */
 /***/ function(module, exports, __webpack_require__) {
 
 	;(function (root, factory, undef) {
 		if (true) {
 			// CommonJS
-			module.exports = exports = factory(__webpack_require__(843), __webpack_require__(859));
+			module.exports = exports = factory(__webpack_require__(850), __webpack_require__(866));
 		}
 		else if (typeof define === "function" && define.amd) {
 			// AMD
@@ -52522,13 +52147,13 @@
 	}));
 
 /***/ },
-/* 867 */
+/* 874 */
 /***/ function(module, exports, __webpack_require__) {
 
 	;(function (root, factory, undef) {
 		if (true) {
 			// CommonJS
-			module.exports = exports = factory(__webpack_require__(843), __webpack_require__(859));
+			module.exports = exports = factory(__webpack_require__(850), __webpack_require__(866));
 		}
 		else if (typeof define === "function" && define.amd) {
 			// AMD
@@ -52567,13 +52192,13 @@
 	}));
 
 /***/ },
-/* 868 */
+/* 875 */
 /***/ function(module, exports, __webpack_require__) {
 
 	;(function (root, factory, undef) {
 		if (true) {
 			// CommonJS
-			module.exports = exports = factory(__webpack_require__(843), __webpack_require__(859));
+			module.exports = exports = factory(__webpack_require__(850), __webpack_require__(866));
 		}
 		else if (typeof define === "function" && define.amd) {
 			// AMD
@@ -52617,13 +52242,13 @@
 	}));
 
 /***/ },
-/* 869 */
+/* 876 */
 /***/ function(module, exports, __webpack_require__) {
 
 	;(function (root, factory, undef) {
 		if (true) {
 			// CommonJS
-			module.exports = exports = factory(__webpack_require__(843), __webpack_require__(859));
+			module.exports = exports = factory(__webpack_require__(850), __webpack_require__(866));
 		}
 		else if (typeof define === "function" && define.amd) {
 			// AMD
@@ -52652,13 +52277,13 @@
 	}));
 
 /***/ },
-/* 870 */
+/* 877 */
 /***/ function(module, exports, __webpack_require__) {
 
 	;(function (root, factory, undef) {
 		if (true) {
 			// CommonJS
-			module.exports = exports = factory(__webpack_require__(843), __webpack_require__(859));
+			module.exports = exports = factory(__webpack_require__(850), __webpack_require__(866));
 		}
 		else if (typeof define === "function" && define.amd) {
 			// AMD
@@ -52723,13 +52348,13 @@
 	}));
 
 /***/ },
-/* 871 */
+/* 878 */
 /***/ function(module, exports, __webpack_require__) {
 
 	;(function (root, factory, undef) {
 		if (true) {
 			// CommonJS
-			module.exports = exports = factory(__webpack_require__(843), __webpack_require__(847), __webpack_require__(848), __webpack_require__(858), __webpack_require__(859));
+			module.exports = exports = factory(__webpack_require__(850), __webpack_require__(854), __webpack_require__(855), __webpack_require__(865), __webpack_require__(866));
 		}
 		else if (typeof define === "function" && define.amd) {
 			// AMD
@@ -52960,13 +52585,13 @@
 	}));
 
 /***/ },
-/* 872 */
+/* 879 */
 /***/ function(module, exports, __webpack_require__) {
 
 	;(function (root, factory, undef) {
 		if (true) {
 			// CommonJS
-			module.exports = exports = factory(__webpack_require__(843), __webpack_require__(847), __webpack_require__(848), __webpack_require__(858), __webpack_require__(859));
+			module.exports = exports = factory(__webpack_require__(850), __webpack_require__(854), __webpack_require__(855), __webpack_require__(865), __webpack_require__(866));
 		}
 		else if (typeof define === "function" && define.amd) {
 			// AMD
@@ -53735,13 +53360,13 @@
 	}));
 
 /***/ },
-/* 873 */
+/* 880 */
 /***/ function(module, exports, __webpack_require__) {
 
 	;(function (root, factory, undef) {
 		if (true) {
 			// CommonJS
-			module.exports = exports = factory(__webpack_require__(843), __webpack_require__(847), __webpack_require__(848), __webpack_require__(858), __webpack_require__(859));
+			module.exports = exports = factory(__webpack_require__(850), __webpack_require__(854), __webpack_require__(855), __webpack_require__(865), __webpack_require__(866));
 		}
 		else if (typeof define === "function" && define.amd) {
 			// AMD
@@ -53879,13 +53504,13 @@
 	}));
 
 /***/ },
-/* 874 */
+/* 881 */
 /***/ function(module, exports, __webpack_require__) {
 
 	;(function (root, factory, undef) {
 		if (true) {
 			// CommonJS
-			module.exports = exports = factory(__webpack_require__(843), __webpack_require__(847), __webpack_require__(848), __webpack_require__(858), __webpack_require__(859));
+			module.exports = exports = factory(__webpack_require__(850), __webpack_require__(854), __webpack_require__(855), __webpack_require__(865), __webpack_require__(866));
 		}
 		else if (typeof define === "function" && define.amd) {
 			// AMD
@@ -54076,13 +53701,13 @@
 	}));
 
 /***/ },
-/* 875 */
+/* 882 */
 /***/ function(module, exports, __webpack_require__) {
 
 	;(function (root, factory, undef) {
 		if (true) {
 			// CommonJS
-			module.exports = exports = factory(__webpack_require__(843), __webpack_require__(847), __webpack_require__(848), __webpack_require__(858), __webpack_require__(859));
+			module.exports = exports = factory(__webpack_require__(850), __webpack_require__(854), __webpack_require__(855), __webpack_require__(865), __webpack_require__(866));
 		}
 		else if (typeof define === "function" && define.amd) {
 			// AMD
@@ -54271,7 +53896,7 @@
 	}));
 
 /***/ },
-/* 876 */
+/* 883 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/*
@@ -54310,9 +53935,9 @@
 	 */
 
 
-	var BigNumber = __webpack_require__(877);
-	var sha3 = __webpack_require__(841);
-	var utf8 = __webpack_require__(878);
+	var BigNumber = __webpack_require__(884);
+	var sha3 = __webpack_require__(848);
+	var utf8 = __webpack_require__(885);
 
 	var unitMap = {
 	    'noether':      '0',    
@@ -54874,7 +54499,7 @@
 
 
 /***/ },
-/* 877 */
+/* 884 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var __WEBPACK_AMD_DEFINE_RESULT__;/*! bignumber.js v2.0.7 https://github.com/MikeMcl/bignumber.js/LICENCE */
@@ -57563,7 +57188,7 @@
 
 
 /***/ },
-/* 878 */
+/* 885 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var __WEBPACK_AMD_DEFINE_RESULT__;/* WEBPACK VAR INJECTION */(function(module, global) {/*! https://mths.be/utf8js v2.1.2 by @mathias */
@@ -57812,7 +57437,7 @@
 	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(65)(module), (function() { return this; }())))
 
 /***/ },
-/* 879 */
+/* 886 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -57823,10 +57448,10 @@
 
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
-	var _ = __webpack_require__(840);
-	var SolidityEvent = __webpack_require__(880);
-	var Web3 = __webpack_require__(901);
-	var web3utils = __webpack_require__(876);
+	var _ = __webpack_require__(847);
+	var SolidityEvent = __webpack_require__(887);
+	var Web3 = __webpack_require__(908);
+	var web3utils = __webpack_require__(883);
 
 	var web3 = new Web3();
 	var hexTranslators = {
@@ -57969,7 +57594,7 @@
 	}();
 
 /***/ },
-/* 880 */
+/* 887 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/*
@@ -57994,12 +57619,12 @@
 	 * @date 2014
 	 */
 
-	var utils = __webpack_require__(876);
-	var coder = __webpack_require__(881);
-	var formatters = __webpack_require__(895);
-	var sha3 = __webpack_require__(841);
-	var Filter = __webpack_require__(897);
-	var watches = __webpack_require__(898);
+	var utils = __webpack_require__(883);
+	var coder = __webpack_require__(888);
+	var formatters = __webpack_require__(902);
+	var sha3 = __webpack_require__(848);
+	var Filter = __webpack_require__(904);
+	var watches = __webpack_require__(905);
 
 	/**
 	 * This prototype should be used to create event filters
@@ -58183,7 +57808,7 @@
 
 
 /***/ },
-/* 881 */
+/* 888 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/*
@@ -58208,17 +57833,17 @@
 	 * @date 2015
 	 */
 
-	var f = __webpack_require__(882);
+	var f = __webpack_require__(889);
 
-	var SolidityTypeAddress = __webpack_require__(885);
-	var SolidityTypeBool = __webpack_require__(887);
-	var SolidityTypeInt = __webpack_require__(888);
-	var SolidityTypeUInt = __webpack_require__(889);
-	var SolidityTypeDynamicBytes = __webpack_require__(890);
-	var SolidityTypeString = __webpack_require__(891);
-	var SolidityTypeReal = __webpack_require__(892);
-	var SolidityTypeUReal = __webpack_require__(893);
-	var SolidityTypeBytes = __webpack_require__(894);
+	var SolidityTypeAddress = __webpack_require__(892);
+	var SolidityTypeBool = __webpack_require__(894);
+	var SolidityTypeInt = __webpack_require__(895);
+	var SolidityTypeUInt = __webpack_require__(896);
+	var SolidityTypeDynamicBytes = __webpack_require__(897);
+	var SolidityTypeString = __webpack_require__(898);
+	var SolidityTypeReal = __webpack_require__(899);
+	var SolidityTypeUReal = __webpack_require__(900);
+	var SolidityTypeBytes = __webpack_require__(901);
 
 	/**
 	 * SolidityCoder prototype should be used to encode/decode solidity params of any type
@@ -58449,7 +58074,7 @@
 
 
 /***/ },
-/* 882 */
+/* 889 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/*
@@ -58474,10 +58099,10 @@
 	 * @date 2015
 	 */
 
-	var BigNumber = __webpack_require__(877);
-	var utils = __webpack_require__(876);
-	var c = __webpack_require__(883);
-	var SolidityParam = __webpack_require__(884);
+	var BigNumber = __webpack_require__(884);
+	var utils = __webpack_require__(883);
+	var c = __webpack_require__(890);
+	var SolidityParam = __webpack_require__(891);
 
 
 	/**
@@ -58705,7 +58330,7 @@
 
 
 /***/ },
-/* 883 */
+/* 890 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/*
@@ -58745,7 +58370,7 @@
 
 
 	/// required to define ETH_BIGNUMBER_ROUNDING_MODE
-	var BigNumber = __webpack_require__(877);
+	var BigNumber = __webpack_require__(884);
 
 	var ETH_UNITS = [
 	    'wei',
@@ -58790,7 +58415,7 @@
 
 
 /***/ },
-/* 884 */
+/* 891 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/*
@@ -58815,7 +58440,7 @@
 	 * @date 2015
 	 */
 
-	var utils = __webpack_require__(876);
+	var utils = __webpack_require__(883);
 
 	/**
 	 * SolidityParam object prototype.
@@ -58948,11 +58573,11 @@
 
 
 /***/ },
-/* 885 */
+/* 892 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var f = __webpack_require__(882);
-	var SolidityType = __webpack_require__(886);
+	var f = __webpack_require__(889);
+	var SolidityType = __webpack_require__(893);
 
 	/**
 	 * SolidityTypeAddress is a prootype that represents address type
@@ -58985,11 +58610,11 @@
 
 
 /***/ },
-/* 886 */
+/* 893 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var f = __webpack_require__(882);
-	var SolidityParam = __webpack_require__(884);
+	var f = __webpack_require__(889);
+	var SolidityParam = __webpack_require__(891);
 
 	/**
 	 * SolidityType prototype is used to encode/decode solidity params of certain type
@@ -59236,11 +58861,11 @@
 
 
 /***/ },
-/* 887 */
+/* 894 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var f = __webpack_require__(882);
-	var SolidityType = __webpack_require__(886);
+	var f = __webpack_require__(889);
+	var SolidityType = __webpack_require__(893);
 
 	/**
 	 * SolidityTypeBool is a prootype that represents bool type
@@ -59272,11 +58897,11 @@
 
 
 /***/ },
-/* 888 */
+/* 895 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var f = __webpack_require__(882);
-	var SolidityType = __webpack_require__(886);
+	var f = __webpack_require__(889);
+	var SolidityType = __webpack_require__(893);
 
 	/**
 	 * SolidityTypeInt is a prootype that represents int type
@@ -59314,11 +58939,11 @@
 
 
 /***/ },
-/* 889 */
+/* 896 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var f = __webpack_require__(882);
-	var SolidityType = __webpack_require__(886);
+	var f = __webpack_require__(889);
+	var SolidityType = __webpack_require__(893);
 
 	/**
 	 * SolidityTypeUInt is a prootype that represents uint type
@@ -59356,11 +58981,11 @@
 
 
 /***/ },
-/* 890 */
+/* 897 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var f = __webpack_require__(882);
-	var SolidityType = __webpack_require__(886);
+	var f = __webpack_require__(889);
+	var SolidityType = __webpack_require__(893);
 
 	var SolidityTypeDynamicBytes = function () {
 	    this._inputFormatter = f.formatInputDynamicBytes;
@@ -59387,11 +59012,11 @@
 
 
 /***/ },
-/* 891 */
+/* 898 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var f = __webpack_require__(882);
-	var SolidityType = __webpack_require__(886);
+	var f = __webpack_require__(889);
+	var SolidityType = __webpack_require__(893);
 
 	var SolidityTypeString = function () {
 	    this._inputFormatter = f.formatInputString;
@@ -59418,11 +59043,11 @@
 
 
 /***/ },
-/* 892 */
+/* 899 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var f = __webpack_require__(882);
-	var SolidityType = __webpack_require__(886);
+	var f = __webpack_require__(889);
+	var SolidityType = __webpack_require__(893);
 
 	/**
 	 * SolidityTypeReal is a prootype that represents real type
@@ -59460,11 +59085,11 @@
 
 
 /***/ },
-/* 893 */
+/* 900 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var f = __webpack_require__(882);
-	var SolidityType = __webpack_require__(886);
+	var f = __webpack_require__(889);
+	var SolidityType = __webpack_require__(893);
 
 	/**
 	 * SolidityTypeUReal is a prootype that represents ureal type
@@ -59502,11 +59127,11 @@
 
 
 /***/ },
-/* 894 */
+/* 901 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var f = __webpack_require__(882);
-	var SolidityType = __webpack_require__(886);
+	var f = __webpack_require__(889);
+	var SolidityType = __webpack_require__(893);
 
 	/**
 	 * SolidityTypeBytes is a prootype that represents bytes type
@@ -59546,7 +59171,7 @@
 
 
 /***/ },
-/* 895 */
+/* 902 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/*
@@ -59572,9 +59197,9 @@
 	 * @date 2015
 	 */
 
-	var utils = __webpack_require__(876);
-	var config = __webpack_require__(883);
-	var Iban = __webpack_require__(896);
+	var utils = __webpack_require__(883);
+	var config = __webpack_require__(890);
+	var Iban = __webpack_require__(903);
 
 	/**
 	 * Should the format output to a big number
@@ -59851,7 +59476,7 @@
 
 
 /***/ },
-/* 896 */
+/* 903 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/*
@@ -59876,7 +59501,7 @@
 	 * @date 2015
 	 */
 
-	var BigNumber = __webpack_require__(877);
+	var BigNumber = __webpack_require__(884);
 
 	var padLeft = function (string, bytes) {
 	    var result = string;
@@ -60084,7 +59709,7 @@
 
 
 /***/ },
-/* 897 */
+/* 904 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/*
@@ -60113,8 +59738,8 @@
 	 * @date 2014
 	 */
 
-	var formatters = __webpack_require__(895);
-	var utils = __webpack_require__(876);
+	var formatters = __webpack_require__(902);
+	var utils = __webpack_require__(883);
 
 	/**
 	* Converts a given topic to a hex string, but also allows null values.
@@ -60320,7 +59945,7 @@
 
 
 /***/ },
-/* 898 */
+/* 905 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/*
@@ -60345,7 +59970,7 @@
 	 * @date 2015
 	 */
 
-	var Method = __webpack_require__(899);
+	var Method = __webpack_require__(906);
 
 	/// @returns an array of objects describing web3.eth.filter api methods
 	var eth = function () {
@@ -60440,7 +60065,7 @@
 
 
 /***/ },
-/* 899 */
+/* 906 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/*
@@ -60465,8 +60090,8 @@
 	 * @date 2015
 	 */
 
-	var utils = __webpack_require__(876);
-	var errors = __webpack_require__(900);
+	var utils = __webpack_require__(883);
+	var errors = __webpack_require__(907);
 
 	var Method = function (options) {
 	    this.name = options.name;
@@ -60611,7 +60236,7 @@
 
 
 /***/ },
-/* 900 */
+/* 907 */
 /***/ function(module, exports) {
 
 	/*
@@ -60655,10 +60280,10 @@
 
 
 /***/ },
-/* 901 */
+/* 908 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var Web3 = __webpack_require__(902);
+	var Web3 = __webpack_require__(909);
 
 	// dont override global variable
 	if (typeof window !== 'undefined' && typeof window.Web3 === 'undefined') {
@@ -60669,7 +60294,7 @@
 
 
 /***/ },
-/* 902 */
+/* 909 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/*
@@ -60699,22 +60324,22 @@
 	 * @date 2014
 	 */
 
-	var RequestManager = __webpack_require__(903);
-	var Iban = __webpack_require__(896);
-	var Eth = __webpack_require__(905);
-	var DB = __webpack_require__(916);
-	var Shh = __webpack_require__(917);
-	var Net = __webpack_require__(918);
-	var Personal = __webpack_require__(919);
-	var Settings = __webpack_require__(920);
-	var version = __webpack_require__(921);
-	var utils = __webpack_require__(876);
-	var sha3 = __webpack_require__(841);
-	var extend = __webpack_require__(922);
-	var Batch = __webpack_require__(923);
-	var Property = __webpack_require__(906);
-	var HttpProvider = __webpack_require__(924);
-	var IpcProvider = __webpack_require__(926);
+	var RequestManager = __webpack_require__(910);
+	var Iban = __webpack_require__(903);
+	var Eth = __webpack_require__(912);
+	var DB = __webpack_require__(923);
+	var Shh = __webpack_require__(924);
+	var Net = __webpack_require__(925);
+	var Personal = __webpack_require__(926);
+	var Settings = __webpack_require__(927);
+	var version = __webpack_require__(928);
+	var utils = __webpack_require__(883);
+	var sha3 = __webpack_require__(848);
+	var extend = __webpack_require__(929);
+	var Batch = __webpack_require__(930);
+	var Property = __webpack_require__(913);
+	var HttpProvider = __webpack_require__(931);
+	var IpcProvider = __webpack_require__(933);
 
 
 
@@ -60821,7 +60446,7 @@
 
 
 /***/ },
-/* 903 */
+/* 910 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/*
@@ -60850,10 +60475,10 @@
 	 * @date 2014
 	 */
 
-	var Jsonrpc = __webpack_require__(904);
-	var utils = __webpack_require__(876);
-	var c = __webpack_require__(883);
-	var errors = __webpack_require__(900);
+	var Jsonrpc = __webpack_require__(911);
+	var utils = __webpack_require__(883);
+	var c = __webpack_require__(890);
+	var errors = __webpack_require__(907);
 
 	/**
 	 * It's responsible for passing messages to providers
@@ -61092,7 +60717,7 @@
 
 
 /***/ },
-/* 904 */
+/* 911 */
 /***/ function(module, exports) {
 
 	/*
@@ -61189,7 +60814,7 @@
 
 
 /***/ },
-/* 905 */
+/* 912 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/*
@@ -61217,18 +60842,18 @@
 
 	"use strict";
 
-	var formatters = __webpack_require__(895);
-	var utils = __webpack_require__(876);
-	var Method = __webpack_require__(899);
-	var Property = __webpack_require__(906);
-	var c = __webpack_require__(883);
-	var Contract = __webpack_require__(907);
-	var watches = __webpack_require__(898);
-	var Filter = __webpack_require__(897);
-	var IsSyncing = __webpack_require__(910);
-	var namereg = __webpack_require__(911);
-	var Iban = __webpack_require__(896);
-	var transfer = __webpack_require__(914);
+	var formatters = __webpack_require__(902);
+	var utils = __webpack_require__(883);
+	var Method = __webpack_require__(906);
+	var Property = __webpack_require__(913);
+	var c = __webpack_require__(890);
+	var Contract = __webpack_require__(914);
+	var watches = __webpack_require__(905);
+	var Filter = __webpack_require__(904);
+	var IsSyncing = __webpack_require__(917);
+	var namereg = __webpack_require__(918);
+	var Iban = __webpack_require__(903);
+	var transfer = __webpack_require__(921);
 
 	var blockCall = function (args) {
 	    return (utils.isString(args[0]) && args[0].indexOf('0x') === 0) ? "eth_getBlockByHash" : "eth_getBlockByNumber";
@@ -61538,7 +61163,7 @@
 
 
 /***/ },
-/* 906 */
+/* 913 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/*
@@ -61564,7 +61189,7 @@
 	 * @date 2015
 	 */
 
-	var utils = __webpack_require__(876);
+	var utils = __webpack_require__(883);
 
 	var Property = function (options) {
 	    this.name = options.name;
@@ -61688,7 +61313,7 @@
 
 
 /***/ },
-/* 907 */
+/* 914 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/*
@@ -61713,11 +61338,11 @@
 	 * @date 2014
 	 */
 
-	var utils = __webpack_require__(876);
-	var coder = __webpack_require__(881);
-	var SolidityEvent = __webpack_require__(880);
-	var SolidityFunction = __webpack_require__(908);
-	var AllEvents = __webpack_require__(909);
+	var utils = __webpack_require__(883);
+	var coder = __webpack_require__(888);
+	var SolidityEvent = __webpack_require__(887);
+	var SolidityFunction = __webpack_require__(915);
+	var AllEvents = __webpack_require__(916);
 
 	/**
 	 * Should be called to encode constructor params
@@ -61992,7 +61617,7 @@
 
 
 /***/ },
-/* 908 */
+/* 915 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/*
@@ -62017,10 +61642,10 @@
 	 * @date 2015
 	 */
 
-	var coder = __webpack_require__(881);
-	var utils = __webpack_require__(876);
-	var formatters = __webpack_require__(895);
-	var sha3 = __webpack_require__(841);
+	var coder = __webpack_require__(888);
+	var utils = __webpack_require__(883);
+	var formatters = __webpack_require__(902);
+	var sha3 = __webpack_require__(848);
 
 	/**
 	 * This prototype should be used to call/sendTransaction to solidity functions
@@ -62245,7 +61870,7 @@
 
 
 /***/ },
-/* 909 */
+/* 916 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/*
@@ -62270,12 +61895,12 @@
 	 * @date 2014
 	 */
 
-	var sha3 = __webpack_require__(841);
-	var SolidityEvent = __webpack_require__(880);
-	var formatters = __webpack_require__(895);
-	var utils = __webpack_require__(876);
-	var Filter = __webpack_require__(897);
-	var watches = __webpack_require__(898);
+	var sha3 = __webpack_require__(848);
+	var SolidityEvent = __webpack_require__(887);
+	var formatters = __webpack_require__(902);
+	var utils = __webpack_require__(883);
+	var Filter = __webpack_require__(904);
+	var watches = __webpack_require__(905);
 
 	var AllSolidityEvents = function (requestManager, json, address) {
 	    this._requestManager = requestManager;
@@ -62339,7 +61964,7 @@
 
 
 /***/ },
-/* 910 */
+/* 917 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/*
@@ -62364,8 +61989,8 @@
 	 * @date 2015
 	 */
 
-	var formatters = __webpack_require__(895);
-	var utils = __webpack_require__(876);
+	var formatters = __webpack_require__(902);
+	var utils = __webpack_require__(883);
 
 	var count = 1;
 
@@ -62438,7 +62063,7 @@
 
 
 /***/ },
-/* 911 */
+/* 918 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/*
@@ -62463,8 +62088,8 @@
 	 * @date 2015
 	 */
 
-	var globalRegistrarAbi = __webpack_require__(912);
-	var icapRegistrarAbi= __webpack_require__(913);
+	var globalRegistrarAbi = __webpack_require__(919);
+	var icapRegistrarAbi= __webpack_require__(920);
 
 	var globalNameregAddress = '0xc6d9d2cd449a754c494264e1809c50e34d64562b';
 	var icapNameregAddress = '0xa1a111bc074c9cfa781f0c38e63bd51c91b8af00';
@@ -62483,7 +62108,7 @@
 
 
 /***/ },
-/* 912 */
+/* 919 */
 /***/ function(module, exports) {
 
 	module.exports = [
@@ -62742,7 +62367,7 @@
 	];
 
 /***/ },
-/* 913 */
+/* 920 */
 /***/ function(module, exports) {
 
 	module.exports = [
@@ -62855,7 +62480,7 @@
 	];
 
 /***/ },
-/* 914 */
+/* 921 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/*
@@ -62880,8 +62505,8 @@
 	 * @date 2015
 	 */
 
-	var Iban = __webpack_require__(896);
-	var exchangeAbi = __webpack_require__(915);
+	var Iban = __webpack_require__(903);
+	var exchangeAbi = __webpack_require__(922);
 
 	/**
 	 * Should be used to make Iban transfer
@@ -62953,7 +62578,7 @@
 
 
 /***/ },
-/* 915 */
+/* 922 */
 /***/ function(module, exports) {
 
 	module.exports = [
@@ -63104,7 +62729,7 @@
 	];
 
 /***/ },
-/* 916 */
+/* 923 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/*
@@ -63129,7 +62754,7 @@
 	 * @date 2015
 	 */
 
-	var Method = __webpack_require__(899);
+	var Method = __webpack_require__(906);
 
 	var DB = function (web3) {
 	    this._requestManager = web3._requestManager;
@@ -63176,7 +62801,7 @@
 
 
 /***/ },
-/* 917 */
+/* 924 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/*
@@ -63201,10 +62826,10 @@
 	 * @date 2015
 	 */
 
-	var Method = __webpack_require__(899);
-	var formatters = __webpack_require__(895);
-	var Filter = __webpack_require__(897);
-	var watches = __webpack_require__(898);
+	var Method = __webpack_require__(906);
+	var formatters = __webpack_require__(902);
+	var Filter = __webpack_require__(904);
+	var watches = __webpack_require__(905);
 
 	var Shh = function (web3) {
 	    this._requestManager = web3._requestManager;
@@ -63268,7 +62893,7 @@
 
 
 /***/ },
-/* 918 */
+/* 925 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/*
@@ -63293,8 +62918,8 @@
 	 * @date 2015
 	 */
 
-	var utils = __webpack_require__(876);
-	var Property = __webpack_require__(906);
+	var utils = __webpack_require__(883);
+	var Property = __webpack_require__(913);
 
 	var Net = function (web3) {
 	    this._requestManager = web3._requestManager;
@@ -63326,7 +62951,7 @@
 
 
 /***/ },
-/* 919 */
+/* 926 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/*
@@ -63354,9 +62979,9 @@
 
 	"use strict";
 
-	var Method = __webpack_require__(899);
-	var Property = __webpack_require__(906);
-	var formatters = __webpack_require__(895);
+	var Method = __webpack_require__(906);
+	var Property = __webpack_require__(913);
+	var formatters = __webpack_require__(902);
 
 	function Personal(web3) {
 	    this._requestManager = web3._requestManager;
@@ -63417,7 +63042,7 @@
 
 
 /***/ },
-/* 920 */
+/* 927 */
 /***/ function(module, exports) {
 
 	
@@ -63432,7 +63057,7 @@
 
 
 /***/ },
-/* 921 */
+/* 928 */
 /***/ function(module, exports) {
 
 	module.exports = {
@@ -63440,13 +63065,13 @@
 	};
 
 /***/ },
-/* 922 */
+/* 929 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var formatters = __webpack_require__(895);
-	var utils = __webpack_require__(876);
-	var Method = __webpack_require__(899);
-	var Property = __webpack_require__(906);
+	var formatters = __webpack_require__(902);
+	var utils = __webpack_require__(883);
+	var Method = __webpack_require__(906);
+	var Property = __webpack_require__(913);
 
 	// TODO: refactor, so the input params are not altered.
 	// it's necessary to make same 'extension' work with multiple providers
@@ -63494,7 +63119,7 @@
 
 
 /***/ },
-/* 923 */
+/* 930 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/*
@@ -63519,8 +63144,8 @@
 	 * @date 2015
 	 */
 
-	var Jsonrpc = __webpack_require__(904);
-	var errors = __webpack_require__(900);
+	var Jsonrpc = __webpack_require__(911);
+	var errors = __webpack_require__(907);
 
 	var Batch = function (web3) {
 	    this.requestManager = web3._requestManager;
@@ -63566,7 +63191,7 @@
 
 
 /***/ },
-/* 924 */
+/* 931 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/*
@@ -63595,7 +63220,7 @@
 
 	"use strict";
 
-	var errors = __webpack_require__(900);
+	var errors = __webpack_require__(907);
 
 	// workaround to use httpprovider in different envs
 	var XMLHttpRequest; // jshint ignore: line
@@ -63610,7 +63235,7 @@
 
 	// node
 	} else {
-	    XMLHttpRequest = __webpack_require__(925).XMLHttpRequest; // jshint ignore: line
+	    XMLHttpRequest = __webpack_require__(932).XMLHttpRequest; // jshint ignore: line
 	}
 
 	/**
@@ -63718,7 +63343,7 @@
 
 
 /***/ },
-/* 925 */
+/* 932 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -63733,7 +63358,7 @@
 
 
 /***/ },
-/* 926 */
+/* 933 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/*
@@ -63760,8 +63385,8 @@
 
 	"use strict";
 
-	var utils = __webpack_require__(876);
-	var errors = __webpack_require__(900);
+	var utils = __webpack_require__(883);
+	var errors = __webpack_require__(907);
 
 
 	var IpcProvider = function (path, net) {
@@ -63946,7 +63571,7 @@
 
 
 /***/ },
-/* 927 */
+/* 934 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
@@ -64062,2225 +63687,2649 @@
 	//# sourceMappingURL=flattenSequentially.js.map
 
 /***/ },
-/* 928 */
-/***/ function(module, exports, __webpack_require__) {
-
-	"use strict";
-	/**
-	 * HTTP Driver factory.
-	 *
-	 * This is a function which, when called, returns a HTTP Driver for Cycle.js
-	 * apps. The driver is also a function, and it takes a stream of requests as
-	 * input, and outputs an HTTP Source, an object with some functions to query for
-	 * response streams.
-	 *
-	 * **Requests**. The stream of requests should emit either strings or objects.
-	 * If the stream emits strings, those should be the URL of the remote resource
-	 * over HTTP. If the stream emits objects, these should be instructions how
-	 * superagent should execute the request. These objects follow a structure
-	 * similar to superagent's request API itself. `request` object properties:
-	 *
-	 * - `url` *(String)*: the remote resource path. **required**
-	 * - `method` *(String)*: HTTP Method for the request (GET, POST, PUT, etc).
-	 * - `category` *(String)*: an optional and arbitrary key that may be used in
-	 * the HTTP Source when querying for the response. E.g.
-	 * `sources.http.select(category)`
-	 * - `query` *(Object)*: an object with the payload for `GET` or `POST`.
-	 * - `send` *(Object)*: an object with the payload for `POST`.
-	 * - `headers` *(Object)*: object specifying HTTP headers.
-	 * - `accept` *(String)*: the Accept header.
-	 * - `type` *(String)*: a short-hand for setting Content-Type.
-	 * - `user` *(String)*: username for authentication.
-	 * - `password` *(String)*: password for authentication.
-	 * - `field` *(Object)*: object where key/values are Form fields.
-	 * - `progress` *(Boolean)*: whether or not to detect and emit progress events
-	 * on the response Observable.
-	 * - `attach` *(Array)*: array of objects, where each object specifies `name`,
-	 * `path`, and `filename` of a resource to upload.
-	 * - `withCredentials` *(Boolean)*: enables the ability to send cookies from the
-	 * origin.
-	 * - `agent` *(Object)*: an object specifying `cert` and `key` for SSL
-	 * certificate authentication.
-	 * - `redirects` *(Number)*: number of redirects to follow.
-	 * - `lazy` *(Boolean)*: whether or not this request runs lazily, which means
-	 * the request happens if and only if its corresponding response stream from the
-	 * HTTP Source is subscribed to. By default this value is false: requests run
-	 * eagerly, even if their response is ignored by the application.
-	 *
-	 * **Responses**. A metastream is a stream that emits streams. The HTTP Source
-	 * manages response metastreams. These streams of responses have a `request`
-	 * field attached to them (to the stream object itself) indicating which request
-	 * (from the driver input) generated this response streams. The HTTP Source has
-	 * functions `filter()` and `select()`, but is not itself a stream. So you can
-	 * call `sources.HTTP.filter(request => request.url === X)` to get a new HTTP
-	 * Source object which is filtered for response streams that match the condition
-	 * given, and may call `sources.HTTP.select(category)` to get a metastream of
-	 * response that match the category key. With an HTTP Source, you can also call
-	 * `httpSource.select()` with no param to get the metastream. You should flatten
-	 * the metastream before consuming it, then the resulting response stream will
-	 * emit the response object received through superagent.
-	 *
-	 * @return {Function} the HTTP Driver function
-	 * @function makeHTTPDriver
-	 */
-	var http_driver_1 = __webpack_require__(929);
-	exports.makeHTTPDriver = http_driver_1.makeHTTPDriver;
-	//# sourceMappingURL=index.js.map
-
-/***/ },
-/* 929 */
-/***/ function(module, exports, __webpack_require__) {
-
-	"use strict";
-	var xstream_1 = __webpack_require__(701);
-	var MainHTTPSource_1 = __webpack_require__(930);
-	var xstream_adapter_1 = __webpack_require__(708);
-	var superagent = __webpack_require__(932);
-	function preprocessReqOptions(reqOptions) {
-	    reqOptions.withCredentials = reqOptions.withCredentials || false;
-	    reqOptions.redirects = typeof reqOptions.redirects === 'number' ? reqOptions.redirects : 5;
-	    reqOptions.method = reqOptions.method || "get";
-	    return reqOptions;
-	}
-	function optionsToSuperagent(rawReqOptions) {
-	    var reqOptions = preprocessReqOptions(rawReqOptions);
-	    if (typeof reqOptions.url !== "string") {
-	        throw new Error("Please provide a `url` property in the request options.");
-	    }
-	    var lowerCaseMethod = (reqOptions.method || 'GET').toLowerCase();
-	    var sanitizedMethod = lowerCaseMethod === "delete" ? "del" : lowerCaseMethod;
-	    var request = superagent[sanitizedMethod](reqOptions.url);
-	    if (typeof request.redirects === "function") {
-	        request = request.redirects(reqOptions.redirects);
-	    }
-	    if (reqOptions.type) {
-	        request = request.type(reqOptions.type);
-	    }
-	    if (reqOptions.send) {
-	        request = request.send(reqOptions.send);
-	    }
-	    if (reqOptions.accept) {
-	        request = request.accept(reqOptions.accept);
-	    }
-	    if (reqOptions.query) {
-	        request = request.query(reqOptions.query);
-	    }
-	    if (reqOptions.withCredentials) {
-	        request = request.withCredentials();
-	    }
-	    if (reqOptions.agent) {
-	        request = request.key(reqOptions.agent.key);
-	        request = request.cert(reqOptions.agent.cert);
-	    }
-	    if (typeof reqOptions.user === 'string' && typeof reqOptions.password === 'string') {
-	        request = request.auth(reqOptions.user, reqOptions.password);
-	    }
-	    if (reqOptions.headers) {
-	        for (var key in reqOptions.headers) {
-	            if (reqOptions.headers.hasOwnProperty(key)) {
-	                request = request.set(key, reqOptions.headers[key]);
-	            }
-	        }
-	    }
-	    if (reqOptions.field) {
-	        for (var key in reqOptions.field) {
-	            if (reqOptions.field.hasOwnProperty(key)) {
-	                request = request.field(key, reqOptions.field[key]);
-	            }
-	        }
-	    }
-	    if (reqOptions.attach) {
-	        for (var i = reqOptions.attach.length - 1; i >= 0; i--) {
-	            var a = reqOptions.attach[i];
-	            request = request.attach(a.name, a.path, a.filename);
-	        }
-	    }
-	    return request;
-	}
-	exports.optionsToSuperagent = optionsToSuperagent;
-	function createResponse$(reqInput) {
-	    return xstream_1.default.create({
-	        start: function startResponseStream(listener) {
-	            try {
-	                var reqOptions_1 = normalizeRequestInput(reqInput);
-	                this.request = optionsToSuperagent(reqOptions_1);
-	                if (reqOptions_1.progress) {
-	                    this.request = this.request.on('progress', function (res) {
-	                        res.request = reqOptions_1;
-	                        listener.next(res);
-	                    });
-	                }
-	                this.request.end(function (err, res) {
-	                    if (err) {
-	                        listener.error(err);
-	                    }
-	                    else {
-	                        res.request = reqOptions_1;
-	                        listener.next(res);
-	                        listener.complete();
-	                    }
-	                });
-	            }
-	            catch (err) {
-	                listener.error(err);
-	            }
-	        },
-	        stop: function stopResponseStream() {
-	            if (this.request && this.request.abort) {
-	                this.request.abort();
-	            }
-	        },
-	    });
-	}
-	exports.createResponse$ = createResponse$;
-	function softNormalizeRequestInput(reqInput) {
-	    var reqOptions;
-	    try {
-	        reqOptions = normalizeRequestInput(reqInput);
-	    }
-	    catch (err) {
-	        reqOptions = { url: 'Error', _error: err };
-	    }
-	    return reqOptions;
-	}
-	function normalizeRequestInput(reqOptions) {
-	    if (typeof reqOptions === 'string') {
-	        return { url: reqOptions };
-	    }
-	    else if (typeof reqOptions === 'object') {
-	        return reqOptions;
-	    }
-	    else {
-	        throw new Error("Observable of requests given to HTTP Driver must emit " +
-	            "either URL strings or objects with parameters.");
-	    }
-	}
-	function makeRequestInputToResponse$(runStreamAdapter) {
-	    return function requestInputToResponse$(reqInput) {
-	        var response$ = createResponse$(reqInput).remember();
-	        var reqOptions = softNormalizeRequestInput(reqInput);
-	        if (!reqOptions.lazy) {
-	            response$.addListener({ next: function () { }, error: function () { }, complete: function () { } });
-	        }
-	        response$ = (runStreamAdapter) ?
-	            runStreamAdapter.adapt(response$, xstream_adapter_1.default.streamSubscribe) :
-	            response$;
-	        Object.defineProperty(response$, 'request', {
-	            value: reqOptions,
-	            writable: false,
-	        });
-	        return response$;
-	    };
-	}
-	function makeHTTPDriver() {
-	    function httpDriver(request$, runSA, name) {
-	        var response$$ = request$
-	            .map(makeRequestInputToResponse$(runSA));
-	        var httpSource = new MainHTTPSource_1.MainHTTPSource(response$$, runSA, name, []);
-	        response$$.addListener({ next: function () { }, error: function () { }, complete: function () { } });
-	        return httpSource;
-	    }
-	    httpDriver.streamAdapter = xstream_adapter_1.default;
-	    return httpDriver;
-	}
-	exports.makeHTTPDriver = makeHTTPDriver;
-	//# sourceMappingURL=http-driver.js.map
-
-/***/ },
-/* 930 */
-/***/ function(module, exports, __webpack_require__) {
-
-	"use strict";
-	var isolate_1 = __webpack_require__(931);
-	var xstream_adapter_1 = __webpack_require__(708);
-	var MainHTTPSource = (function () {
-	    function MainHTTPSource(_res$$, runStreamAdapter, _name, _namespace) {
-	        if (_namespace === void 0) { _namespace = []; }
-	        this._res$$ = _res$$;
-	        this.runStreamAdapter = runStreamAdapter;
-	        this._name = _name;
-	        this._namespace = _namespace;
-	        this.isolateSource = isolate_1.isolateSource;
-	        this.isolateSink = isolate_1.isolateSink;
-	    }
-	    MainHTTPSource.prototype.filter = function (predicate) {
-	        var filteredResponse$$ = this._res$$.filter(function (r$) { return predicate(r$.request); });
-	        return new MainHTTPSource(filteredResponse$$, this.runStreamAdapter, this._name, this._namespace);
-	    };
-	    MainHTTPSource.prototype.select = function (category) {
-	        var res$$ = this._res$$;
-	        if (category) {
-	            res$$ = this._res$$
-	                .filter(function (res$) { return res$.request && res$.request.category === category; });
-	        }
-	        var out = this.runStreamAdapter.adapt(res$$, xstream_adapter_1.default.streamSubscribe);
-	        out._isCycleSource = this._name;
-	        return out;
-	    };
-	    return MainHTTPSource;
-	}());
-	exports.MainHTTPSource = MainHTTPSource;
-	//# sourceMappingURL=MainHTTPSource.js.map
-
-/***/ },
-/* 931 */
-/***/ function(module, exports) {
-
-	"use strict";
-	function isolateSource(httpSource, scope) {
-	    return httpSource.filter(function (request) {
-	        return Array.isArray(request._namespace) &&
-	            request._namespace.indexOf(scope) !== -1;
-	    });
-	}
-	exports.isolateSource = isolateSource;
-	function isolateSink(request$, scope) {
-	    return request$.map(function (req) {
-	        if (typeof req === 'string') {
-	            return { url: req, _namespace: [scope] };
-	        }
-	        req._namespace = req._namespace || [];
-	        req._namespace.push(scope);
-	        return req;
-	    });
-	}
-	exports.isolateSink = isolateSink;
-	//# sourceMappingURL=isolate.js.map
-
-/***/ },
-/* 932 */
-/***/ function(module, exports, __webpack_require__) {
-
-	/**
-	 * Root reference for iframes.
-	 */
-
-	var root;
-	if (typeof window !== 'undefined') { // Browser window
-	  root = window;
-	} else if (typeof self !== 'undefined') { // Web Worker
-	  root = self;
-	} else { // Other environments
-	  console.warn("Using browser-only version of superagent in non-browser environment");
-	  root = this;
-	}
-
-	var Emitter = __webpack_require__(933);
-	var requestBase = __webpack_require__(934);
-	var isObject = __webpack_require__(935);
-
-	/**
-	 * Noop.
-	 */
-
-	function noop(){};
-
-	/**
-	 * Expose `request`.
-	 */
-
-	var request = module.exports = __webpack_require__(936).bind(null, Request);
-
-	/**
-	 * Determine XHR.
-	 */
-
-	request.getXHR = function () {
-	  if (root.XMLHttpRequest
-	      && (!root.location || 'file:' != root.location.protocol
-	          || !root.ActiveXObject)) {
-	    return new XMLHttpRequest;
-	  } else {
-	    try { return new ActiveXObject('Microsoft.XMLHTTP'); } catch(e) {}
-	    try { return new ActiveXObject('Msxml2.XMLHTTP.6.0'); } catch(e) {}
-	    try { return new ActiveXObject('Msxml2.XMLHTTP.3.0'); } catch(e) {}
-	    try { return new ActiveXObject('Msxml2.XMLHTTP'); } catch(e) {}
-	  }
-	  throw Error("Browser-only verison of superagent could not find XHR");
-	};
-
-	/**
-	 * Removes leading and trailing whitespace, added to support IE.
-	 *
-	 * @param {String} s
-	 * @return {String}
-	 * @api private
-	 */
-
-	var trim = ''.trim
-	  ? function(s) { return s.trim(); }
-	  : function(s) { return s.replace(/(^\s*|\s*$)/g, ''); };
-
-	/**
-	 * Serialize the given `obj`.
-	 *
-	 * @param {Object} obj
-	 * @return {String}
-	 * @api private
-	 */
-
-	function serialize(obj) {
-	  if (!isObject(obj)) return obj;
-	  var pairs = [];
-	  for (var key in obj) {
-	    pushEncodedKeyValuePair(pairs, key, obj[key]);
-	  }
-	  return pairs.join('&');
-	}
-
-	/**
-	 * Helps 'serialize' with serializing arrays.
-	 * Mutates the pairs array.
-	 *
-	 * @param {Array} pairs
-	 * @param {String} key
-	 * @param {Mixed} val
-	 */
-
-	function pushEncodedKeyValuePair(pairs, key, val) {
-	  if (val != null) {
-	    if (Array.isArray(val)) {
-	      val.forEach(function(v) {
-	        pushEncodedKeyValuePair(pairs, key, v);
-	      });
-	    } else if (isObject(val)) {
-	      for(var subkey in val) {
-	        pushEncodedKeyValuePair(pairs, key + '[' + subkey + ']', val[subkey]);
-	      }
-	    } else {
-	      pairs.push(encodeURIComponent(key)
-	        + '=' + encodeURIComponent(val));
-	    }
-	  } else if (val === null) {
-	    pairs.push(encodeURIComponent(key));
-	  }
-	}
-
-	/**
-	 * Expose serialization method.
-	 */
-
-	 request.serializeObject = serialize;
-
-	 /**
-	  * Parse the given x-www-form-urlencoded `str`.
-	  *
-	  * @param {String} str
-	  * @return {Object}
-	  * @api private
-	  */
-
-	function parseString(str) {
-	  var obj = {};
-	  var pairs = str.split('&');
-	  var pair;
-	  var pos;
-
-	  for (var i = 0, len = pairs.length; i < len; ++i) {
-	    pair = pairs[i];
-	    pos = pair.indexOf('=');
-	    if (pos == -1) {
-	      obj[decodeURIComponent(pair)] = '';
-	    } else {
-	      obj[decodeURIComponent(pair.slice(0, pos))] =
-	        decodeURIComponent(pair.slice(pos + 1));
-	    }
-	  }
-
-	  return obj;
-	}
-
-	/**
-	 * Expose parser.
-	 */
-
-	request.parseString = parseString;
-
-	/**
-	 * Default MIME type map.
-	 *
-	 *     superagent.types.xml = 'application/xml';
-	 *
-	 */
-
-	request.types = {
-	  html: 'text/html',
-	  json: 'application/json',
-	  xml: 'application/xml',
-	  urlencoded: 'application/x-www-form-urlencoded',
-	  'form': 'application/x-www-form-urlencoded',
-	  'form-data': 'application/x-www-form-urlencoded'
-	};
-
-	/**
-	 * Default serialization map.
-	 *
-	 *     superagent.serialize['application/xml'] = function(obj){
-	 *       return 'generated xml here';
-	 *     };
-	 *
-	 */
-
-	 request.serialize = {
-	   'application/x-www-form-urlencoded': serialize,
-	   'application/json': JSON.stringify
-	 };
-
-	 /**
-	  * Default parsers.
-	  *
-	  *     superagent.parse['application/xml'] = function(str){
-	  *       return { object parsed from str };
-	  *     };
-	  *
-	  */
-
-	request.parse = {
-	  'application/x-www-form-urlencoded': parseString,
-	  'application/json': JSON.parse
-	};
-
-	/**
-	 * Parse the given header `str` into
-	 * an object containing the mapped fields.
-	 *
-	 * @param {String} str
-	 * @return {Object}
-	 * @api private
-	 */
-
-	function parseHeader(str) {
-	  var lines = str.split(/\r?\n/);
-	  var fields = {};
-	  var index;
-	  var line;
-	  var field;
-	  var val;
-
-	  lines.pop(); // trailing CRLF
-
-	  for (var i = 0, len = lines.length; i < len; ++i) {
-	    line = lines[i];
-	    index = line.indexOf(':');
-	    field = line.slice(0, index).toLowerCase();
-	    val = trim(line.slice(index + 1));
-	    fields[field] = val;
-	  }
-
-	  return fields;
-	}
-
-	/**
-	 * Check if `mime` is json or has +json structured syntax suffix.
-	 *
-	 * @param {String} mime
-	 * @return {Boolean}
-	 * @api private
-	 */
-
-	function isJSON(mime) {
-	  return /[\/+]json\b/.test(mime);
-	}
-
-	/**
-	 * Return the mime type for the given `str`.
-	 *
-	 * @param {String} str
-	 * @return {String}
-	 * @api private
-	 */
-
-	function type(str){
-	  return str.split(/ *; */).shift();
-	};
-
-	/**
-	 * Return header field parameters.
-	 *
-	 * @param {String} str
-	 * @return {Object}
-	 * @api private
-	 */
-
-	function params(str){
-	  return str.split(/ *; */).reduce(function(obj, str){
-	    var parts = str.split(/ *= */),
-	        key = parts.shift(),
-	        val = parts.shift();
-
-	    if (key && val) obj[key] = val;
-	    return obj;
-	  }, {});
-	};
-
-	/**
-	 * Initialize a new `Response` with the given `xhr`.
-	 *
-	 *  - set flags (.ok, .error, etc)
-	 *  - parse header
-	 *
-	 * Examples:
-	 *
-	 *  Aliasing `superagent` as `request` is nice:
-	 *
-	 *      request = superagent;
-	 *
-	 *  We can use the promise-like API, or pass callbacks:
-	 *
-	 *      request.get('/').end(function(res){});
-	 *      request.get('/', function(res){});
-	 *
-	 *  Sending data can be chained:
-	 *
-	 *      request
-	 *        .post('/user')
-	 *        .send({ name: 'tj' })
-	 *        .end(function(res){});
-	 *
-	 *  Or passed to `.send()`:
-	 *
-	 *      request
-	 *        .post('/user')
-	 *        .send({ name: 'tj' }, function(res){});
-	 *
-	 *  Or passed to `.post()`:
-	 *
-	 *      request
-	 *        .post('/user', { name: 'tj' })
-	 *        .end(function(res){});
-	 *
-	 * Or further reduced to a single call for simple cases:
-	 *
-	 *      request
-	 *        .post('/user', { name: 'tj' }, function(res){});
-	 *
-	 * @param {XMLHTTPRequest} xhr
-	 * @param {Object} options
-	 * @api private
-	 */
-
-	function Response(req, options) {
-	  options = options || {};
-	  this.req = req;
-	  this.xhr = this.req.xhr;
-	  // responseText is accessible only if responseType is '' or 'text' and on older browsers
-	  this.text = ((this.req.method !='HEAD' && (this.xhr.responseType === '' || this.xhr.responseType === 'text')) || typeof this.xhr.responseType === 'undefined')
-	     ? this.xhr.responseText
-	     : null;
-	  this.statusText = this.req.xhr.statusText;
-	  this._setStatusProperties(this.xhr.status);
-	  this.header = this.headers = parseHeader(this.xhr.getAllResponseHeaders());
-	  // getAllResponseHeaders sometimes falsely returns "" for CORS requests, but
-	  // getResponseHeader still works. so we get content-type even if getting
-	  // other headers fails.
-	  this.header['content-type'] = this.xhr.getResponseHeader('content-type');
-	  this._setHeaderProperties(this.header);
-	  this.body = this.req.method != 'HEAD'
-	    ? this._parseBody(this.text ? this.text : this.xhr.response)
-	    : null;
-	}
-
-	/**
-	 * Get case-insensitive `field` value.
-	 *
-	 * @param {String} field
-	 * @return {String}
-	 * @api public
-	 */
-
-	Response.prototype.get = function(field){
-	  return this.header[field.toLowerCase()];
-	};
-
-	/**
-	 * Set header related properties:
-	 *
-	 *   - `.type` the content type without params
-	 *
-	 * A response of "Content-Type: text/plain; charset=utf-8"
-	 * will provide you with a `.type` of "text/plain".
-	 *
-	 * @param {Object} header
-	 * @api private
-	 */
-
-	Response.prototype._setHeaderProperties = function(header){
-	  // content-type
-	  var ct = this.header['content-type'] || '';
-	  this.type = type(ct);
-
-	  // params
-	  var obj = params(ct);
-	  for (var key in obj) this[key] = obj[key];
-	};
-
-	/**
-	 * Parse the given body `str`.
-	 *
-	 * Used for auto-parsing of bodies. Parsers
-	 * are defined on the `superagent.parse` object.
-	 *
-	 * @param {String} str
-	 * @return {Mixed}
-	 * @api private
-	 */
-
-	Response.prototype._parseBody = function(str){
-	  var parse = request.parse[this.type];
-	  if (!parse && isJSON(this.type)) {
-	    parse = request.parse['application/json'];
-	  }
-	  return parse && str && (str.length || str instanceof Object)
-	    ? parse(str)
-	    : null;
-	};
-
-	/**
-	 * Set flags such as `.ok` based on `status`.
-	 *
-	 * For example a 2xx response will give you a `.ok` of __true__
-	 * whereas 5xx will be __false__ and `.error` will be __true__. The
-	 * `.clientError` and `.serverError` are also available to be more
-	 * specific, and `.statusType` is the class of error ranging from 1..5
-	 * sometimes useful for mapping respond colors etc.
-	 *
-	 * "sugar" properties are also defined for common cases. Currently providing:
-	 *
-	 *   - .noContent
-	 *   - .badRequest
-	 *   - .unauthorized
-	 *   - .notAcceptable
-	 *   - .notFound
-	 *
-	 * @param {Number} status
-	 * @api private
-	 */
-
-	Response.prototype._setStatusProperties = function(status){
-	  // handle IE9 bug: http://stackoverflow.com/questions/10046972/msie-returns-status-code-of-1223-for-ajax-request
-	  if (status === 1223) {
-	    status = 204;
-	  }
-
-	  var type = status / 100 | 0;
-
-	  // status / class
-	  this.status = this.statusCode = status;
-	  this.statusType = type;
-
-	  // basics
-	  this.info = 1 == type;
-	  this.ok = 2 == type;
-	  this.clientError = 4 == type;
-	  this.serverError = 5 == type;
-	  this.error = (4 == type || 5 == type)
-	    ? this.toError()
-	    : false;
-
-	  // sugar
-	  this.accepted = 202 == status;
-	  this.noContent = 204 == status;
-	  this.badRequest = 400 == status;
-	  this.unauthorized = 401 == status;
-	  this.notAcceptable = 406 == status;
-	  this.notFound = 404 == status;
-	  this.forbidden = 403 == status;
-	};
-
-	/**
-	 * Return an `Error` representative of this response.
-	 *
-	 * @return {Error}
-	 * @api public
-	 */
-
-	Response.prototype.toError = function(){
-	  var req = this.req;
-	  var method = req.method;
-	  var url = req.url;
-
-	  var msg = 'cannot ' + method + ' ' + url + ' (' + this.status + ')';
-	  var err = new Error(msg);
-	  err.status = this.status;
-	  err.method = method;
-	  err.url = url;
-
-	  return err;
-	};
-
-	/**
-	 * Expose `Response`.
-	 */
-
-	request.Response = Response;
-
-	/**
-	 * Initialize a new `Request` with the given `method` and `url`.
-	 *
-	 * @param {String} method
-	 * @param {String} url
-	 * @api public
-	 */
-
-	function Request(method, url) {
-	  var self = this;
-	  this._query = this._query || [];
-	  this.method = method;
-	  this.url = url;
-	  this.header = {}; // preserves header name case
-	  this._header = {}; // coerces header names to lowercase
-	  this.on('end', function(){
-	    var err = null;
-	    var res = null;
-
-	    try {
-	      res = new Response(self);
-	    } catch(e) {
-	      err = new Error('Parser is unable to parse the response');
-	      err.parse = true;
-	      err.original = e;
-	      // issue #675: return the raw response if the response parsing fails
-	      err.rawResponse = self.xhr && self.xhr.responseText ? self.xhr.responseText : null;
-	      // issue #876: return the http status code if the response parsing fails
-	      err.statusCode = self.xhr && self.xhr.status ? self.xhr.status : null;
-	      return self.callback(err);
-	    }
-
-	    self.emit('response', res);
-
-	    var new_err;
-	    try {
-	      if (res.status < 200 || res.status >= 300) {
-	        new_err = new Error(res.statusText || 'Unsuccessful HTTP response');
-	        new_err.original = err;
-	        new_err.response = res;
-	        new_err.status = res.status;
-	      }
-	    } catch(e) {
-	      new_err = e; // #985 touching res may cause INVALID_STATE_ERR on old Android
-	    }
-
-	    // #1000 don't catch errors from the callback to avoid double calling it
-	    if (new_err) {
-	      self.callback(new_err, res);
-	    } else {
-	      self.callback(null, res);
-	    }
-	  });
-	}
-
-	/**
-	 * Mixin `Emitter` and `requestBase`.
-	 */
-
-	Emitter(Request.prototype);
-	for (var key in requestBase) {
-	  Request.prototype[key] = requestBase[key];
-	}
-
-	/**
-	 * Set Content-Type to `type`, mapping values from `request.types`.
-	 *
-	 * Examples:
-	 *
-	 *      superagent.types.xml = 'application/xml';
-	 *
-	 *      request.post('/')
-	 *        .type('xml')
-	 *        .send(xmlstring)
-	 *        .end(callback);
-	 *
-	 *      request.post('/')
-	 *        .type('application/xml')
-	 *        .send(xmlstring)
-	 *        .end(callback);
-	 *
-	 * @param {String} type
-	 * @return {Request} for chaining
-	 * @api public
-	 */
-
-	Request.prototype.type = function(type){
-	  this.set('Content-Type', request.types[type] || type);
-	  return this;
-	};
-
-	/**
-	 * Set responseType to `val`. Presently valid responseTypes are 'blob' and
-	 * 'arraybuffer'.
-	 *
-	 * Examples:
-	 *
-	 *      req.get('/')
-	 *        .responseType('blob')
-	 *        .end(callback);
-	 *
-	 * @param {String} val
-	 * @return {Request} for chaining
-	 * @api public
-	 */
-
-	Request.prototype.responseType = function(val){
-	  this._responseType = val;
-	  return this;
-	};
-
-	/**
-	 * Set Accept to `type`, mapping values from `request.types`.
-	 *
-	 * Examples:
-	 *
-	 *      superagent.types.json = 'application/json';
-	 *
-	 *      request.get('/agent')
-	 *        .accept('json')
-	 *        .end(callback);
-	 *
-	 *      request.get('/agent')
-	 *        .accept('application/json')
-	 *        .end(callback);
-	 *
-	 * @param {String} accept
-	 * @return {Request} for chaining
-	 * @api public
-	 */
-
-	Request.prototype.accept = function(type){
-	  this.set('Accept', request.types[type] || type);
-	  return this;
-	};
-
-	/**
-	 * Set Authorization field value with `user` and `pass`.
-	 *
-	 * @param {String} user
-	 * @param {String} pass
-	 * @param {Object} options with 'type' property 'auto' or 'basic' (default 'basic')
-	 * @return {Request} for chaining
-	 * @api public
-	 */
-
-	Request.prototype.auth = function(user, pass, options){
-	  if (!options) {
-	    options = {
-	      type: 'basic'
-	    }
-	  }
-
-	  switch (options.type) {
-	    case 'basic':
-	      var str = btoa(user + ':' + pass);
-	      this.set('Authorization', 'Basic ' + str);
-	    break;
-
-	    case 'auto':
-	      this.username = user;
-	      this.password = pass;
-	    break;
-	  }
-	  return this;
-	};
-
-	/**
-	* Add query-string `val`.
-	*
-	* Examples:
-	*
-	*   request.get('/shoes')
-	*     .query('size=10')
-	*     .query({ color: 'blue' })
-	*
-	* @param {Object|String} val
-	* @return {Request} for chaining
-	* @api public
-	*/
-
-	Request.prototype.query = function(val){
-	  if ('string' != typeof val) val = serialize(val);
-	  if (val) this._query.push(val);
-	  return this;
-	};
-
-	/**
-	 * Queue the given `file` as an attachment to the specified `field`,
-	 * with optional `filename`.
-	 *
-	 * ``` js
-	 * request.post('/upload')
-	 *   .attach('content', new Blob(['<a id="a"><b id="b">hey!</b></a>'], { type: "text/html"}))
-	 *   .end(callback);
-	 * ```
-	 *
-	 * @param {String} field
-	 * @param {Blob|File} file
-	 * @param {String} filename
-	 * @return {Request} for chaining
-	 * @api public
-	 */
-
-	Request.prototype.attach = function(field, file, filename){
-	  this._getFormData().append(field, file, filename || file.name);
-	  return this;
-	};
-
-	Request.prototype._getFormData = function(){
-	  if (!this._formData) {
-	    this._formData = new root.FormData();
-	  }
-	  return this._formData;
-	};
-
-	/**
-	 * Invoke the callback with `err` and `res`
-	 * and handle arity check.
-	 *
-	 * @param {Error} err
-	 * @param {Response} res
-	 * @api private
-	 */
-
-	Request.prototype.callback = function(err, res){
-	  var fn = this._callback;
-	  this.clearTimeout();
-	  fn(err, res);
-	};
-
-	/**
-	 * Invoke callback with x-domain error.
-	 *
-	 * @api private
-	 */
-
-	Request.prototype.crossDomainError = function(){
-	  var err = new Error('Request has been terminated\nPossible causes: the network is offline, Origin is not allowed by Access-Control-Allow-Origin, the page is being unloaded, etc.');
-	  err.crossDomain = true;
-
-	  err.status = this.status;
-	  err.method = this.method;
-	  err.url = this.url;
-
-	  this.callback(err);
-	};
-
-	/**
-	 * Invoke callback with timeout error.
-	 *
-	 * @api private
-	 */
-
-	Request.prototype._timeoutError = function(){
-	  var timeout = this._timeout;
-	  var err = new Error('timeout of ' + timeout + 'ms exceeded');
-	  err.timeout = timeout;
-	  this.callback(err);
-	};
-
-	/**
-	 * Compose querystring to append to req.url
-	 *
-	 * @api private
-	 */
-
-	Request.prototype._appendQueryString = function(){
-	  var query = this._query.join('&');
-	  if (query) {
-	    this.url += ~this.url.indexOf('?')
-	      ? '&' + query
-	      : '?' + query;
-	  }
-	};
-
-	/**
-	 * Initiate request, invoking callback `fn(res)`
-	 * with an instanceof `Response`.
-	 *
-	 * @param {Function} fn
-	 * @return {Request} for chaining
-	 * @api public
-	 */
-
-	Request.prototype.end = function(fn){
-	  var self = this;
-	  var xhr = this.xhr = request.getXHR();
-	  var timeout = this._timeout;
-	  var data = this._formData || this._data;
-
-	  // store callback
-	  this._callback = fn || noop;
-
-	  // state change
-	  xhr.onreadystatechange = function(){
-	    if (4 != xhr.readyState) return;
-
-	    // In IE9, reads to any property (e.g. status) off of an aborted XHR will
-	    // result in the error "Could not complete the operation due to error c00c023f"
-	    var status;
-	    try { status = xhr.status } catch(e) { status = 0; }
-
-	    if (0 == status) {
-	      if (self.timedout) return self._timeoutError();
-	      if (self._aborted) return;
-	      return self.crossDomainError();
-	    }
-	    self.emit('end');
-	  };
-
-	  // progress
-	  var handleProgress = function(direction, e) {
-	    if (e.total > 0) {
-	      e.percent = e.loaded / e.total * 100;
-	    }
-	    e.direction = direction;
-	    self.emit('progress', e);
-	  }
-	  if (this.hasListeners('progress')) {
-	    try {
-	      xhr.onprogress = handleProgress.bind(null, 'download');
-	      if (xhr.upload) {
-	        xhr.upload.onprogress = handleProgress.bind(null, 'upload');
-	      }
-	    } catch(e) {
-	      // Accessing xhr.upload fails in IE from a web worker, so just pretend it doesn't exist.
-	      // Reported here:
-	      // https://connect.microsoft.com/IE/feedback/details/837245/xmlhttprequest-upload-throws-invalid-argument-when-used-from-web-worker-context
-	    }
-	  }
-
-	  // timeout
-	  if (timeout && !this._timer) {
-	    this._timer = setTimeout(function(){
-	      self.timedout = true;
-	      self.abort();
-	    }, timeout);
-	  }
-
-	  // querystring
-	  this._appendQueryString();
-
-	  // initiate request
-	  if (this.username && this.password) {
-	    xhr.open(this.method, this.url, true, this.username, this.password);
-	  } else {
-	    xhr.open(this.method, this.url, true);
-	  }
-
-	  // CORS
-	  if (this._withCredentials) xhr.withCredentials = true;
-
-	  // body
-	  if ('GET' != this.method && 'HEAD' != this.method && 'string' != typeof data && !this._isHost(data)) {
-	    // serialize stuff
-	    var contentType = this._header['content-type'];
-	    var serialize = this._serializer || request.serialize[contentType ? contentType.split(';')[0] : ''];
-	    if (!serialize && isJSON(contentType)) serialize = request.serialize['application/json'];
-	    if (serialize) data = serialize(data);
-	  }
-
-	  // set header fields
-	  for (var field in this.header) {
-	    if (null == this.header[field]) continue;
-	    xhr.setRequestHeader(field, this.header[field]);
-	  }
-
-	  if (this._responseType) {
-	    xhr.responseType = this._responseType;
-	  }
-
-	  // send stuff
-	  this.emit('request', this);
-
-	  // IE11 xhr.send(undefined) sends 'undefined' string as POST payload (instead of nothing)
-	  // We need null here if data is undefined
-	  xhr.send(typeof data !== 'undefined' ? data : null);
-	  return this;
-	};
-
-
-	/**
-	 * Expose `Request`.
-	 */
-
-	request.Request = Request;
-
-	/**
-	 * GET `url` with optional callback `fn(res)`.
-	 *
-	 * @param {String} url
-	 * @param {Mixed|Function} [data] or fn
-	 * @param {Function} [fn]
-	 * @return {Request}
-	 * @api public
-	 */
-
-	request.get = function(url, data, fn){
-	  var req = request('GET', url);
-	  if ('function' == typeof data) fn = data, data = null;
-	  if (data) req.query(data);
-	  if (fn) req.end(fn);
-	  return req;
-	};
-
-	/**
-	 * HEAD `url` with optional callback `fn(res)`.
-	 *
-	 * @param {String} url
-	 * @param {Mixed|Function} [data] or fn
-	 * @param {Function} [fn]
-	 * @return {Request}
-	 * @api public
-	 */
-
-	request.head = function(url, data, fn){
-	  var req = request('HEAD', url);
-	  if ('function' == typeof data) fn = data, data = null;
-	  if (data) req.send(data);
-	  if (fn) req.end(fn);
-	  return req;
-	};
-
-	/**
-	 * OPTIONS query to `url` with optional callback `fn(res)`.
-	 *
-	 * @param {String} url
-	 * @param {Mixed|Function} [data] or fn
-	 * @param {Function} [fn]
-	 * @return {Request}
-	 * @api public
-	 */
-
-	request.options = function(url, data, fn){
-	  var req = request('OPTIONS', url);
-	  if ('function' == typeof data) fn = data, data = null;
-	  if (data) req.send(data);
-	  if (fn) req.end(fn);
-	  return req;
-	};
-
-	/**
-	 * DELETE `url` with optional callback `fn(res)`.
-	 *
-	 * @param {String} url
-	 * @param {Function} [fn]
-	 * @return {Request}
-	 * @api public
-	 */
-
-	function del(url, fn){
-	  var req = request('DELETE', url);
-	  if (fn) req.end(fn);
-	  return req;
-	};
-
-	request['del'] = del;
-	request['delete'] = del;
-
-	/**
-	 * PATCH `url` with optional `data` and callback `fn(res)`.
-	 *
-	 * @param {String} url
-	 * @param {Mixed} [data]
-	 * @param {Function} [fn]
-	 * @return {Request}
-	 * @api public
-	 */
-
-	request.patch = function(url, data, fn){
-	  var req = request('PATCH', url);
-	  if ('function' == typeof data) fn = data, data = null;
-	  if (data) req.send(data);
-	  if (fn) req.end(fn);
-	  return req;
-	};
-
-	/**
-	 * POST `url` with optional `data` and callback `fn(res)`.
-	 *
-	 * @param {String} url
-	 * @param {Mixed} [data]
-	 * @param {Function} [fn]
-	 * @return {Request}
-	 * @api public
-	 */
-
-	request.post = function(url, data, fn){
-	  var req = request('POST', url);
-	  if ('function' == typeof data) fn = data, data = null;
-	  if (data) req.send(data);
-	  if (fn) req.end(fn);
-	  return req;
-	};
-
-	/**
-	 * PUT `url` with optional `data` and callback `fn(res)`.
-	 *
-	 * @param {String} url
-	 * @param {Mixed|Function} [data] or fn
-	 * @param {Function} [fn]
-	 * @return {Request}
-	 * @api public
-	 */
-
-	request.put = function(url, data, fn){
-	  var req = request('PUT', url);
-	  if ('function' == typeof data) fn = data, data = null;
-	  if (data) req.send(data);
-	  if (fn) req.end(fn);
-	  return req;
-	};
-
-
-/***/ },
-/* 933 */
-/***/ function(module, exports, __webpack_require__) {
-
-	
-	/**
-	 * Expose `Emitter`.
-	 */
-
-	if (true) {
-	  module.exports = Emitter;
-	}
-
-	/**
-	 * Initialize a new `Emitter`.
-	 *
-	 * @api public
-	 */
-
-	function Emitter(obj) {
-	  if (obj) return mixin(obj);
-	};
-
-	/**
-	 * Mixin the emitter properties.
-	 *
-	 * @param {Object} obj
-	 * @return {Object}
-	 * @api private
-	 */
-
-	function mixin(obj) {
-	  for (var key in Emitter.prototype) {
-	    obj[key] = Emitter.prototype[key];
-	  }
-	  return obj;
-	}
-
-	/**
-	 * Listen on the given `event` with `fn`.
-	 *
-	 * @param {String} event
-	 * @param {Function} fn
-	 * @return {Emitter}
-	 * @api public
-	 */
-
-	Emitter.prototype.on =
-	Emitter.prototype.addEventListener = function(event, fn){
-	  this._callbacks = this._callbacks || {};
-	  (this._callbacks['$' + event] = this._callbacks['$' + event] || [])
-	    .push(fn);
-	  return this;
-	};
-
-	/**
-	 * Adds an `event` listener that will be invoked a single
-	 * time then automatically removed.
-	 *
-	 * @param {String} event
-	 * @param {Function} fn
-	 * @return {Emitter}
-	 * @api public
-	 */
-
-	Emitter.prototype.once = function(event, fn){
-	  function on() {
-	    this.off(event, on);
-	    fn.apply(this, arguments);
-	  }
-
-	  on.fn = fn;
-	  this.on(event, on);
-	  return this;
-	};
-
-	/**
-	 * Remove the given callback for `event` or all
-	 * registered callbacks.
-	 *
-	 * @param {String} event
-	 * @param {Function} fn
-	 * @return {Emitter}
-	 * @api public
-	 */
-
-	Emitter.prototype.off =
-	Emitter.prototype.removeListener =
-	Emitter.prototype.removeAllListeners =
-	Emitter.prototype.removeEventListener = function(event, fn){
-	  this._callbacks = this._callbacks || {};
-
-	  // all
-	  if (0 == arguments.length) {
-	    this._callbacks = {};
-	    return this;
-	  }
-
-	  // specific event
-	  var callbacks = this._callbacks['$' + event];
-	  if (!callbacks) return this;
-
-	  // remove all handlers
-	  if (1 == arguments.length) {
-	    delete this._callbacks['$' + event];
-	    return this;
-	  }
-
-	  // remove specific handler
-	  var cb;
-	  for (var i = 0; i < callbacks.length; i++) {
-	    cb = callbacks[i];
-	    if (cb === fn || cb.fn === fn) {
-	      callbacks.splice(i, 1);
-	      break;
-	    }
-	  }
-	  return this;
-	};
-
-	/**
-	 * Emit `event` with the given args.
-	 *
-	 * @param {String} event
-	 * @param {Mixed} ...
-	 * @return {Emitter}
-	 */
-
-	Emitter.prototype.emit = function(event){
-	  this._callbacks = this._callbacks || {};
-	  var args = [].slice.call(arguments, 1)
-	    , callbacks = this._callbacks['$' + event];
-
-	  if (callbacks) {
-	    callbacks = callbacks.slice(0);
-	    for (var i = 0, len = callbacks.length; i < len; ++i) {
-	      callbacks[i].apply(this, args);
-	    }
-	  }
-
-	  return this;
-	};
-
-	/**
-	 * Return array of callbacks for `event`.
-	 *
-	 * @param {String} event
-	 * @return {Array}
-	 * @api public
-	 */
-
-	Emitter.prototype.listeners = function(event){
-	  this._callbacks = this._callbacks || {};
-	  return this._callbacks['$' + event] || [];
-	};
-
-	/**
-	 * Check if this emitter has `event` handlers.
-	 *
-	 * @param {String} event
-	 * @return {Boolean}
-	 * @api public
-	 */
-
-	Emitter.prototype.hasListeners = function(event){
-	  return !! this.listeners(event).length;
-	};
-
-
-/***/ },
-/* 934 */
-/***/ function(module, exports, __webpack_require__) {
-
-	/**
-	 * Module of mixed-in functions shared between node and client code
-	 */
-	var isObject = __webpack_require__(935);
-
-	/**
-	 * Clear previous timeout.
-	 *
-	 * @return {Request} for chaining
-	 * @api public
-	 */
-
-	exports.clearTimeout = function _clearTimeout(){
-	  this._timeout = 0;
-	  clearTimeout(this._timer);
-	  return this;
-	};
-
-	/**
-	 * Override default response body parser
-	 *
-	 * This function will be called to convert incoming data into request.body
-	 *
-	 * @param {Function}
-	 * @api public
-	 */
-
-	exports.parse = function parse(fn){
-	  this._parser = fn;
-	  return this;
-	};
-
-	/**
-	 * Override default request body serializer
-	 *
-	 * This function will be called to convert data set via .send or .attach into payload to send
-	 *
-	 * @param {Function}
-	 * @api public
-	 */
-
-	exports.serialize = function serialize(fn){
-	  this._serializer = fn;
-	  return this;
-	};
-
-	/**
-	 * Set timeout to `ms`.
-	 *
-	 * @param {Number} ms
-	 * @return {Request} for chaining
-	 * @api public
-	 */
-
-	exports.timeout = function timeout(ms){
-	  this._timeout = ms;
-	  return this;
-	};
-
-	/**
-	 * Promise support
-	 *
-	 * @param {Function} resolve
-	 * @param {Function} reject
-	 * @return {Request}
-	 */
-
-	exports.then = function then(resolve, reject) {
-	  if (!this._fullfilledPromise) {
-	    var self = this;
-	    this._fullfilledPromise = new Promise(function(innerResolve, innerReject){
-	      self.end(function(err, res){
-	        if (err) innerReject(err); else innerResolve(res);
-	      });
-	    });
-	  }
-	  return this._fullfilledPromise.then(resolve, reject);
-	}
-
-	exports.catch = function(cb) {
-	  return this.then(undefined, cb);
-	};
-
-	/**
-	 * Allow for extension
-	 */
-
-	exports.use = function use(fn) {
-	  fn(this);
-	  return this;
-	}
-
-
-	/**
-	 * Get request header `field`.
-	 * Case-insensitive.
-	 *
-	 * @param {String} field
-	 * @return {String}
-	 * @api public
-	 */
-
-	exports.get = function(field){
-	  return this._header[field.toLowerCase()];
-	};
-
-	/**
-	 * Get case-insensitive header `field` value.
-	 * This is a deprecated internal API. Use `.get(field)` instead.
-	 *
-	 * (getHeader is no longer used internally by the superagent code base)
-	 *
-	 * @param {String} field
-	 * @return {String}
-	 * @api private
-	 * @deprecated
-	 */
-
-	exports.getHeader = exports.get;
-
-	/**
-	 * Set header `field` to `val`, or multiple fields with one object.
-	 * Case-insensitive.
-	 *
-	 * Examples:
-	 *
-	 *      req.get('/')
-	 *        .set('Accept', 'application/json')
-	 *        .set('X-API-Key', 'foobar')
-	 *        .end(callback);
-	 *
-	 *      req.get('/')
-	 *        .set({ Accept: 'application/json', 'X-API-Key': 'foobar' })
-	 *        .end(callback);
-	 *
-	 * @param {String|Object} field
-	 * @param {String} val
-	 * @return {Request} for chaining
-	 * @api public
-	 */
-
-	exports.set = function(field, val){
-	  if (isObject(field)) {
-	    for (var key in field) {
-	      this.set(key, field[key]);
-	    }
-	    return this;
-	  }
-	  this._header[field.toLowerCase()] = val;
-	  this.header[field] = val;
-	  return this;
-	};
-
-	/**
-	 * Remove header `field`.
-	 * Case-insensitive.
-	 *
-	 * Example:
-	 *
-	 *      req.get('/')
-	 *        .unset('User-Agent')
-	 *        .end(callback);
-	 *
-	 * @param {String} field
-	 */
-	exports.unset = function(field){
-	  delete this._header[field.toLowerCase()];
-	  delete this.header[field];
-	  return this;
-	};
-
-	/**
-	 * Write the field `name` and `val`, or multiple fields with one object
-	 * for "multipart/form-data" request bodies.
-	 *
-	 * ``` js
-	 * request.post('/upload')
-	 *   .field('foo', 'bar')
-	 *   .end(callback);
-	 *
-	 * request.post('/upload')
-	 *   .field({ foo: 'bar', baz: 'qux' })
-	 *   .end(callback);
-	 * ```
-	 *
-	 * @param {String|Object} name
-	 * @param {String|Blob|File|Buffer|fs.ReadStream} val
-	 * @return {Request} for chaining
-	 * @api public
-	 */
-	exports.field = function(name, val) {
-
-	  // name should be either a string or an object.
-	  if (null === name ||  undefined === name) {
-	    throw new Error('.field(name, val) name can not be empty');
-	  }
-
-	  if (isObject(name)) {
-	    for (var key in name) {
-	      this.field(key, name[key]);
-	    }
-	    return this;
-	  }
-
-	  // val should be defined now
-	  if (null === val || undefined === val) {
-	    throw new Error('.field(name, val) val can not be empty');
-	  }
-	  this._getFormData().append(name, val);
-	  return this;
-	};
-
-	/**
-	 * Abort the request, and clear potential timeout.
-	 *
-	 * @return {Request}
-	 * @api public
-	 */
-	exports.abort = function(){
-	  if (this._aborted) {
-	    return this;
-	  }
-	  this._aborted = true;
-	  this.xhr && this.xhr.abort(); // browser
-	  this.req && this.req.abort(); // node
-	  this.clearTimeout();
-	  this.emit('abort');
-	  return this;
-	};
-
-	/**
-	 * Enable transmission of cookies with x-domain requests.
-	 *
-	 * Note that for this to work the origin must not be
-	 * using "Access-Control-Allow-Origin" with a wildcard,
-	 * and also must set "Access-Control-Allow-Credentials"
-	 * to "true".
-	 *
-	 * @api public
-	 */
-
-	exports.withCredentials = function(){
-	  // This is browser-only functionality. Node side is no-op.
-	  this._withCredentials = true;
-	  return this;
-	};
-
-	/**
-	 * Set the max redirects to `n`. Does noting in browser XHR implementation.
-	 *
-	 * @param {Number} n
-	 * @return {Request} for chaining
-	 * @api public
-	 */
-
-	exports.redirects = function(n){
-	  this._maxRedirects = n;
-	  return this;
-	};
-
-	/**
-	 * Convert to a plain javascript object (not JSON string) of scalar properties.
-	 * Note as this method is designed to return a useful non-this value,
-	 * it cannot be chained.
-	 *
-	 * @return {Object} describing method, url, and data of this request
-	 * @api public
-	 */
-
-	exports.toJSON = function(){
-	  return {
-	    method: this.method,
-	    url: this.url,
-	    data: this._data,
-	    headers: this._header
-	  };
-	};
-
-	/**
-	 * Check if `obj` is a host object,
-	 * we don't want to serialize these :)
-	 *
-	 * TODO: future proof, move to compoent land
-	 *
-	 * @param {Object} obj
-	 * @return {Boolean}
-	 * @api private
-	 */
-
-	exports._isHost = function _isHost(obj) {
-	  var str = {}.toString.call(obj);
-
-	  switch (str) {
-	    case '[object File]':
-	    case '[object Blob]':
-	    case '[object FormData]':
-	      return true;
-	    default:
-	      return false;
-	  }
-	}
-
-	/**
-	 * Send `data` as the request body, defaulting the `.type()` to "json" when
-	 * an object is given.
-	 *
-	 * Examples:
-	 *
-	 *       // manual json
-	 *       request.post('/user')
-	 *         .type('json')
-	 *         .send('{"name":"tj"}')
-	 *         .end(callback)
-	 *
-	 *       // auto json
-	 *       request.post('/user')
-	 *         .send({ name: 'tj' })
-	 *         .end(callback)
-	 *
-	 *       // manual x-www-form-urlencoded
-	 *       request.post('/user')
-	 *         .type('form')
-	 *         .send('name=tj')
-	 *         .end(callback)
-	 *
-	 *       // auto x-www-form-urlencoded
-	 *       request.post('/user')
-	 *         .type('form')
-	 *         .send({ name: 'tj' })
-	 *         .end(callback)
-	 *
-	 *       // defaults to x-www-form-urlencoded
-	 *      request.post('/user')
-	 *        .send('name=tobi')
-	 *        .send('species=ferret')
-	 *        .end(callback)
-	 *
-	 * @param {String|Object} data
-	 * @return {Request} for chaining
-	 * @api public
-	 */
-
-	exports.send = function(data){
-	  var obj = isObject(data);
-	  var type = this._header['content-type'];
-
-	  // merge
-	  if (obj && isObject(this._data)) {
-	    for (var key in data) {
-	      this._data[key] = data[key];
-	    }
-	  } else if ('string' == typeof data) {
-	    // default to x-www-form-urlencoded
-	    if (!type) this.type('form');
-	    type = this._header['content-type'];
-	    if ('application/x-www-form-urlencoded' == type) {
-	      this._data = this._data
-	        ? this._data + '&' + data
-	        : data;
-	    } else {
-	      this._data = (this._data || '') + data;
-	    }
-	  } else {
-	    this._data = data;
-	  }
-
-	  if (!obj || this._isHost(data)) return this;
-
-	  // default to json
-	  if (!type) this.type('json');
-	  return this;
-	};
-
-
-/***/ },
 /* 935 */
-/***/ function(module, exports) {
+/***/ function(module, exports, __webpack_require__) {
 
-	/**
-	 * Check if `obj` is an object.
-	 *
-	 * @param {Object} obj
-	 * @return {Boolean}
-	 * @api private
-	 */
+	"use strict";
 
-	function isObject(obj) {
-	  return null !== obj && 'object' === typeof obj;
-	}
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+	exports.AddrView = undefined;
 
-	module.exports = isObject;
+	var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
 
+	var _dom = __webpack_require__(709);
+
+	var _sampleCombine = __webpack_require__(828);
+
+	var _sampleCombine2 = _interopRequireDefault(_sampleCombine);
+
+	var _helper = __webpack_require__(829);
+
+	var _isolate = __webpack_require__(825);
+
+	var _isolate2 = _interopRequireDefault(_isolate);
+
+	var _treeview = __webpack_require__(827);
+
+	var _cycleOnionify = __webpack_require__(830);
+
+	var _collection = __webpack_require__(936);
+
+	var _collection2 = _interopRequireDefault(_collection);
+
+	var _xstream = __webpack_require__(701);
+
+	var _xstream2 = _interopRequireDefault(_xstream);
+
+	var _lodash = __webpack_require__(826);
+
+	var _lodash2 = _interopRequireDefault(_lodash);
+
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+	var ABI = function ABI(_ref) {
+	  var DOM = _ref.DOM,
+	      onion = _ref.onion,
+	      Sniffer = _ref.Sniffer;
+
+
+	  // TODO - handle errors well
+	  var resp$ = Sniffer.filter(function (e) {
+	    return e.type === "DH_RES";
+	  }).compose((0, _sampleCombine2.default)(onion.state$)).debug("26").filter(function (_ref2) {
+	    var _ref3 = _slicedToArray(_ref2, 2),
+	        resp = _ref3[0],
+	        state = _ref3[1];
+
+	    return resp.req.params[0].data.slice(2, 10) === state.signature;
+	  }).map(function (_ref4) {
+	    var _ref5 = _slicedToArray(_ref4, 2),
+	        resp = _ref5[0],
+	        state = _ref5[1];
+
+	    return state.decodeOutputs(resp.res.result && resp.res.result.slice(2));
+	  }).startWith([]);
+
+	  var click$ = DOM.select("button").events("click");
+
+	  var changes$ = DOM.select("input").events("change").map(function (e) {
+	    return {
+	      index: e.target.getAttribute('ref'),
+	      value: e.target.value };
+	  });
+
+	  var sendState$ = changes$.fold(function (acc, e) {
+	    acc[e.index] = e.value;return acc;
+	  }, []);
+
+	  var sendEvent$ = click$.compose((0, _sampleCombine2.default)(sendState$)).map(function (_ref6) {
+	    var _ref7 = _slicedToArray(_ref6, 2),
+	        _ = _ref7[0],
+	        state = _ref7[1];
+
+	    return state;
+	  }).compose((0, _sampleCombine2.default)(onion.state$)).map(function (_ref8) {
+	    var _ref9 = _slicedToArray(_ref8, 2),
+	        value = _ref9[0],
+	        state = _ref9[1];
+
+	    return {
+	      value: value,
+	      fabi: state
+	    };
+	  });
+
+	  var context = function context(name, content) {
+	    return (0, _dom.fieldset)("", [(0, _dom.legend)(name), (0, _dom.table)("", [(0, _dom.tbody)("", content)])]);
+	  };
+
+	  var interfaceform = function interfaceform(interfaces) {
+	    var data = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : [];
+	    return interfaces.map(function (iface, index) {
+	      return (0, _dom.tr)("", [(0, _dom.td)(".label", [(0, _dom.label)(iface.name || iface.type)]), (0, _dom.td)(".input", [(0, _dom.input)({ attrs: {
+	          type: "text",
+	          value: index in data && data[index] || "",
+	          ref: index
+	        } })]), (0, _dom.td)("", ["::" + iface.type])]);
+	    });
+	  };
+
+	  var mainView$ = _xstream2.default.combine(onion.state$, resp$).map(function (_ref10) {
+	    var _ref11 = _slicedToArray(_ref10, 2),
+	        p = _ref11[0],
+	        resp = _ref11[1];
+
+	    return (0, _dom.div)(".objectView", [
+	    // Display Inputs
+	    p.inputs && p.inputs.length > 0 ? context("Input", interfaceform(p.inputs)) : (0, _dom.div)(), (0, _dom.button)(p.constant ? "call" : "trigger"),
+	    // Display Outputs
+	    p.outputs && p.outputs.length > 0 ? context("Output", interfaceform(p.outputs, resp)) : (0, _dom.div)()]);
+	  });
+
+	  return {
+	    DOM: mainView$,
+	    web3$: sendEvent$
+	  };
+	};
+
+	var TabNavView = function TabNavView(_ref12) {
+	  var DOM = _ref12.DOM,
+	      onion = _ref12.onion;
+
+	  var view$ = onion.state$.map(function (p) {
+	    return (0, _dom.span)(p.name + '(' + (p.inputs && p.inputs.map(function (i) {
+	      return i.type;
+	    }).join(", ")) + ')');
+	  });
+
+	  return {
+	    DOM: view$
+	  };
+	};
+
+	var AddrView = exports.AddrView = function AddrView(_ref13) {
+	  var DOM = _ref13.DOM,
+	      onion = _ref13.onion,
+	      Sniffer = _ref13.Sniffer;
+
+
+	  var fabisOnion = (0, _cycleOnionify.isolateSource)(onion, 'children');
+
+	  var C = {
+	    abi: (0, _isolate2.default)(ABI, 'state')
+	  };
+
+	  var tabs = (0, _treeview.Tabs)({
+	    C: C,
+	    TabNavView: TabNavView,
+	    sinkNames: ["onion", "web3$"],
+	    classname: ".abiView"
+	  });
+
+	  var tab = tabs({
+	    DOM: DOM,
+	    onion: fabisOnion,
+	    Sniffer: Sniffer
+	  });
+
+	  var web3$ = tab.web3$.compose((0, _sampleCombine2.default)(onion.state$)).debug("state").map(function (_ref14) {
+	    var _ref15 = _slicedToArray(_ref14, 2),
+	        _ref15$ = _ref15[0],
+	        value = _ref15$.value,
+	        fabi = _ref15$.fabi,
+	        state = _ref15[1].state;
+
+	    return {
+	      id: 1,
+	      method: fabi.constant ? "eth_call" : "eth_sendTransaction",
+	      params: [{
+	        from: "0xb007ed86a7198a7bfe97b4dcf291bceabe40852d", // TODO - dynamic
+	        to: state.address,
+	        gas: "0x76c0",
+	        gasPrice: "0x9184e72a000",
+	        value: "0x0",
+	        data: "0x" + fabi.signature + fabi.encodeInputs(value)
+	      }]
+	    };
+	  });
+
+	  return {
+	    DOM: tab.DOM,
+	    web3$: web3$,
+	    onion: (0, _cycleOnionify.isolateSink)(tab.onion, 'children')
+	  };
+	};
 
 /***/ },
 /* 936 */
-/***/ function(module, exports) {
+/***/ function(module, exports, __webpack_require__) {
 
-	// The node and browser modules expose versions of this with the
-	// appropriate constructor function bound as first argument
-	/**
-	 * Issue a request:
-	 *
-	 * Examples:
-	 *
-	 *    request('GET', '/users').end(callback)
-	 *    request('/users').end(callback)
-	 *    request('/users', callback)
-	 *
-	 * @param {String} method
-	 * @param {String|Function} url or callback
-	 * @return {Request}
-	 * @api public
-	 */
+	'use strict';
 
-	function request(RequestConstructor, method, url) {
-	  // callback
-	  if ('function' == typeof url) {
-	    return new RequestConstructor('GET', method).end(url);
-	  }
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+	exports.makeCollection = undefined;
 
-	  // url first
-	  if (2 == arguments.length) {
-	    return new RequestConstructor('GET', method);
-	  }
+	var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
 
-	  return new RequestConstructor(method, url);
+	var _xstream = __webpack_require__(937);
+
+	var _xstream2 = _interopRequireDefault(_xstream);
+
+	var _delay = __webpack_require__(939);
+
+	var _delay2 = _interopRequireDefault(_delay);
+
+	var _dropRepeats = __webpack_require__(940);
+
+	var _dropRepeats2 = _interopRequireDefault(_dropRepeats);
+
+	var _isolate = __webpack_require__(825);
+
+	var _isolate2 = _interopRequireDefault(_isolate);
+
+	var _xstreamAdapter = __webpack_require__(708);
+
+	var _xstreamAdapter2 = _interopRequireDefault(_xstreamAdapter);
+
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+	function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
+
+	function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }
+
+	var noop = Function.prototype;
+
+	function isVtree(x) {
+	  return x && typeof x.sel === 'string';
 	}
 
-	module.exports = request;
+	var _id = 0;
 
+	function id() {
+	  return _id++;
+	}
+
+	function makeItem(component, sources) {
+	  var newId = id();
+
+	  var newItem = (0, _isolate2.default)(component, newId.toString())(sources);
+
+	  newItem._id = newId;
+	  newItem._name = component.name;
+
+	  return newItem;
+	}
+
+	function convert(stream, sourceSA, targetSA) {
+	  return targetSA.isValidStream(stream) ? stream : targetSA.adapt(stream, sourceSA.streamSubscribe);
+	}
+
+	function makeCollection() {
+	  var externalSA = arguments.length <= 0 || arguments[0] === undefined ? _xstreamAdapter2.default : arguments[0];
+
+	  function collection(options) {
+	    var items = arguments.length <= 1 || arguments[1] === undefined ? [] : arguments[1];
+	    var component = options.component;
+	    var sources = options.sources;
+	    var removeSelector = options.removeSelector;
+
+
+	    return {
+	      add: function add() {
+	        var additionalSources = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
+
+	        var newItem = makeItem(component, _extends({}, sources, additionalSources));
+	        var selectedSink = removeSelector(newItem) || _xstream2.default.empty();
+	        var removeSink = convert(selectedSink, externalSA, _xstreamAdapter2.default);
+	        newItem._remove$ = removeSink.take(1).mapTo(newItem);
+
+	        return collection(options, [].concat(_toConsumableArray(items), [newItem]));
+	      },
+	      remove: function remove(itemForRemoval) {
+	        return collection(options, items.filter(function (item) {
+	          return item !== itemForRemoval;
+	        }));
+	      },
+	      asArray: function asArray() {
+	        return items.slice(); // returns a copy of items to avoid mutation
+	      }
+	    };
+	  }
+
+	  function Collection(component) {
+	    var sources = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
+	    var sourceAdd$ = arguments.length <= 2 || arguments[2] === undefined ? _xstream2.default.empty() : arguments[2];
+	    var removeSelector = arguments.length <= 3 || arguments[3] === undefined ? noop : arguments[3];
+
+	    var removeProxy$ = _xstream2.default.create();
+	    var add$ = convert(sourceAdd$, externalSA, _xstreamAdapter2.default);
+	    var addReducer$ = add$.map(function (sourcesList) {
+	      return function (collection) {
+	        if (Array.isArray(sourcesList)) {
+	          // multiple items
+	          return sourcesList.reduce(function (collection, sources) {
+	            return collection.add(sources);
+	          }, collection);
+	        } else {
+	          // single item
+	          return collection.add(sourcesList);
+	        }
+	      };
+	    });
+	    var removeReducer$ = removeProxy$.map(function (item) {
+	      return function (collection) {
+	        return collection.remove(item);
+	      };
+	    });
+	    var reducer$ = _xstream2.default.merge(addReducer$, removeReducer$);
+
+	    var emptyCollection = collection({ component: component, sources: sources, removeSelector: removeSelector });
+	    var collection$ = reducer$.fold(function (collection, reducer) {
+	      return reducer(collection);
+	    }, emptyCollection).map(function (collection) {
+	      return collection.asArray();
+	    });
+
+	    var remove$ = Collection.merge(collection$, function (item) {
+	      return item._remove$;
+	    }, true);
+	    removeProxy$.imitate(remove$);
+
+	    return convert(collection$, _xstreamAdapter2.default, externalSA);
+	  }
+
+	  Collection.pluck = function pluck(sourceCollection$, pluckSelector) {
+	    var sinks = {};
+
+	    function sink$(item) {
+	      var key = item._id;
+
+	      if (sinks[key] === undefined) {
+	        var selectedSink = convert(pluckSelector(item), externalSA, _xstreamAdapter2.default);
+	        var sink = selectedSink.map(function (x) {
+	          return isVtree(x) && x.key == null ? _extends({}, x, { key: key }) : x;
+	        });
+	        sinks[key] = sink.remember();
+	      }
+
+	      return sinks[key];
+	    }
+
+	    var collection$ = convert(sourceCollection$, externalSA, _xstreamAdapter2.default);
+	    var outputCollection$ = collection$.map(function (items) {
+	      return items.map(function (item) {
+	        return sink$(item);
+	      });
+	    }).map(function (sinkStreams) {
+	      return _xstream2.default.combine.apply(_xstream2.default, _toConsumableArray(sinkStreams));
+	    }).flatten().startWith([]);
+	    return convert(outputCollection$, _xstreamAdapter2.default, externalSA);
+	  };
+
+	  Collection.merge = function merge(sourceCollection$, mergeSelector) {
+	    var internal = arguments.length <= 2 || arguments[2] === undefined ? false : arguments[2];
+
+	    var sinks = {};
+
+	    function sink$(item) {
+	      var key = item._id;
+
+	      if (sinks[key] === undefined) {
+	        var selectedSink = convert(mergeSelector(item), externalSA, _xstreamAdapter2.default);
+	        var sink = selectedSink.map(function (x) {
+	          return isVtree(x) && x.key == null ? _extends({}, x, { key: key }) : x;
+	        });
+	        // prevent sink from early completion and reinitialization
+	        sinks[key] = _xstream2.default.merge(sink, _xstream2.default.never());
+	      }
+
+	      return sinks[key];
+	    }
+
+	    var collection$ = convert(sourceCollection$, externalSA, _xstreamAdapter2.default);
+	    var outputCollection$ = collection$.map(function (items) {
+	      return items.map(function (item) {
+	        return sink$(item);
+	      });
+	    }).map(function (sinkStreams) {
+	      return _xstream2.default.merge.apply(_xstream2.default, _toConsumableArray(sinkStreams));
+	    }).flatten();
+	    return internal ? outputCollection$ : convert(outputCollection$, _xstreamAdapter2.default, externalSA);
+	  };
+
+	  // convert a stream of items' sources snapshots into a stream of collections
+	  Collection.gather = function gather(component, sources, sourceItems$) {
+	    var idAttribute = arguments.length <= 3 || arguments[3] === undefined ? 'id' : arguments[3];
+
+	    function makeDestroyable(component) {
+	      return function (sources) {
+	        return _extends({}, component(sources), {
+	          _destroy$: sources._destroy$
+	        });
+	      };
+	    }
+
+	    // finds items not present in previous snapshot
+	    function findNewItems(_ref, items) {
+	      var prevIds = _ref.prevIds;
+
+	      return {
+	        prevIds: items.map(function (item) {
+	          return item[idAttribute];
+	        }),
+	        addedItems: items.filter(function (item) {
+	          return prevIds.indexOf(item[idAttribute]) === -1;
+	        })
+	      };
+	    }
+
+	    function compareJSON(value, nextValue) {
+	      if (value === nextValue) {
+	        return true;
+	      }
+	      try {
+	        if (JSON.stringify(value) === JSON.stringify(nextValue)) {
+	          return true;
+	        }
+	      } catch (e) {}
+	      // if not equal or not serializable
+	      return false;
+	    }
+
+	    // turn a new item into a hash of source streams, tracking all the future updates
+	    function itemToSourceStreams(addedItem, itemsState$) {
+	      var itemStateInfinite$ = itemsState$.map(function (items) {
+	        return items.find(function (item) {
+	          return item[idAttribute] === addedItem[idAttribute];
+	        });
+	      });
+	      // if an item isn't present if a new snapshot, it shall be destroyed
+	      var _destroy$ = itemStateInfinite$.filter(function (item) {
+	        return !item;
+	      }).take(1);
+	      var itemState$ = itemStateInfinite$.endWhen(_destroy$.compose((0, _delay2.default)()));
+
+	      return Object.keys(addedItem).reduce(function (sources, key) {
+	        // skip idAttribute
+	        if (key === idAttribute) {
+	          return sources;
+	        }
+
+	        var stream$ = itemState$.map(function (state) {
+	          return state[key];
+	        }).startWith(addedItem[key])
+	        // skip the snapshot if the value didn't change
+	        .compose((0, _dropRepeats2.default)(compareJSON)).remember();
+
+	        return _extends({}, sources, _defineProperty({}, key, convert(stream$, _xstreamAdapter2.default, externalSA)));
+	      }, {
+	        _destroy$: _destroy$
+	      });
+	    }
+
+	    var items$ = convert(sourceItems$, externalSA, _xstreamAdapter2.default);
+	    var itemsState$ = items$.remember();
+
+	    var add$ = itemsState$
+	    // get the added items at each step
+	    .fold(findNewItems, { prevIds: [], addedItems: [] }).map(function (_ref2) {
+	      var addedItems = _ref2.addedItems;
+	      return addedItems;
+	    }).filter(function (addedItems) {
+	      return addedItems.length;
+	    }).map(function (addedItems) {
+	      return addedItems.map(function (item) {
+	        return itemToSourceStreams(item, itemsState$);
+	      });
+	    });
+
+	    return Collection(makeDestroyable(component), sources, add$, function (item) {
+	      return item._destroy$;
+	    });
+	  };
+
+	  return Collection;
+	}
+
+	var Collection = makeCollection();
+
+	exports.default = Collection;
+	exports.makeCollection = makeCollection;
 
 /***/ },
 /* 937 */
 /***/ function(module, exports, __webpack_require__) {
 
-	// style-loader: Adds some css to the DOM by adding a <style> tag
-
-	// load the styles
-	var content = __webpack_require__(938);
-	if(typeof content === 'string') content = [[module.id, content, '']];
-	// add the styles to the DOM
-	var update = __webpack_require__(940)(content, {});
-	if(content.locals) module.exports = content.locals;
-	// Hot Module Replacement
-	if(false) {
-		// When the styles change, update the <style> tags
-		if(!content.locals) {
-			module.hot.accept("!!./../node_modules/css-loader/index.js!./../node_modules/sass-loader/index.js!./style.scss", function() {
-				var newContent = require("!!./../node_modules/css-loader/index.js!./../node_modules/sass-loader/index.js!./style.scss");
-				if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
-				update(newContent);
-			});
-		}
-		// When the module is disposed, remove the <style> tags
-		module.hot.dispose(function() { update(); });
-	}
+	"use strict";
+	var core_1 = __webpack_require__(938);
+	exports.Stream = core_1.Stream;
+	exports.MemoryStream = core_1.MemoryStream;
+	Object.defineProperty(exports, "__esModule", { value: true });
+	exports.default = core_1.Stream;
+	//# sourceMappingURL=index.js.map
 
 /***/ },
 /* 938 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ function(module, exports) {
 
-	exports = module.exports = __webpack_require__(939)();
-	// imports
-	exports.push([module.id, "@import url(https://fonts.googleapis.com/css?family=Lato:100,400,300,500);", ""]);
-	exports.push([module.id, "@import url(https://fonts.googleapis.com/css?family=Source+Code+Pro);", ""]);
-
-	// module
-	exports.push([module.id, "@charset \"UTF-8\";\nbody {\n  margin: 0;\n  font-size: 12px;\n  font-size: calculateRem(12px);\n  background: #e7e7e7;\n  font-family: sans-serif;\n  color: #27243F; }\n  body #app {\n    height: 100%; }\n\nlegend {\n  color: #13111f;\n  letter-spacing: 1px; }\n\nlabel {\n  font-size: 12px;\n  font-size: calculateRem(12px); }\n\nfieldset {\n  margin: 1.2rem 0 0 0;\n  border: 1px solid #e7e7e7;\n  color: #3b375f; }\n\ninput {\n  border: 1px solid #e7e7e7;\n  color: #8D86C9;\n  display: inline-block;\n  width: 80%;\n  padding: 6px 10px;\n  margin: 6px 0; }\n\nbutton {\n  display: inline-block;\n  border: 1px solid #27243F;\n  background: #27243F;\n  color: #e7e7e7;\n  border-radius: 2px;\n  letter-spacing: 1px;\n  margin: 10px 0;\n  padding: 8px 28px;\n  text-transform: uppercase; }\n  button + button {\n    margin-left: 10px; }\n  button:disabled {\n    background: #a19bcd;\n    color: #ddd;\n    position: relative; }\n    button:disabled:after {\n      display: block;\n      position: absolute;\n      color: #333;\n      top: 0;\n      width: 460px;\n      content: 'cannot call non static functions via server.';\n      left: 100%;\n      text-align: left;\n      padding: 9px 18px; }\n\n.injectDappHub {\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  flex-direction: column;\n  height: 80%; }\n\n.treeview {\n  height: 100%;\n  display: flex;\n  flex-direction: row;\n  align-content: flex-start;\n  flex: 1; }\n  .treeview > .selectView {\n    flex: 1;\n    overflow-y: auto;\n    position: relative;\n    background: #27243F;\n    color: #fff;\n    min-width: 15%;\n    width: 15%; }\n    .treeview > .selectView > .navBtn {\n      padding: 6px 15px;\n      font-size: 12px;\n      font-weight: 300;\n      letter-spacing: 1px;\n      background-color: #27243F;\n      color: #fff; }\n      .treeview > .selectView > .navBtn:hover {\n        background-color: #4f4980; }\n      .treeview > .selectView > .navBtn.selected {\n        border-left: 4px solid #725AC1;\n        background: #4f4980;\n        padding-left: 11px; }\n  .treeview .mainView {\n    flex: 8;\n    overflow: auto;\n    display: flex; }\n    .treeview .mainView .sniffer {\n      display: flex;\n      flex-direction: column;\n      font-family: monospace;\n      width: 100%;\n      overflow-wrap: break-word; }\n      .treeview .mainView .sniffer .controllBar {\n        border-bottom: 4px solid #ddd;\n        padding: 2px 6px; }\n        .treeview .mainView .sniffer .controllBar .record input {\n          display: none; }\n        .treeview .mainView .sniffer .controllBar .record::before {\n          content: \" \";\n          display: inline-block;\n          width: 12px;\n          height: 12px;\n          background: #bbb;\n          border-radius: 20px;\n          margin: 0px 7px 2px 3px;\n          vertical-align: middle; }\n        .treeview .mainView .sniffer .controllBar .record.checked::before {\n          background: #ff603b;\n          box-shadow: 0px 1px 4px 0px #ff603b; }\n      .treeview .mainView .sniffer ul {\n        padding: 0;\n        margin: 0;\n        overflow-y: auto; }\n        .treeview .mainView .sniffer ul li.sniffline {\n          cursor: default;\n          width: 100%;\n          list-style: none; }\n          .treeview .mainView .sniffer ul li.sniffline.call {\n            background: #cce1f0; }\n          .treeview .mainView .sniffer ul li.sniffline.tx {\n            background: #f7e5d2; }\n          .treeview .mainView .sniffer ul li.sniffline span.req {\n            padding: 4px 15px;\n            display: block;\n            border-bottom: 1px solid #cdcdcd; }\n            .treeview .mainView .sniffer ul li.sniffline span.req:hover, .treeview .mainView .sniffer ul li.sniffline span.req.open {\n              background: rgba(255, 255, 255, 0.3); }\n          .treeview .mainView .sniffer ul li.sniffline span.res {\n            display: block;\n            padding: 5px 35px;\n            background: rgba(0, 0, 0, 0.1);\n            white-space: pre-wrap; }\n          .treeview .mainView .sniffer ul li.sniffline::before {\n            content: \"\\25B8\";\n            font-size: 10px;\n            line-height: 10px;\n            float: left;\n            margin: 5px 10px; }\n          .treeview .mainView .sniffer ul li.sniffline.open::before {\n            content: \"\\25BE\"; }\n\n.objectView {\n  width: 100%; }\n\n.abiView {\n  display: flex;\n  width: 100%;\n  height: 100%; }\n  .abiView .selectView {\n    flex: 3;\n    overflow-y: auto; }\n    .abiView .selectView .navBtn {\n      cursor: default;\n      font-weight: 100;\n      background: #fff;\n      font-weight: 400;\n      position: relative;\n      padding: 6px 15px; }\n      .abiView .selectView .navBtn.contract, .abiView .selectView .navBtn.objectInfo {\n        font-size: 18px;\n        padding: 10px;\n        background: #8D86C9;\n        color: #fff;\n        letter-spacing: 1px; }\n        .abiView .selectView .navBtn.contract.selected, .abiView .selectView .navBtn.objectInfo.selected {\n          border-left: 4px solid #f0a800;\n          padding-left: 11px; }\n        .abiView .selectView .navBtn.contract:hover, .abiView .selectView .navBtn.contract.selected, .abiView .selectView .navBtn.objectInfo:hover, .abiView .selectView .navBtn.objectInfo.selected {\n          background: #534d86; }\n        .abiView .selectView .navBtn.contract:before, .abiView .selectView .navBtn.objectInfo:before {\n          border-bottom: none; }\n      .abiView .selectView .navBtn.selected {\n        border-left: 4px solid #725AC1;\n        padding-left: 11px; }\n      .abiView .selectView .navBtn:hover {\n        background: rgba(255, 255, 255, 0.1); }\n      .abiView .selectView .navBtn:before {\n        content: \" \";\n        border-bottom: 1px dotted #e7e7e7;\n        display: block;\n        position: absolute;\n        bottom: 0;\n        right: 0;\n        width: 90%; }\n      .abiView .selectView .navBtn:hover {\n        background: #F8F7F5; }\n      .abiView .selectView .navBtn.selected {\n        border-left: 4px solid #725AC1;\n        background: #F8F7F5; }\n  .abiView .mainView {\n    flex: 6;\n    overflow-y: auto;\n    padding: 15px;\n    border-left: 1px solid #F8F7F5;\n    background: #fff; }\n    .abiView .mainView table {\n      width: 100%; }\n      .abiView .mainView table td {\n        margin: 6px 0; }\n      .abiView .mainView table td.input {\n        display: flex; }\n        .abiView .mainView table td.input > input {\n          flex: 1; }\n      .abiView .mainView table td.label {\n        text-align: right;\n        padding-right: 10px;\n        width: 18%; }\n      .abiView .mainView table td.type {\n        padding-left: 4px;\n        width: 15%; }\n\n.jsonDisplay {\n  white-space: pre;\n  font-family: monospace;\n  padding: 20px;\n  display: block; }\n", ""]);
-
-	// exports
-
+	"use strict";
+	var __extends = (this && this.__extends) || function (d, b) {
+	    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+	    function __() { this.constructor = d; }
+	    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+	};
+	var NO = {};
+	function noop() { }
+	function copy(a) {
+	    var l = a.length;
+	    var b = Array(l);
+	    for (var i = 0; i < l; ++i) {
+	        b[i] = a[i];
+	    }
+	    return b;
+	}
+	exports.NO_IL = {
+	    _n: noop,
+	    _e: noop,
+	    _c: noop,
+	};
+	// mutates the input
+	function internalizeProducer(producer) {
+	    producer._start =
+	        function _start(il) {
+	            il.next = il._n;
+	            il.error = il._e;
+	            il.complete = il._c;
+	            this.start(il);
+	        };
+	    producer._stop = producer.stop;
+	}
+	function compose2(f1, f2) {
+	    return function composedFn(arg) {
+	        return f1(f2(arg));
+	    };
+	}
+	function and(f1, f2) {
+	    return function andFn(t) {
+	        return f1(t) && f2(t);
+	    };
+	}
+	var MergeProducer = (function () {
+	    function MergeProducer(insArr) {
+	        this.type = 'merge';
+	        this.insArr = insArr;
+	        this.out = NO;
+	        this.ac = 0;
+	    }
+	    MergeProducer.prototype._start = function (out) {
+	        this.out = out;
+	        var s = this.insArr;
+	        var L = s.length;
+	        this.ac = L;
+	        for (var i = 0; i < L; i++) {
+	            s[i]._add(this);
+	        }
+	    };
+	    MergeProducer.prototype._stop = function () {
+	        var s = this.insArr;
+	        var L = s.length;
+	        for (var i = 0; i < L; i++) {
+	            s[i]._remove(this);
+	        }
+	        this.out = NO;
+	    };
+	    MergeProducer.prototype._n = function (t) {
+	        var u = this.out;
+	        if (u === NO)
+	            return;
+	        u._n(t);
+	    };
+	    MergeProducer.prototype._e = function (err) {
+	        var u = this.out;
+	        if (u === NO)
+	            return;
+	        u._e(err);
+	    };
+	    MergeProducer.prototype._c = function () {
+	        if (--this.ac <= 0) {
+	            var u = this.out;
+	            if (u === NO)
+	                return;
+	            u._c();
+	        }
+	    };
+	    return MergeProducer;
+	}());
+	exports.MergeProducer = MergeProducer;
+	var CombineListener = (function () {
+	    function CombineListener(i, out, p) {
+	        this.i = i;
+	        this.out = out;
+	        this.p = p;
+	        p.ils.push(this);
+	    }
+	    CombineListener.prototype._n = function (t) {
+	        var p = this.p, out = this.out;
+	        if (!out)
+	            return;
+	        if (p.up(t, this.i)) {
+	            out._n(p.vals);
+	        }
+	    };
+	    CombineListener.prototype._e = function (err) {
+	        var out = this.out;
+	        if (!out)
+	            return;
+	        out._e(err);
+	    };
+	    CombineListener.prototype._c = function () {
+	        var p = this.p;
+	        if (!p.out)
+	            return;
+	        if (--p.Nc === 0) {
+	            p.out._c();
+	        }
+	    };
+	    return CombineListener;
+	}());
+	exports.CombineListener = CombineListener;
+	var CombineProducer = (function () {
+	    function CombineProducer(insArr) {
+	        this.type = 'combine';
+	        this.insArr = insArr;
+	        this.out = NO;
+	        this.ils = [];
+	        this.Nc = this.Nn = 0;
+	        this.vals = [];
+	    }
+	    CombineProducer.prototype.up = function (t, i) {
+	        var v = this.vals[i];
+	        var Nn = !this.Nn ? 0 : v === NO ? --this.Nn : this.Nn;
+	        this.vals[i] = t;
+	        return Nn === 0;
+	    };
+	    CombineProducer.prototype._start = function (out) {
+	        this.out = out;
+	        var s = this.insArr;
+	        var n = this.Nc = this.Nn = s.length;
+	        var vals = this.vals = new Array(n);
+	        if (n === 0) {
+	            out._n([]);
+	            out._c();
+	        }
+	        else {
+	            for (var i = 0; i < n; i++) {
+	                vals[i] = NO;
+	                s[i]._add(new CombineListener(i, out, this));
+	            }
+	        }
+	    };
+	    CombineProducer.prototype._stop = function () {
+	        var s = this.insArr;
+	        var n = s.length;
+	        for (var i = 0; i < n; i++) {
+	            s[i]._remove(this.ils[i]);
+	        }
+	        this.out = NO;
+	        this.ils = [];
+	        this.vals = [];
+	    };
+	    return CombineProducer;
+	}());
+	exports.CombineProducer = CombineProducer;
+	var FromArrayProducer = (function () {
+	    function FromArrayProducer(a) {
+	        this.type = 'fromArray';
+	        this.a = a;
+	    }
+	    FromArrayProducer.prototype._start = function (out) {
+	        var a = this.a;
+	        for (var i = 0, l = a.length; i < l; i++) {
+	            out._n(a[i]);
+	        }
+	        out._c();
+	    };
+	    FromArrayProducer.prototype._stop = function () {
+	    };
+	    return FromArrayProducer;
+	}());
+	exports.FromArrayProducer = FromArrayProducer;
+	var FromPromiseProducer = (function () {
+	    function FromPromiseProducer(p) {
+	        this.type = 'fromPromise';
+	        this.on = false;
+	        this.p = p;
+	    }
+	    FromPromiseProducer.prototype._start = function (out) {
+	        var prod = this;
+	        this.on = true;
+	        this.p.then(function (v) {
+	            if (prod.on) {
+	                out._n(v);
+	                out._c();
+	            }
+	        }, function (e) {
+	            out._e(e);
+	        }).then(null, function (err) {
+	            setTimeout(function () { throw err; });
+	        });
+	    };
+	    FromPromiseProducer.prototype._stop = function () {
+	        this.on = false;
+	    };
+	    return FromPromiseProducer;
+	}());
+	exports.FromPromiseProducer = FromPromiseProducer;
+	var PeriodicProducer = (function () {
+	    function PeriodicProducer(period) {
+	        this.type = 'periodic';
+	        this.period = period;
+	        this.intervalID = -1;
+	        this.i = 0;
+	    }
+	    PeriodicProducer.prototype._start = function (stream) {
+	        var self = this;
+	        function intervalHandler() { stream._n(self.i++); }
+	        this.intervalID = setInterval(intervalHandler, this.period);
+	    };
+	    PeriodicProducer.prototype._stop = function () {
+	        if (this.intervalID !== -1)
+	            clearInterval(this.intervalID);
+	        this.intervalID = -1;
+	        this.i = 0;
+	    };
+	    return PeriodicProducer;
+	}());
+	exports.PeriodicProducer = PeriodicProducer;
+	var DebugOperator = (function () {
+	    function DebugOperator(arg, ins) {
+	        this.type = 'debug';
+	        this.ins = ins;
+	        this.out = NO;
+	        this.s = noop;
+	        this.l = '';
+	        if (typeof arg === 'string') {
+	            this.l = arg;
+	        }
+	        else if (typeof arg === 'function') {
+	            this.s = arg;
+	        }
+	    }
+	    DebugOperator.prototype._start = function (out) {
+	        this.out = out;
+	        this.ins._add(this);
+	    };
+	    DebugOperator.prototype._stop = function () {
+	        this.ins._remove(this);
+	        this.out = NO;
+	    };
+	    DebugOperator.prototype._n = function (t) {
+	        var u = this.out;
+	        if (u === NO)
+	            return;
+	        var s = this.s, l = this.l;
+	        if (s !== noop) {
+	            try {
+	                s(t);
+	            }
+	            catch (e) {
+	                u._e(e);
+	            }
+	        }
+	        else if (l) {
+	            console.log(l + ':', t);
+	        }
+	        else {
+	            console.log(t);
+	        }
+	        u._n(t);
+	    };
+	    DebugOperator.prototype._e = function (err) {
+	        var u = this.out;
+	        if (u === NO)
+	            return;
+	        u._e(err);
+	    };
+	    DebugOperator.prototype._c = function () {
+	        var u = this.out;
+	        if (u === NO)
+	            return;
+	        u._c();
+	    };
+	    return DebugOperator;
+	}());
+	exports.DebugOperator = DebugOperator;
+	var DropOperator = (function () {
+	    function DropOperator(max, ins) {
+	        this.type = 'drop';
+	        this.ins = ins;
+	        this.out = NO;
+	        this.max = max;
+	        this.dropped = 0;
+	    }
+	    DropOperator.prototype._start = function (out) {
+	        this.out = out;
+	        this.dropped = 0;
+	        this.ins._add(this);
+	    };
+	    DropOperator.prototype._stop = function () {
+	        this.ins._remove(this);
+	        this.out = NO;
+	    };
+	    DropOperator.prototype._n = function (t) {
+	        var u = this.out;
+	        if (u === NO)
+	            return;
+	        if (this.dropped++ >= this.max)
+	            u._n(t);
+	    };
+	    DropOperator.prototype._e = function (err) {
+	        var u = this.out;
+	        if (u === NO)
+	            return;
+	        u._e(err);
+	    };
+	    DropOperator.prototype._c = function () {
+	        var u = this.out;
+	        if (u === NO)
+	            return;
+	        u._c();
+	    };
+	    return DropOperator;
+	}());
+	exports.DropOperator = DropOperator;
+	var OtherIL = (function () {
+	    function OtherIL(out, op) {
+	        this.out = out;
+	        this.op = op;
+	    }
+	    OtherIL.prototype._n = function (t) {
+	        this.op.end();
+	    };
+	    OtherIL.prototype._e = function (err) {
+	        this.out._e(err);
+	    };
+	    OtherIL.prototype._c = function () {
+	        this.op.end();
+	    };
+	    return OtherIL;
+	}());
+	var EndWhenOperator = (function () {
+	    function EndWhenOperator(o, ins) {
+	        this.type = 'endWhen';
+	        this.ins = ins;
+	        this.out = NO;
+	        this.o = o;
+	        this.oil = exports.NO_IL;
+	    }
+	    EndWhenOperator.prototype._start = function (out) {
+	        this.out = out;
+	        this.o._add(this.oil = new OtherIL(out, this));
+	        this.ins._add(this);
+	    };
+	    EndWhenOperator.prototype._stop = function () {
+	        this.ins._remove(this);
+	        this.o._remove(this.oil);
+	        this.out = NO;
+	        this.oil = exports.NO_IL;
+	    };
+	    EndWhenOperator.prototype.end = function () {
+	        var u = this.out;
+	        if (u === NO)
+	            return;
+	        u._c();
+	    };
+	    EndWhenOperator.prototype._n = function (t) {
+	        var u = this.out;
+	        if (u === NO)
+	            return;
+	        u._n(t);
+	    };
+	    EndWhenOperator.prototype._e = function (err) {
+	        var u = this.out;
+	        if (u === NO)
+	            return;
+	        u._e(err);
+	    };
+	    EndWhenOperator.prototype._c = function () {
+	        this.end();
+	    };
+	    return EndWhenOperator;
+	}());
+	exports.EndWhenOperator = EndWhenOperator;
+	var FilterOperator = (function () {
+	    function FilterOperator(passes, ins) {
+	        this.type = 'filter';
+	        this.ins = ins;
+	        this.out = NO;
+	        this.passes = passes;
+	    }
+	    FilterOperator.prototype._start = function (out) {
+	        this.out = out;
+	        this.ins._add(this);
+	    };
+	    FilterOperator.prototype._stop = function () {
+	        this.ins._remove(this);
+	        this.out = NO;
+	    };
+	    FilterOperator.prototype._n = function (t) {
+	        var u = this.out;
+	        if (u === NO)
+	            return;
+	        try {
+	            if (this.passes(t))
+	                u._n(t);
+	        }
+	        catch (e) {
+	            u._e(e);
+	        }
+	    };
+	    FilterOperator.prototype._e = function (err) {
+	        var u = this.out;
+	        if (u === NO)
+	            return;
+	        u._e(err);
+	    };
+	    FilterOperator.prototype._c = function () {
+	        var u = this.out;
+	        if (u === NO)
+	            return;
+	        u._c();
+	    };
+	    return FilterOperator;
+	}());
+	exports.FilterOperator = FilterOperator;
+	var FlattenListener = (function () {
+	    function FlattenListener(out, op) {
+	        this.out = out;
+	        this.op = op;
+	    }
+	    FlattenListener.prototype._n = function (t) {
+	        this.out._n(t);
+	    };
+	    FlattenListener.prototype._e = function (err) {
+	        this.out._e(err);
+	    };
+	    FlattenListener.prototype._c = function () {
+	        this.op.inner = NO;
+	        this.op.less();
+	    };
+	    return FlattenListener;
+	}());
+	var FlattenOperator = (function () {
+	    function FlattenOperator(ins) {
+	        this.type = 'flatten';
+	        this.ins = ins;
+	        this.out = NO;
+	        this.open = true;
+	        this.inner = NO;
+	        this.il = exports.NO_IL;
+	    }
+	    FlattenOperator.prototype._start = function (out) {
+	        this.out = out;
+	        this.open = true;
+	        this.inner = NO;
+	        this.il = exports.NO_IL;
+	        this.ins._add(this);
+	    };
+	    FlattenOperator.prototype._stop = function () {
+	        this.ins._remove(this);
+	        if (this.inner !== NO)
+	            this.inner._remove(this.il);
+	        this.out = NO;
+	        this.open = true;
+	        this.inner = NO;
+	        this.il = exports.NO_IL;
+	    };
+	    FlattenOperator.prototype.less = function () {
+	        var u = this.out;
+	        if (u === NO)
+	            return;
+	        if (!this.open && this.inner === NO)
+	            u._c();
+	    };
+	    FlattenOperator.prototype._n = function (s) {
+	        var u = this.out;
+	        if (u === NO)
+	            return;
+	        var _a = this, inner = _a.inner, il = _a.il;
+	        if (inner !== NO && il !== exports.NO_IL)
+	            inner._remove(il);
+	        (this.inner = s)._add(this.il = new FlattenListener(u, this));
+	    };
+	    FlattenOperator.prototype._e = function (err) {
+	        var u = this.out;
+	        if (u === NO)
+	            return;
+	        u._e(err);
+	    };
+	    FlattenOperator.prototype._c = function () {
+	        this.open = false;
+	        this.less();
+	    };
+	    return FlattenOperator;
+	}());
+	exports.FlattenOperator = FlattenOperator;
+	var FoldOperator = (function () {
+	    function FoldOperator(f, seed, ins) {
+	        this.type = 'fold';
+	        this.ins = ins;
+	        this.out = NO;
+	        this.f = f;
+	        this.acc = this.seed = seed;
+	    }
+	    FoldOperator.prototype._start = function (out) {
+	        this.out = out;
+	        this.acc = this.seed;
+	        out._n(this.acc);
+	        this.ins._add(this);
+	    };
+	    FoldOperator.prototype._stop = function () {
+	        this.ins._remove(this);
+	        this.out = NO;
+	        this.acc = this.seed;
+	    };
+	    FoldOperator.prototype._n = function (t) {
+	        var u = this.out;
+	        if (u === NO)
+	            return;
+	        try {
+	            u._n(this.acc = this.f(this.acc, t));
+	        }
+	        catch (e) {
+	            u._e(e);
+	        }
+	    };
+	    FoldOperator.prototype._e = function (err) {
+	        var u = this.out;
+	        if (u === NO)
+	            return;
+	        u._e(err);
+	    };
+	    FoldOperator.prototype._c = function () {
+	        var u = this.out;
+	        if (u === NO)
+	            return;
+	        u._c();
+	    };
+	    return FoldOperator;
+	}());
+	exports.FoldOperator = FoldOperator;
+	var LastOperator = (function () {
+	    function LastOperator(ins) {
+	        this.type = 'last';
+	        this.ins = ins;
+	        this.out = NO;
+	        this.has = false;
+	        this.val = NO;
+	    }
+	    LastOperator.prototype._start = function (out) {
+	        this.out = out;
+	        this.has = false;
+	        this.ins._add(this);
+	    };
+	    LastOperator.prototype._stop = function () {
+	        this.ins._remove(this);
+	        this.out = NO;
+	        this.val = NO;
+	    };
+	    LastOperator.prototype._n = function (t) {
+	        this.has = true;
+	        this.val = t;
+	    };
+	    LastOperator.prototype._e = function (err) {
+	        var u = this.out;
+	        if (u === NO)
+	            return;
+	        u._e(err);
+	    };
+	    LastOperator.prototype._c = function () {
+	        var u = this.out;
+	        if (u === NO)
+	            return;
+	        if (this.has) {
+	            u._n(this.val);
+	            u._c();
+	        }
+	        else {
+	            u._e('TODO show proper error');
+	        }
+	    };
+	    return LastOperator;
+	}());
+	exports.LastOperator = LastOperator;
+	var MapFlattenInner = (function () {
+	    function MapFlattenInner(out, op) {
+	        this.out = out;
+	        this.op = op;
+	    }
+	    MapFlattenInner.prototype._n = function (r) {
+	        this.out._n(r);
+	    };
+	    MapFlattenInner.prototype._e = function (err) {
+	        this.out._e(err);
+	    };
+	    MapFlattenInner.prototype._c = function () {
+	        this.op.inner = NO;
+	        this.op.less();
+	    };
+	    return MapFlattenInner;
+	}());
+	var MapFlattenOperator = (function () {
+	    function MapFlattenOperator(mapOp) {
+	        this.type = mapOp.type + "+flatten";
+	        this.ins = mapOp.ins;
+	        this.out = NO;
+	        this.mapOp = mapOp;
+	        this.inner = NO;
+	        this.il = exports.NO_IL;
+	        this.open = true;
+	    }
+	    MapFlattenOperator.prototype._start = function (out) {
+	        this.out = out;
+	        this.inner = NO;
+	        this.il = exports.NO_IL;
+	        this.open = true;
+	        this.mapOp.ins._add(this);
+	    };
+	    MapFlattenOperator.prototype._stop = function () {
+	        this.mapOp.ins._remove(this);
+	        if (this.inner !== NO)
+	            this.inner._remove(this.il);
+	        this.out = NO;
+	        this.inner = NO;
+	        this.il = exports.NO_IL;
+	    };
+	    MapFlattenOperator.prototype.less = function () {
+	        if (!this.open && this.inner === NO) {
+	            var u = this.out;
+	            if (u === NO)
+	                return;
+	            u._c();
+	        }
+	    };
+	    MapFlattenOperator.prototype._n = function (v) {
+	        var u = this.out;
+	        if (u === NO)
+	            return;
+	        var _a = this, inner = _a.inner, il = _a.il;
+	        var s;
+	        try {
+	            s = this.mapOp.project(v);
+	        }
+	        catch (e) {
+	            u._e(e);
+	            return;
+	        }
+	        if (inner !== NO && il !== exports.NO_IL)
+	            inner._remove(il);
+	        (this.inner = s)._add(this.il = new MapFlattenInner(u, this));
+	    };
+	    MapFlattenOperator.prototype._e = function (err) {
+	        var u = this.out;
+	        if (u === NO)
+	            return;
+	        u._e(err);
+	    };
+	    MapFlattenOperator.prototype._c = function () {
+	        this.open = false;
+	        this.less();
+	    };
+	    return MapFlattenOperator;
+	}());
+	exports.MapFlattenOperator = MapFlattenOperator;
+	var MapOperator = (function () {
+	    function MapOperator(project, ins) {
+	        this.type = 'map';
+	        this.ins = ins;
+	        this.out = NO;
+	        this.project = project;
+	    }
+	    MapOperator.prototype._start = function (out) {
+	        this.out = out;
+	        this.ins._add(this);
+	    };
+	    MapOperator.prototype._stop = function () {
+	        this.ins._remove(this);
+	        this.out = NO;
+	    };
+	    MapOperator.prototype._n = function (t) {
+	        var u = this.out;
+	        if (u === NO)
+	            return;
+	        try {
+	            u._n(this.project(t));
+	        }
+	        catch (e) {
+	            u._e(e);
+	        }
+	    };
+	    MapOperator.prototype._e = function (err) {
+	        var u = this.out;
+	        if (u === NO)
+	            return;
+	        u._e(err);
+	    };
+	    MapOperator.prototype._c = function () {
+	        var u = this.out;
+	        if (u === NO)
+	            return;
+	        u._c();
+	    };
+	    return MapOperator;
+	}());
+	exports.MapOperator = MapOperator;
+	var FilterMapOperator = (function (_super) {
+	    __extends(FilterMapOperator, _super);
+	    function FilterMapOperator(passes, project, ins) {
+	        _super.call(this, project, ins);
+	        this.type = 'filter+map';
+	        this.passes = passes;
+	    }
+	    FilterMapOperator.prototype._n = function (v) {
+	        if (this.passes(v)) {
+	            _super.prototype._n.call(this, v);
+	        }
+	        ;
+	    };
+	    return FilterMapOperator;
+	}(MapOperator));
+	exports.FilterMapOperator = FilterMapOperator;
+	var RememberOperator = (function () {
+	    function RememberOperator(ins) {
+	        this.type = 'remember';
+	        this.ins = ins;
+	        this.out = NO;
+	    }
+	    RememberOperator.prototype._start = function (out) {
+	        this.out = out;
+	        this.ins._add(out);
+	    };
+	    RememberOperator.prototype._stop = function () {
+	        this.ins._remove(this.out);
+	        this.out = NO;
+	    };
+	    return RememberOperator;
+	}());
+	exports.RememberOperator = RememberOperator;
+	var ReplaceErrorOperator = (function () {
+	    function ReplaceErrorOperator(fn, ins) {
+	        this.type = 'replaceError';
+	        this.ins = ins;
+	        this.out = NO;
+	        this.fn = fn;
+	    }
+	    ReplaceErrorOperator.prototype._start = function (out) {
+	        this.out = out;
+	        this.ins._add(this);
+	    };
+	    ReplaceErrorOperator.prototype._stop = function () {
+	        this.ins._remove(this);
+	        this.out = NO;
+	    };
+	    ReplaceErrorOperator.prototype._n = function (t) {
+	        var u = this.out;
+	        if (u === NO)
+	            return;
+	        u._n(t);
+	    };
+	    ReplaceErrorOperator.prototype._e = function (err) {
+	        var u = this.out;
+	        if (u === NO)
+	            return;
+	        try {
+	            this.ins._remove(this);
+	            (this.ins = this.fn(err))._add(this);
+	        }
+	        catch (e) {
+	            u._e(e);
+	        }
+	    };
+	    ReplaceErrorOperator.prototype._c = function () {
+	        var u = this.out;
+	        if (u === NO)
+	            return;
+	        u._c();
+	    };
+	    return ReplaceErrorOperator;
+	}());
+	exports.ReplaceErrorOperator = ReplaceErrorOperator;
+	var StartWithOperator = (function () {
+	    function StartWithOperator(ins, val) {
+	        this.type = 'startWith';
+	        this.ins = ins;
+	        this.out = NO;
+	        this.val = val;
+	    }
+	    StartWithOperator.prototype._start = function (out) {
+	        this.out = out;
+	        this.out._n(this.val);
+	        this.ins._add(out);
+	    };
+	    StartWithOperator.prototype._stop = function () {
+	        this.ins._remove(this.out);
+	        this.out = NO;
+	    };
+	    return StartWithOperator;
+	}());
+	exports.StartWithOperator = StartWithOperator;
+	var TakeOperator = (function () {
+	    function TakeOperator(max, ins) {
+	        this.type = 'take';
+	        this.ins = ins;
+	        this.out = NO;
+	        this.max = max;
+	        this.taken = 0;
+	    }
+	    TakeOperator.prototype._start = function (out) {
+	        this.out = out;
+	        this.taken = 0;
+	        if (this.max <= 0) {
+	            out._c();
+	        }
+	        else {
+	            this.ins._add(this);
+	        }
+	    };
+	    TakeOperator.prototype._stop = function () {
+	        this.ins._remove(this);
+	        this.out = NO;
+	    };
+	    TakeOperator.prototype._n = function (t) {
+	        var u = this.out;
+	        if (u === NO)
+	            return;
+	        if (this.taken++ < this.max - 1) {
+	            u._n(t);
+	        }
+	        else {
+	            u._n(t);
+	            u._c();
+	        }
+	    };
+	    TakeOperator.prototype._e = function (err) {
+	        var u = this.out;
+	        if (u === NO)
+	            return;
+	        u._e(err);
+	    };
+	    TakeOperator.prototype._c = function () {
+	        var u = this.out;
+	        if (u === NO)
+	            return;
+	        u._c();
+	    };
+	    return TakeOperator;
+	}());
+	exports.TakeOperator = TakeOperator;
+	var Stream = (function () {
+	    function Stream(producer) {
+	        this._prod = producer || NO;
+	        this._ils = [];
+	        this._stopID = NO;
+	        this._target = NO;
+	        this._err = NO;
+	    }
+	    Stream.prototype._n = function (t) {
+	        var a = this._ils;
+	        var L = a.length;
+	        if (L == 1)
+	            a[0]._n(t);
+	        else {
+	            var b = copy(a);
+	            for (var i = 0; i < L; i++)
+	                b[i]._n(t);
+	        }
+	    };
+	    Stream.prototype._e = function (err) {
+	        if (this._err !== NO)
+	            return;
+	        this._err = err;
+	        var a = this._ils;
+	        var L = a.length;
+	        if (L == 1)
+	            a[0]._e(err);
+	        else {
+	            var b = copy(a);
+	            for (var i = 0; i < L; i++)
+	                b[i]._e(err);
+	        }
+	        this._x();
+	    };
+	    Stream.prototype._c = function () {
+	        var a = this._ils;
+	        var L = a.length;
+	        if (L == 1)
+	            a[0]._c();
+	        else {
+	            var b = copy(a);
+	            for (var i = 0; i < L; i++)
+	                b[i]._c();
+	        }
+	        this._x();
+	    };
+	    Stream.prototype._x = function () {
+	        if (this._ils.length === 0)
+	            return;
+	        if (this._prod !== NO)
+	            this._prod._stop();
+	        this._err = NO;
+	        this._ils = [];
+	    };
+	    Stream.prototype._stopNow = function () {
+	        // WARNING: code that calls this method should
+	        // first check if this._prod is valid (not `NO`)
+	        this._prod._stop();
+	        this._err = NO;
+	        this._stopID = NO;
+	    };
+	    Stream.prototype._add = function (il) {
+	        var ta = this._target;
+	        if (ta !== NO)
+	            return ta._add(il);
+	        var a = this._ils;
+	        a.push(il);
+	        if (a.length === 1) {
+	            if (this._stopID !== NO) {
+	                clearTimeout(this._stopID);
+	                this._stopID = NO;
+	            }
+	            var p = this._prod;
+	            if (p !== NO)
+	                p._start(this);
+	        }
+	    };
+	    Stream.prototype._remove = function (il) {
+	        var _this = this;
+	        var ta = this._target;
+	        if (ta !== NO)
+	            return ta._remove(il);
+	        var a = this._ils;
+	        var i = a.indexOf(il);
+	        if (i > -1) {
+	            a.splice(i, 1);
+	            if (this._prod !== NO && a.length <= 0) {
+	                this._err = NO;
+	                this._stopID = setTimeout(function () { return _this._stopNow(); });
+	            }
+	            else if (a.length === 1) {
+	                this._pruneCycles();
+	            }
+	        }
+	    };
+	    // If all paths stemming from `this` stream eventually end at `this`
+	    // stream, then we remove the single listener of `this` stream, to
+	    // force it to end its execution and dispose resources. This method
+	    // assumes as a precondition that this._ils has just one listener.
+	    Stream.prototype._pruneCycles = function () {
+	        if (this._hasNoSinks(this, [])) {
+	            this._remove(this._ils[0]);
+	        }
+	    };
+	    // Checks whether *there is no* path starting from `x` that leads to an end
+	    // listener (sink) in the stream graph, following edges A->B where B is a
+	    // listener of A. This means these paths constitute a cycle somehow. Is given
+	    // a trace of all visited nodes so far.
+	    Stream.prototype._hasNoSinks = function (x, trace) {
+	        if (trace.indexOf(x) !== -1) {
+	            return true;
+	        }
+	        else if (x.out === this) {
+	            return true;
+	        }
+	        else if (x.out && x.out !== NO) {
+	            return this._hasNoSinks(x.out, trace.concat(x));
+	        }
+	        else if (x._ils) {
+	            for (var i = 0, N = x._ils.length; i < N; i++) {
+	                if (!this._hasNoSinks(x._ils[i], trace.concat(x))) {
+	                    return false;
+	                }
+	            }
+	            return true;
+	        }
+	        else {
+	            return false;
+	        }
+	    };
+	    Stream.prototype.ctor = function () {
+	        return this instanceof MemoryStream ? MemoryStream : Stream;
+	    };
+	    /**
+	     * Adds a Listener to the Stream.
+	     *
+	     * @param {Listener<T>} listener
+	     */
+	    Stream.prototype.addListener = function (listener) {
+	        if (typeof listener.next !== 'function'
+	            || typeof listener.error !== 'function'
+	            || typeof listener.complete !== 'function') {
+	            throw new Error('stream.addListener() requires all three next, error, ' +
+	                'and complete functions.');
+	        }
+	        listener._n = listener.next;
+	        listener._e = listener.error;
+	        listener._c = listener.complete;
+	        this._add(listener);
+	    };
+	    /**
+	     * Removes a Listener from the Stream, assuming the Listener was added to it.
+	     *
+	     * @param {Listener<T>} listener
+	     */
+	    Stream.prototype.removeListener = function (listener) {
+	        this._remove(listener);
+	    };
+	    /**
+	     * Creates a new Stream given a Producer.
+	     *
+	     * @factory true
+	     * @param {Producer} producer An optional Producer that dictates how to
+	     * start, generate events, and stop the Stream.
+	     * @return {Stream}
+	     */
+	    Stream.create = function (producer) {
+	        if (producer) {
+	            if (typeof producer.start !== 'function'
+	                || typeof producer.stop !== 'function') {
+	                throw new Error('producer requires both start and stop functions');
+	            }
+	            internalizeProducer(producer); // mutates the input
+	        }
+	        return new Stream(producer);
+	    };
+	    /**
+	     * Creates a new MemoryStream given a Producer.
+	     *
+	     * @factory true
+	     * @param {Producer} producer An optional Producer that dictates how to
+	     * start, generate events, and stop the Stream.
+	     * @return {MemoryStream}
+	     */
+	    Stream.createWithMemory = function (producer) {
+	        if (producer) {
+	            internalizeProducer(producer); // mutates the input
+	        }
+	        return new MemoryStream(producer);
+	    };
+	    /**
+	     * Creates a Stream that does nothing when started. It never emits any event.
+	     *
+	     * Marble diagram:
+	     *
+	     * ```text
+	     *          never
+	     * -----------------------
+	     * ```
+	     *
+	     * @factory true
+	     * @return {Stream}
+	     */
+	    Stream.never = function () {
+	        return new Stream({ _start: noop, _stop: noop });
+	    };
+	    /**
+	     * Creates a Stream that immediately emits the "complete" notification when
+	     * started, and that's it.
+	     *
+	     * Marble diagram:
+	     *
+	     * ```text
+	     * empty
+	     * -|
+	     * ```
+	     *
+	     * @factory true
+	     * @return {Stream}
+	     */
+	    Stream.empty = function () {
+	        return new Stream({
+	            _start: function (il) { il._c(); },
+	            _stop: noop,
+	        });
+	    };
+	    /**
+	     * Creates a Stream that immediately emits an "error" notification with the
+	     * value you passed as the `error` argument when the stream starts, and that's
+	     * it.
+	     *
+	     * Marble diagram:
+	     *
+	     * ```text
+	     * throw(X)
+	     * -X
+	     * ```
+	     *
+	     * @factory true
+	     * @param error The error event to emit on the created stream.
+	     * @return {Stream}
+	     */
+	    Stream.throw = function (error) {
+	        return new Stream({
+	            _start: function (il) { il._e(error); },
+	            _stop: noop,
+	        });
+	    };
+	    /**
+	     * Creates a Stream that immediately emits the arguments that you give to
+	     * *of*, then completes.
+	     *
+	     * Marble diagram:
+	     *
+	     * ```text
+	     * of(1,2,3)
+	     * 123|
+	     * ```
+	     *
+	     * @factory true
+	     * @param a The first value you want to emit as an event on the stream.
+	     * @param b The second value you want to emit as an event on the stream. One
+	     * or more of these values may be given as arguments.
+	     * @return {Stream}
+	     */
+	    Stream.of = function () {
+	        var items = [];
+	        for (var _i = 0; _i < arguments.length; _i++) {
+	            items[_i - 0] = arguments[_i];
+	        }
+	        return Stream.fromArray(items);
+	    };
+	    /**
+	     * Converts an array to a stream. The returned stream will emit synchronously
+	     * all the items in the array, and then complete.
+	     *
+	     * Marble diagram:
+	     *
+	     * ```text
+	     * fromArray([1,2,3])
+	     * 123|
+	     * ```
+	     *
+	     * @factory true
+	     * @param {Array} array The array to be converted as a stream.
+	     * @return {Stream}
+	     */
+	    Stream.fromArray = function (array) {
+	        return new Stream(new FromArrayProducer(array));
+	    };
+	    /**
+	     * Converts a promise to a stream. The returned stream will emit the resolved
+	     * value of the promise, and then complete. However, if the promise is
+	     * rejected, the stream will emit the corresponding error.
+	     *
+	     * Marble diagram:
+	     *
+	     * ```text
+	     * fromPromise( ----42 )
+	     * -----------------42|
+	     * ```
+	     *
+	     * @factory true
+	     * @param {Promise} promise The promise to be converted as a stream.
+	     * @return {Stream}
+	     */
+	    Stream.fromPromise = function (promise) {
+	        return new Stream(new FromPromiseProducer(promise));
+	    };
+	    /**
+	     * Creates a stream that periodically emits incremental numbers, every
+	     * `period` milliseconds.
+	     *
+	     * Marble diagram:
+	     *
+	     * ```text
+	     *     periodic(1000)
+	     * ---0---1---2---3---4---...
+	     * ```
+	     *
+	     * @factory true
+	     * @param {number} period The interval in milliseconds to use as a rate of
+	     * emission.
+	     * @return {Stream}
+	     */
+	    Stream.periodic = function (period) {
+	        return new Stream(new PeriodicProducer(period));
+	    };
+	    Stream.prototype._map = function (project) {
+	        var p = this._prod;
+	        var ctor = this.ctor();
+	        if (p instanceof FilterOperator) {
+	            return new ctor(new FilterMapOperator(p.passes, project, p.ins));
+	        }
+	        if (p instanceof FilterMapOperator) {
+	            return new ctor(new FilterMapOperator(p.passes, compose2(project, p.project), p.ins));
+	        }
+	        if (p instanceof MapOperator) {
+	            return new ctor(new MapOperator(compose2(project, p.project), p.ins));
+	        }
+	        return new ctor(new MapOperator(project, this));
+	    };
+	    /**
+	     * Transforms each event from the input Stream through a `project` function,
+	     * to get a Stream that emits those transformed events.
+	     *
+	     * Marble diagram:
+	     *
+	     * ```text
+	     * --1---3--5-----7------
+	     *    map(i => i * 10)
+	     * --10--30-50----70-----
+	     * ```
+	     *
+	     * @param {Function} project A function of type `(t: T) => U` that takes event
+	     * `t` of type `T` from the input Stream and produces an event of type `U`, to
+	     * be emitted on the output Stream.
+	     * @return {Stream}
+	     */
+	    Stream.prototype.map = function (project) {
+	        return this._map(project);
+	    };
+	    /**
+	     * It's like `map`, but transforms each input event to always the same
+	     * constant value on the output Stream.
+	     *
+	     * Marble diagram:
+	     *
+	     * ```text
+	     * --1---3--5-----7-----
+	     *       mapTo(10)
+	     * --10--10-10----10----
+	     * ```
+	     *
+	     * @param projectedValue A value to emit on the output Stream whenever the
+	     * input Stream emits any value.
+	     * @return {Stream}
+	     */
+	    Stream.prototype.mapTo = function (projectedValue) {
+	        var s = this.map(function () { return projectedValue; });
+	        var op = s._prod;
+	        op.type = op.type.replace('map', 'mapTo');
+	        return s;
+	    };
+	    /**
+	     * Only allows events that pass the test given by the `passes` argument.
+	     *
+	     * Each event from the input stream is given to the `passes` function. If the
+	     * function returns `true`, the event is forwarded to the output stream,
+	     * otherwise it is ignored and not forwarded.
+	     *
+	     * Marble diagram:
+	     *
+	     * ```text
+	     * --1---2--3-----4-----5---6--7-8--
+	     *     filter(i => i % 2 === 0)
+	     * ------2--------4---------6----8--
+	     * ```
+	     *
+	     * @param {Function} passes A function of type `(t: T) +> boolean` that takes
+	     * an event from the input stream and checks if it passes, by returning a
+	     * boolean.
+	     * @return {Stream}
+	     */
+	    Stream.prototype.filter = function (passes) {
+	        var p = this._prod;
+	        if (p instanceof FilterOperator) {
+	            return new Stream(new FilterOperator(and(p.passes, passes), p.ins));
+	        }
+	        return new Stream(new FilterOperator(passes, this));
+	    };
+	    /**
+	     * Lets the first `amount` many events from the input stream pass to the
+	     * output stream, then makes the output stream complete.
+	     *
+	     * Marble diagram:
+	     *
+	     * ```text
+	     * --a---b--c----d---e--
+	     *    take(3)
+	     * --a---b--c|
+	     * ```
+	     *
+	     * @param {number} amount How many events to allow from the input stream
+	     * before completing the output stream.
+	     * @return {Stream}
+	     */
+	    Stream.prototype.take = function (amount) {
+	        return new (this.ctor())(new TakeOperator(amount, this));
+	    };
+	    /**
+	     * Ignores the first `amount` many events from the input stream, and then
+	     * after that starts forwarding events from the input stream to the output
+	     * stream.
+	     *
+	     * Marble diagram:
+	     *
+	     * ```text
+	     * --a---b--c----d---e--
+	     *       drop(3)
+	     * --------------d---e--
+	     * ```
+	     *
+	     * @param {number} amount How many events to ignore from the input stream
+	     * before forwarding all events from the input stream to the output stream.
+	     * @return {Stream}
+	     */
+	    Stream.prototype.drop = function (amount) {
+	        return new Stream(new DropOperator(amount, this));
+	    };
+	    /**
+	     * When the input stream completes, the output stream will emit the last event
+	     * emitted by the input stream, and then will also complete.
+	     *
+	     * Marble diagram:
+	     *
+	     * ```text
+	     * --a---b--c--d----|
+	     *       last()
+	     * -----------------d|
+	     * ```
+	     *
+	     * @return {Stream}
+	     */
+	    Stream.prototype.last = function () {
+	        return new Stream(new LastOperator(this));
+	    };
+	    /**
+	     * Prepends the given `initial` value to the sequence of events emitted by the
+	     * input stream. The returned stream is a MemoryStream, which means it is
+	     * already `remember()`'d.
+	     *
+	     * Marble diagram:
+	     *
+	     * ```text
+	     * ---1---2-----3---
+	     *   startWith(0)
+	     * 0--1---2-----3---
+	     * ```
+	     *
+	     * @param initial The value or event to prepend.
+	     * @return {MemoryStream}
+	     */
+	    Stream.prototype.startWith = function (initial) {
+	        return new MemoryStream(new StartWithOperator(this, initial));
+	    };
+	    /**
+	     * Uses another stream to determine when to complete the current stream.
+	     *
+	     * When the given `other` stream emits an event or completes, the output
+	     * stream will complete. Before that happens, the output stream will behaves
+	     * like the input stream.
+	     *
+	     * Marble diagram:
+	     *
+	     * ```text
+	     * ---1---2-----3--4----5----6---
+	     *   endWhen( --------a--b--| )
+	     * ---1---2-----3--4--|
+	     * ```
+	     *
+	     * @param other Some other stream that is used to know when should the output
+	     * stream of this operator complete.
+	     * @return {Stream}
+	     */
+	    Stream.prototype.endWhen = function (other) {
+	        return new (this.ctor())(new EndWhenOperator(other, this));
+	    };
+	    /**
+	     * "Folds" the stream onto itself.
+	     *
+	     * Combines events from the past throughout
+	     * the entire execution of the input stream, allowing you to accumulate them
+	     * together. It's essentially like `Array.prototype.reduce`. The returned
+	     * stream is a MemoryStream, which means it is already `remember()`'d.
+	     *
+	     * The output stream starts by emitting the `seed` which you give as argument.
+	     * Then, when an event happens on the input stream, it is combined with that
+	     * seed value through the `accumulate` function, and the output value is
+	     * emitted on the output stream. `fold` remembers that output value as `acc`
+	     * ("accumulator"), and then when a new input event `t` happens, `acc` will be
+	     * combined with that to produce the new `acc` and so forth.
+	     *
+	     * Marble diagram:
+	     *
+	     * ```text
+	     * ------1-----1--2----1----1------
+	     *   fold((acc, x) => acc + x, 3)
+	     * 3-----4-----5--7----8----9------
+	     * ```
+	     *
+	     * @param {Function} accumulate A function of type `(acc: R, t: T) => R` that
+	     * takes the previous accumulated value `acc` and the incoming event from the
+	     * input stream and produces the new accumulated value.
+	     * @param seed The initial accumulated value, of type `R`.
+	     * @return {MemoryStream}
+	     */
+	    Stream.prototype.fold = function (accumulate, seed) {
+	        return new MemoryStream(new FoldOperator(accumulate, seed, this));
+	    };
+	    /**
+	     * Replaces an error with another stream.
+	     *
+	     * When (and if) an error happens on the input stream, instead of forwarding
+	     * that error to the output stream, *replaceError* will call the `replace`
+	     * function which returns the stream that the output stream will replicate.
+	     * And, in case that new stream also emits an error, `replace` will be called
+	     * again to get another stream to start replicating.
+	     *
+	     * Marble diagram:
+	     *
+	     * ```text
+	     * --1---2-----3--4-----X
+	     *   replaceError( () => --10--| )
+	     * --1---2-----3--4--------10--|
+	     * ```
+	     *
+	     * @param {Function} replace A function of type `(err) => Stream` that takes
+	     * the error that occurred on the input stream or on the previous replacement
+	     * stream and returns a new stream. The output stream will behave like the
+	     * stream that this function returns.
+	     * @return {Stream}
+	     */
+	    Stream.prototype.replaceError = function (replace) {
+	        return new (this.ctor())(new ReplaceErrorOperator(replace, this));
+	    };
+	    /**
+	     * Flattens a "stream of streams", handling only one nested stream at a time
+	     * (no concurrency).
+	     *
+	     * If the input stream is a stream that emits streams, then this operator will
+	     * return an output stream which is a flat stream: emits regular events. The
+	     * flattening happens without concurrency. It works like this: when the input
+	     * stream emits a nested stream, *flatten* will start imitating that nested
+	     * one. However, as soon as the next nested stream is emitted on the input
+	     * stream, *flatten* will forget the previous nested one it was imitating, and
+	     * will start imitating the new nested one.
+	     *
+	     * Marble diagram:
+	     *
+	     * ```text
+	     * --+--------+---------------
+	     *   \        \
+	     *    \       ----1----2---3--
+	     *    --a--b----c----d--------
+	     *           flatten
+	     * -----a--b------1----2---3--
+	     * ```
+	     *
+	     * @return {Stream}
+	     */
+	    Stream.prototype.flatten = function () {
+	        var p = this._prod;
+	        return new Stream(p instanceof MapOperator && !(p instanceof FilterMapOperator) ?
+	            new MapFlattenOperator(p) :
+	            new FlattenOperator(this));
+	    };
+	    /**
+	     * Passes the input stream to a custom operator, to produce an output stream.
+	     *
+	     * *compose* is a handy way of using an existing function in a chained style.
+	     * Instead of writing `outStream = f(inStream)` you can write
+	     * `outStream = inStream.compose(f)`.
+	     *
+	     * @param {function} operator A function that takes a stream as input and
+	     * returns a stream as well.
+	     * @return {Stream}
+	     */
+	    Stream.prototype.compose = function (operator) {
+	        return operator(this);
+	    };
+	    /**
+	     * Returns an output stream that behaves like the input stream, but also
+	     * remembers the most recent event that happens on the input stream, so that a
+	     * newly added listener will immediately receive that memorised event.
+	     *
+	     * @return {MemoryStream}
+	     */
+	    Stream.prototype.remember = function () {
+	        return new MemoryStream(new RememberOperator(this));
+	    };
+	    /**
+	     * Returns an output stream that identically behaves like the input stream,
+	     * but also runs a `spy` function fo each event, to help you debug your app.
+	     *
+	     * *debug* takes a `spy` function as argument, and runs that for each event
+	     * happening on the input stream. If you don't provide the `spy` argument,
+	     * then *debug* will just `console.log` each event. This helps you to
+	     * understand the flow of events through some operator chain.
+	     *
+	     * Please note that if the output stream has no listeners, then it will not
+	     * start, which means `spy` will never run because no actual event happens in
+	     * that case.
+	     *
+	     * Marble diagram:
+	     *
+	     * ```text
+	     * --1----2-----3-----4--
+	     *         debug
+	     * --1----2-----3-----4--
+	     * ```
+	     *
+	     * @param {function} labelOrSpy A string to use as the label when printing
+	     * debug information on the console, or a 'spy' function that takes an event
+	     * as argument, and does not need to return anything.
+	     * @return {Stream}
+	     */
+	    Stream.prototype.debug = function (labelOrSpy) {
+	        return new (this.ctor())(new DebugOperator(labelOrSpy, this));
+	    };
+	    /**
+	     * *imitate* changes this current Stream to emit the same events that the
+	     * `other` given Stream does. This method returns nothing.
+	     *
+	     * This method exists to allow one thing: **circular dependency of streams**.
+	     * For instance, let's imagine that for some reason you need to create a
+	     * circular dependency where stream `first$` depends on stream `second$`
+	     * which in turn depends on `first$`:
+	     *
+	     * <!-- skip-example -->
+	     * ```js
+	     * import delay from 'xstream/extra/delay'
+	     *
+	     * var first$ = second$.map(x => x * 10).take(3);
+	     * var second$ = first$.map(x => x + 1).startWith(1).compose(delay(100));
+	     * ```
+	     *
+	     * However, that is invalid JavaScript, because `second$` is undefined
+	     * on the first line. This is how *imitate* can help solve it:
+	     *
+	     * ```js
+	     * import delay from 'xstream/extra/delay'
+	     *
+	     * var secondProxy$ = xs.create();
+	     * var first$ = secondProxy$.map(x => x * 10).take(3);
+	     * var second$ = first$.map(x => x + 1).startWith(1).compose(delay(100));
+	     * secondProxy$.imitate(second$);
+	     * ```
+	     *
+	     * We create `secondProxy$` before the others, so it can be used in the
+	     * declaration of `first$`. Then, after both `first$` and `second$` are
+	     * defined, we hook `secondProxy$` with `second$` with `imitate()` to tell
+	     * that they are "the same". `imitate` will not trigger the start of any
+	     * stream, it just binds `secondProxy$` and `second$` together.
+	     *
+	     * The following is an example where `imitate()` is important in Cycle.js
+	     * applications. A parent component contains some child components. A child
+	     * has an action stream which is given to the parent to define its state:
+	     *
+	     * <!-- skip-example -->
+	     * ```js
+	     * const childActionProxy$ = xs.create();
+	     * const parent = Parent({...sources, childAction$: childActionProxy$});
+	     * const childAction$ = parent.state$.map(s => s.child.action$).flatten();
+	     * childActionProxy$.imitate(childAction$);
+	     * ```
+	     *
+	     * Note, though, that **`imitate()` does not support MemoryStreams**. If we
+	     * would attempt to imitate a MemoryStream in a circular dependency, we would
+	     * either get a race condition (where the symptom would be "nothing happens")
+	     * or an infinite cyclic emission of values. It's useful to think about
+	     * MemoryStreams as cells in a spreadsheet. It doesn't make any sense to
+	     * define a spreadsheet cell `A1` with a formula that depends on `B1` and
+	     * cell `B1` defined with a formula that depends on `A1`.
+	     *
+	     * If you find yourself wanting to use `imitate()` with a
+	     * MemoryStream, you should rework your code around `imitate()` to use a
+	     * Stream instead. Look for the stream in the circular dependency that
+	     * represents an event stream, and that would be a candidate for creating a
+	     * proxy Stream which then imitates the target Stream.
+	     *
+	     * @param {Stream} target The other stream to imitate on the current one. Must
+	     * not be a MemoryStream.
+	     */
+	    Stream.prototype.imitate = function (target) {
+	        if (target instanceof MemoryStream) {
+	            throw new Error('A MemoryStream was given to imitate(), but it only ' +
+	                'supports a Stream. Read more about this restriction here: ' +
+	                'https://github.com/staltz/xstream#faq');
+	        }
+	        this._target = target;
+	        for (var ils = this._ils, N = ils.length, i = 0; i < N; i++) {
+	            target._add(ils[i]);
+	        }
+	        this._ils = [];
+	    };
+	    /**
+	     * Forces the Stream to emit the given value to its listeners.
+	     *
+	     * As the name indicates, if you use this, you are most likely doing something
+	     * The Wrong Way. Please try to understand the reactive way before using this
+	     * method. Use it only when you know what you are doing.
+	     *
+	     * @param value The "next" value you want to broadcast to all listeners of
+	     * this Stream.
+	     */
+	    Stream.prototype.shamefullySendNext = function (value) {
+	        this._n(value);
+	    };
+	    /**
+	     * Forces the Stream to emit the given error to its listeners.
+	     *
+	     * As the name indicates, if you use this, you are most likely doing something
+	     * The Wrong Way. Please try to understand the reactive way before using this
+	     * method. Use it only when you know what you are doing.
+	     *
+	     * @param {any} error The error you want to broadcast to all the listeners of
+	     * this Stream.
+	     */
+	    Stream.prototype.shamefullySendError = function (error) {
+	        this._e(error);
+	    };
+	    /**
+	     * Forces the Stream to emit the "completed" event to its listeners.
+	     *
+	     * As the name indicates, if you use this, you are most likely doing something
+	     * The Wrong Way. Please try to understand the reactive way before using this
+	     * method. Use it only when you know what you are doing.
+	     */
+	    Stream.prototype.shamefullySendComplete = function () {
+	        this._c();
+	    };
+	    /**
+	     * Blends multiple streams together, emitting events from all of them
+	     * concurrently.
+	     *
+	     * *merge* takes multiple streams as arguments, and creates a stream that
+	     * behaves like each of the argument streams, in parallel.
+	     *
+	     * Marble diagram:
+	     *
+	     * ```text
+	     * --1----2-----3--------4---
+	     * ----a-----b----c---d------
+	     *            merge
+	     * --1-a--2--b--3-c---d--4---
+	     * ```
+	     *
+	     * @factory true
+	     * @param {Stream} stream1 A stream to merge together with other streams.
+	     * @param {Stream} stream2 A stream to merge together with other streams. Two
+	     * or more streams may be given as arguments.
+	     * @return {Stream}
+	     */
+	    Stream.merge = function merge() {
+	        var streams = [];
+	        for (var _i = 0; _i < arguments.length; _i++) {
+	            streams[_i - 0] = arguments[_i];
+	        }
+	        return new Stream(new MergeProducer(streams));
+	    };
+	    /**
+	     * Combines multiple input streams together to return a stream whose events
+	     * are arrays that collect the latest events from each input stream.
+	     *
+	     * *combine* internally remembers the most recent event from each of the input
+	     * streams. When any of the input streams emits an event, that event together
+	     * with all the other saved events are combined into an array. That array will
+	     * be emitted on the output stream. It's essentially a way of joining together
+	     * the events from multiple streams.
+	     *
+	     * Marble diagram:
+	     *
+	     * ```text
+	     * --1----2-----3--------4---
+	     * ----a-----b-----c--d------
+	     *          combine
+	     * ----1a-2a-2b-3b-3c-3d-4d--
+	     * ```
+	     *
+	     * @factory true
+	     * @param {Stream} stream1 A stream to combine together with other streams.
+	     * @param {Stream} stream2 A stream to combine together with other streams.
+	     * Multiple streams, not just two, may be given as arguments.
+	     * @return {Stream}
+	     */
+	    Stream.combine = function combine() {
+	        var streams = [];
+	        for (var _i = 0; _i < arguments.length; _i++) {
+	            streams[_i - 0] = arguments[_i];
+	        }
+	        return new Stream(new CombineProducer(streams));
+	    };
+	    return Stream;
+	}());
+	exports.Stream = Stream;
+	var MemoryStream = (function (_super) {
+	    __extends(MemoryStream, _super);
+	    function MemoryStream(producer) {
+	        _super.call(this, producer);
+	        this._has = false;
+	    }
+	    MemoryStream.prototype._n = function (x) {
+	        this._v = x;
+	        this._has = true;
+	        _super.prototype._n.call(this, x);
+	    };
+	    MemoryStream.prototype._add = function (il) {
+	        if (this._has) {
+	            il._n(this._v);
+	        }
+	        _super.prototype._add.call(this, il);
+	    };
+	    MemoryStream.prototype._stopNow = function () {
+	        this._has = false;
+	        _super.prototype._stopNow.call(this);
+	    };
+	    MemoryStream.prototype._x = function () {
+	        this._has = false;
+	        _super.prototype._x.call(this);
+	    };
+	    MemoryStream.prototype.map = function (project) {
+	        return this._map(project);
+	    };
+	    MemoryStream.prototype.mapTo = function (projectedValue) {
+	        return _super.prototype.mapTo.call(this, projectedValue);
+	    };
+	    MemoryStream.prototype.take = function (amount) {
+	        return _super.prototype.take.call(this, amount);
+	    };
+	    MemoryStream.prototype.endWhen = function (other) {
+	        return _super.prototype.endWhen.call(this, other);
+	    };
+	    MemoryStream.prototype.replaceError = function (replace) {
+	        return _super.prototype.replaceError.call(this, replace);
+	    };
+	    MemoryStream.prototype.remember = function () {
+	        return this;
+	    };
+	    MemoryStream.prototype.debug = function (labelOrSpy) {
+	        return _super.prototype.debug.call(this, labelOrSpy);
+	    };
+	    return MemoryStream;
+	}(Stream));
+	exports.MemoryStream = MemoryStream;
+	Object.defineProperty(exports, "__esModule", { value: true });
+	exports.default = Stream;
+	//# sourceMappingURL=core.js.map
 
 /***/ },
 /* 939 */
-/***/ function(module, exports) {
+/***/ function(module, exports, __webpack_require__) {
 
-	/*
-		MIT License http://www.opensource.org/licenses/mit-license.php
-		Author Tobias Koppers @sokra
-	*/
-	// css base code, injected by the css-loader
-	module.exports = function() {
-		var list = [];
-
-		// return the list of modules as css string
-		list.toString = function toString() {
-			var result = [];
-			for(var i = 0; i < this.length; i++) {
-				var item = this[i];
-				if(item[2]) {
-					result.push("@media " + item[2] + "{" + item[1] + "}");
-				} else {
-					result.push(item[1]);
-				}
-			}
-			return result.join("");
-		};
-
-		// import a list of modules into the list
-		list.i = function(modules, mediaQuery) {
-			if(typeof modules === "string")
-				modules = [[null, modules, ""]];
-			var alreadyImportedModules = {};
-			for(var i = 0; i < this.length; i++) {
-				var id = this[i][0];
-				if(typeof id === "number")
-					alreadyImportedModules[id] = true;
-			}
-			for(i = 0; i < modules.length; i++) {
-				var item = modules[i];
-				// skip already imported module
-				// this implementation is not 100% perfect for weird media query combinations
-				//  when a module is imported multiple times with different media queries.
-				//  I hope this will never occur (Hey this way we have smaller bundles)
-				if(typeof item[0] !== "number" || !alreadyImportedModules[item[0]]) {
-					if(mediaQuery && !item[2]) {
-						item[2] = mediaQuery;
-					} else if(mediaQuery) {
-						item[2] = "(" + item[2] + ") and (" + mediaQuery + ")";
-					}
-					list.push(item);
-				}
-			}
-		};
-		return list;
-	};
-
+	"use strict";
+	var core_1 = __webpack_require__(938);
+	var DelayOperator = (function () {
+	    function DelayOperator(dt, ins) {
+	        this.dt = dt;
+	        this.ins = ins;
+	        this.type = 'delay';
+	        this.out = null;
+	    }
+	    DelayOperator.prototype._start = function (out) {
+	        this.out = out;
+	        this.ins._add(this);
+	    };
+	    DelayOperator.prototype._stop = function () {
+	        this.ins._remove(this);
+	        this.out = null;
+	    };
+	    DelayOperator.prototype._n = function (t) {
+	        var u = this.out;
+	        if (!u)
+	            return;
+	        var id = setInterval(function () {
+	            u._n(t);
+	            clearInterval(id);
+	        }, this.dt);
+	    };
+	    DelayOperator.prototype._e = function (err) {
+	        var u = this.out;
+	        if (!u)
+	            return;
+	        var id = setInterval(function () {
+	            u._e(err);
+	            clearInterval(id);
+	        }, this.dt);
+	    };
+	    DelayOperator.prototype._c = function () {
+	        var u = this.out;
+	        if (!u)
+	            return;
+	        var id = setInterval(function () {
+	            u._c();
+	            clearInterval(id);
+	        }, this.dt);
+	    };
+	    return DelayOperator;
+	}());
+	/**
+	 * Delays periodic events by a given time period.
+	 *
+	 * Marble diagram:
+	 *
+	 * ```text
+	 * 1----2--3--4----5|
+	 *     delay(60)
+	 * ---1----2--3--4----5|
+	 * ```
+	 *
+	 * Example:
+	 *
+	 * ```js
+	 * import fromDiagram from 'xstream/extra/fromDiagram'
+	 * import delay from 'xstream/extra/delay'
+	 *
+	 * const stream = fromDiagram('1----2--3--4----5|')
+	 *  .compose(delay(60))
+	 *
+	 * stream.addListener({
+	 *   next: i => console.log(i),
+	 *   error: err => console.error(err),
+	 *   complete: () => console.log('completed')
+	 * })
+	 * ```
+	 *
+	 * ```text
+	 * > 1  (after 60 ms)
+	 * > 2  (after 160 ms)
+	 * > 3  (after 220 ms)
+	 * > 4  (after 280 ms)
+	 * > 5  (after 380 ms)
+	 * > completed
+	 * ```
+	 *
+	 * @param {number} period The amount of silence required in milliseconds.
+	 * @return {Stream}
+	 */
+	function delay(period) {
+	    return function delayOperator(ins) {
+	        return new core_1.Stream(new DelayOperator(period, ins));
+	    };
+	}
+	Object.defineProperty(exports, "__esModule", { value: true });
+	exports.default = delay;
+	//# sourceMappingURL=delay.js.map
 
 /***/ },
 /* 940 */
 /***/ function(module, exports, __webpack_require__) {
 
-	/*
-		MIT License http://www.opensource.org/licenses/mit-license.php
-		Author Tobias Koppers @sokra
-	*/
-	var stylesInDom = {},
-		memoize = function(fn) {
-			var memo;
-			return function () {
-				if (typeof memo === "undefined") memo = fn.apply(this, arguments);
-				return memo;
-			};
-		},
-		isOldIE = memoize(function() {
-			return /msie [6-9]\b/.test(window.navigator.userAgent.toLowerCase());
-		}),
-		getHeadElement = memoize(function () {
-			return document.head || document.getElementsByTagName("head")[0];
-		}),
-		singletonElement = null,
-		singletonCounter = 0,
-		styleElementsInsertedAtTop = [];
-
-	module.exports = function(list, options) {
-		if(false) {
-			if(typeof document !== "object") throw new Error("The style-loader cannot be used in a non-browser environment");
-		}
-
-		options = options || {};
-		// Force single-tag solution on IE6-9, which has a hard limit on the # of <style>
-		// tags it will allow on a page
-		if (typeof options.singleton === "undefined") options.singleton = isOldIE();
-
-		// By default, add <style> tags to the bottom of <head>.
-		if (typeof options.insertAt === "undefined") options.insertAt = "bottom";
-
-		var styles = listToStyles(list);
-		addStylesToDom(styles, options);
-
-		return function update(newList) {
-			var mayRemove = [];
-			for(var i = 0; i < styles.length; i++) {
-				var item = styles[i];
-				var domStyle = stylesInDom[item.id];
-				domStyle.refs--;
-				mayRemove.push(domStyle);
-			}
-			if(newList) {
-				var newStyles = listToStyles(newList);
-				addStylesToDom(newStyles, options);
-			}
-			for(var i = 0; i < mayRemove.length; i++) {
-				var domStyle = mayRemove[i];
-				if(domStyle.refs === 0) {
-					for(var j = 0; j < domStyle.parts.length; j++)
-						domStyle.parts[j]();
-					delete stylesInDom[domStyle.id];
-				}
-			}
-		};
+	"use strict";
+	var core_1 = __webpack_require__(938);
+	var empty = {};
+	var DropRepeatsOperator = (function () {
+	    function DropRepeatsOperator(fn, ins) {
+	        this.fn = fn;
+	        this.ins = ins;
+	        this.type = 'dropRepeats';
+	        this.out = null;
+	        this.v = empty;
+	    }
+	    DropRepeatsOperator.prototype._start = function (out) {
+	        this.out = out;
+	        this.ins._add(this);
+	    };
+	    DropRepeatsOperator.prototype._stop = function () {
+	        this.ins._remove(this);
+	        this.out = null;
+	        this.v = empty;
+	    };
+	    DropRepeatsOperator.prototype.isEq = function (x, y) {
+	        return this.fn ? this.fn(x, y) : x === y;
+	    };
+	    DropRepeatsOperator.prototype._n = function (t) {
+	        var u = this.out;
+	        if (!u)
+	            return;
+	        var v = this.v;
+	        if (v !== empty && this.isEq(t, v))
+	            return;
+	        this.v = Array.isArray(t) ? t.slice() : t;
+	        u._n(t);
+	    };
+	    DropRepeatsOperator.prototype._e = function (err) {
+	        var u = this.out;
+	        if (!u)
+	            return;
+	        u._e(err);
+	    };
+	    DropRepeatsOperator.prototype._c = function () {
+	        var u = this.out;
+	        if (!u)
+	            return;
+	        u._c();
+	    };
+	    return DropRepeatsOperator;
+	}());
+	exports.DropRepeatsOperator = DropRepeatsOperator;
+	/**
+	 * Drops consecutive duplicate values in a stream.
+	 *
+	 * Marble diagram:
+	 *
+	 * ```text
+	 * --1--2--1--1--1--2--3--4--3--3|
+	 *     dropRepeats
+	 * --1--2--1--------2--3--4--3---|
+	 * ```
+	 *
+	 * Example:
+	 *
+	 * ```js
+	 * import dropRepeats from 'xstream/extra/dropRepeats'
+	 *
+	 * const stream = xs.of(1, 2, 1, 1, 1, 2, 3, 4, 3, 3)
+	 *   .compose(dropRepeats())
+	 *
+	 * stream.addListener({
+	 *   next: i => console.log(i),
+	 *   error: err => console.error(err),
+	 *   complete: () => console.log('completed')
+	 * })
+	 * ```
+	 *
+	 * ```text
+	 * > 1
+	 * > 2
+	 * > 1
+	 * > 2
+	 * > 3
+	 * > 4
+	 * > 3
+	 * > completed
+	 * ```
+	 *
+	 * Example with a custom isEqual function:
+	 *
+	 * ```js
+	 * import dropRepeats from 'xstream/extra/dropRepeats'
+	 *
+	 * const stream = xs.of('a', 'b', 'a', 'A', 'B', 'b')
+	 *   .compose(dropRepeats((x, y) => x.toLowerCase() === y.toLowerCase()))
+	 *
+	 * stream.addListener({
+	 *   next: i => console.log(i),
+	 *   error: err => console.error(err),
+	 *   complete: () => console.log('completed')
+	 * })
+	 * ```
+	 *
+	 * ```text
+	 * > a
+	 * > b
+	 * > a
+	 * > B
+	 * > completed
+	 * ```
+	 *
+	 * @param {Function} isEqual An optional function of type
+	 * `(x: T, y: T) => boolean` that takes an event from the input stream and
+	 * checks if it is equal to previous event, by returning a boolean.
+	 * @return {Stream}
+	 */
+	function dropRepeats(isEqual) {
+	    if (isEqual === void 0) { isEqual = null; }
+	    return function dropRepeatsOperator(ins) {
+	        return new core_1.Stream(new DropRepeatsOperator(isEqual, ins));
+	    };
 	}
+	Object.defineProperty(exports, "__esModule", { value: true });
+	exports.default = dropRepeats;
+	//# sourceMappingURL=dropRepeats.js.map
 
-	function addStylesToDom(styles, options) {
-		for(var i = 0; i < styles.length; i++) {
-			var item = styles[i];
-			var domStyle = stylesInDom[item.id];
-			if(domStyle) {
-				domStyle.refs++;
-				for(var j = 0; j < domStyle.parts.length; j++) {
-					domStyle.parts[j](item.parts[j]);
-				}
-				for(; j < item.parts.length; j++) {
-					domStyle.parts.push(addStyle(item.parts[j], options));
-				}
-			} else {
-				var parts = [];
-				for(var j = 0; j < item.parts.length; j++) {
-					parts.push(addStyle(item.parts[j], options));
-				}
-				stylesInDom[item.id] = {id: item.id, refs: 1, parts: parts};
-			}
-		}
-	}
+/***/ },
+/* 941 */
+/***/ function(module, exports, __webpack_require__) {
 
-	function listToStyles(list) {
-		var styles = [];
-		var newStyles = {};
-		for(var i = 0; i < list.length; i++) {
-			var item = list[i];
-			var id = item[0];
-			var css = item[1];
-			var media = item[2];
-			var sourceMap = item[3];
-			var part = {css: css, media: media, sourceMap: sourceMap};
-			if(!newStyles[id])
-				styles.push(newStyles[id] = {id: id, parts: [part]});
-			else
-				newStyles[id].parts.push(part);
-		}
-		return styles;
-	}
+	"use strict";
 
-	function insertStyleElement(options, styleElement) {
-		var head = getHeadElement();
-		var lastStyleElementInsertedAtTop = styleElementsInsertedAtTop[styleElementsInsertedAtTop.length - 1];
-		if (options.insertAt === "top") {
-			if(!lastStyleElementInsertedAtTop) {
-				head.insertBefore(styleElement, head.firstChild);
-			} else if(lastStyleElementInsertedAtTop.nextSibling) {
-				head.insertBefore(styleElement, lastStyleElementInsertedAtTop.nextSibling);
-			} else {
-				head.appendChild(styleElement);
-			}
-			styleElementsInsertedAtTop.push(styleElement);
-		} else if (options.insertAt === "bottom") {
-			head.appendChild(styleElement);
-		} else {
-			throw new Error("Invalid value for parameter 'insertAt'. Must be 'top' or 'bottom'.");
-		}
-	}
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+	exports.Sniffer = undefined;
 
-	function removeStyleElement(styleElement) {
-		styleElement.parentNode.removeChild(styleElement);
-		var idx = styleElementsInsertedAtTop.indexOf(styleElement);
-		if(idx >= 0) {
-			styleElementsInsertedAtTop.splice(idx, 1);
-		}
-	}
+	var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
 
-	function createStyleElement(options) {
-		var styleElement = document.createElement("style");
-		styleElement.type = "text/css";
-		insertStyleElement(options, styleElement);
-		return styleElement;
-	}
+	var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
 
-	function createLinkElement(options) {
-		var linkElement = document.createElement("link");
-		linkElement.rel = "stylesheet";
-		insertStyleElement(options, linkElement);
-		return linkElement;
-	}
+	var _dom = __webpack_require__(709);
 
-	function addStyle(obj, options) {
-		var styleElement, update, remove;
+	var _collection = __webpack_require__(936);
 
-		if (options.singleton) {
-			var styleIndex = singletonCounter++;
-			styleElement = singletonElement || (singletonElement = createStyleElement(options));
-			update = applyToSingletonTag.bind(null, styleElement, styleIndex, false);
-			remove = applyToSingletonTag.bind(null, styleElement, styleIndex, true);
-		} else if(obj.sourceMap &&
-			typeof URL === "function" &&
-			typeof URL.createObjectURL === "function" &&
-			typeof URL.revokeObjectURL === "function" &&
-			typeof Blob === "function" &&
-			typeof btoa === "function") {
-			styleElement = createLinkElement(options);
-			update = updateLink.bind(null, styleElement);
-			remove = function() {
-				removeStyleElement(styleElement);
-				if(styleElement.href)
-					URL.revokeObjectURL(styleElement.href);
-			};
-		} else {
-			styleElement = createStyleElement(options);
-			update = applyToTag.bind(null, styleElement);
-			remove = function() {
-				removeStyleElement(styleElement);
-			};
-		}
+	var _collection2 = _interopRequireDefault(_collection);
 
-		update(obj);
+	var _cycleOnionify = __webpack_require__(830);
 
-		return function updateStyle(newObj) {
-			if(newObj) {
-				if(newObj.css === obj.css && newObj.media === obj.media && newObj.sourceMap === obj.sourceMap)
-					return;
-				update(obj = newObj);
-			} else {
-				remove();
-			}
-		};
-	}
+	var _isolate = __webpack_require__(825);
 
-	var replaceText = (function () {
-		var textStore = [];
+	var _isolate2 = _interopRequireDefault(_isolate);
 
-		return function (index, replacement) {
-			textStore[index] = replacement;
-			return textStore.filter(Boolean).join('\n');
-		};
-	})();
+	var _sampleCombine = __webpack_require__(828);
 
-	function applyToSingletonTag(styleElement, index, remove, obj) {
-		var css = remove ? "" : obj.css;
+	var _sampleCombine2 = _interopRequireDefault(_sampleCombine);
 
-		if (styleElement.styleSheet) {
-			styleElement.styleSheet.cssText = replaceText(index, css);
-		} else {
-			var cssNode = document.createTextNode(css);
-			var childNodes = styleElement.childNodes;
-			if (childNodes[index]) styleElement.removeChild(childNodes[index]);
-			if (childNodes.length) {
-				styleElement.insertBefore(cssNode, childNodes[index]);
-			} else {
-				styleElement.appendChild(cssNode);
-			}
-		}
-	}
+	var _xstream = __webpack_require__(701);
 
-	function applyToTag(styleElement, obj) {
-		var css = obj.css;
-		var media = obj.media;
+	var _xstream2 = _interopRequireDefault(_xstream);
 
-		if(media) {
-			styleElement.setAttribute("media", media)
-		}
+	var _helper = __webpack_require__(829);
 
-		if(styleElement.styleSheet) {
-			styleElement.styleSheet.cssText = css;
-		} else {
-			while(styleElement.firstChild) {
-				styleElement.removeChild(styleElement.firstChild);
-			}
-			styleElement.appendChild(document.createTextNode(css));
-		}
-	}
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-	function updateLink(linkElement, obj) {
-		var css = obj.css;
-		var sourceMap = obj.sourceMap;
+	function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
 
-		if(sourceMap) {
-			// http://stackoverflow.com/a/26603875
-			css += "\n/*# sourceMappingURL=data:application/json;base64," + btoa(unescape(encodeURIComponent(JSON.stringify(sourceMap)))) + " */";
-		}
+	var formatSniffLine = function formatSniffLine(data) {
+	  var memep = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
 
-		var blob = new Blob([css], { type: "text/css" });
 
-		var oldSrc = linkElement.href;
+	  var formattedInput = data.req.method + '(' + data.req.params.map(function (e) {
+	    return JSON.stringify(e);
+	  }).join(", ") + ')';
+	  var formattedOutput = JSON.stringify(data.res, false, 2);
 
-		linkElement.href = URL.createObjectURL(blob);
+	  var call = false;
+	  var tx = false;
+	  if ((data.req.method === "eth_call" || data.req.method === "eth_sendTransaction") && data.req.params[0].to in memep.addrs) {
+	    var object = memep.addrs[data.req.params[0].to];
+	    var fsign = data.req.params[0].data.slice(2, 10);
+	    var fdata = data.req.params[0].data.slice(10);
+	    var fres = _typeof(data.res) === "object" ? data.res.result.slice(2) : data.res.slice(2);
+	    var fabi = object.contract.signatures_to_fabi[fsign];
+	    var fname = fabi.name;
+	    var finput = fabi.decodeInputs(fdata);
+	    var foutput = fabi.decodeOutputs(fres);
+	    formattedInput = object.contract.name + '(' + object.address + ').' + fname + '(' + finput.join(', ') + ')';
+	    formattedOutput = foutput.join(', ');
+	    if (data.req.method === "eth_call") {
+	      call = true;
+	    } else {
+	      tx = true;
+	    }
+	  } else {}
 
-		if(oldSrc)
-			URL.revokeObjectURL(oldSrc);
-	}
+	  var line = [(0, _dom.span)({
+	    class: {
+	      req: true,
+	      open: data.expanded
+	    },
+	    attrs: {
+	      _id: data.req.id
+	    }
+	  }, formattedInput)];
+	  if (data.expanded) {
+	    line.push((0, _dom.span)(".res", formattedOutput));
+	  }
 
+	  return (0, _dom.li)({
+	    class: _defineProperty({
+	      call: call,
+	      tx: tx,
+	      sniffline: true,
+	      open: data.expanded
+	    }, "id" + data.req.id, true)
+	  }, line);
+	};
+
+	var Line = function Line(sources) {
+	  var expanded$ = sources.DOM.select(".req").events("click");
+
+	  var vdom$ = _xstream2.default.combine(sources.onion.state$, sources.memepool$).map(function (_ref) {
+	    var _ref2 = _slicedToArray(_ref, 2),
+	        state = _ref2[0],
+	        memep = _ref2[1];
+
+	    return formatSniffLine(state, memep);
+	  });
+
+	  var reducer$ = expanded$.map(function (v) {
+	    return function lineExpandedReducer(parent) {
+	      return _.assign({}, parent, {
+	        expanded: !parent.expanded
+	      });
+	    };
+	  });
+
+	  return {
+	    DOM: vdom$,
+	    onion: reducer$
+	  };
+	};
+
+	var Children = function Children(sources) {
+
+	  var lineList$ = sources.onion.state$.compose((0, _helper.member)(Line, sources));
+
+	  var lines$ = lineList$.compose((0, _cycleOnionify.pick)(function (sinks) {
+	    return sinks.DOM;
+	  })).compose((0, _cycleOnionify.mix)(_xstream2.default.combine));
+
+	  var reducer$ = lineList$.compose((0, _cycleOnionify.pick)(function (sinks) {
+	    return sinks.onion;
+	  })).compose((0, _cycleOnionify.mix)(_xstream2.default.merge));
+
+	  return {
+	    DOM: lines$,
+	    onion: reducer$
+	  };
+	};
+
+	var Sniffer = exports.Sniffer = function Sniffer(sources) {
+
+	  var toggle$ = sources.DOM.select(".record input").events("change").map(function (e) {
+	    return e.target.checked;
+	  }).startWith(false);
+
+	  // Filter out uninteresting information
+	  var filter = ["eth_syncing", "eth_getFilterChanges"];
+	  var filtered$ = sources.Sniffer.filter(function (l) {
+	    return filter.indexOf(l.req.method) === -1;
+	  });
+
+	  var lines = (0, _isolate2.default)(Children, 'history')(sources);
+
+	  var vdom$ = _xstream2.default.combine(lines.DOM, toggle$).map(function (_ref3) {
+	    var _ref4 = _slicedToArray(_ref3, 2),
+	        lines = _ref4[0],
+	        toggled = _ref4[1];
+
+	    return (0, _dom.div)(".sniffer", [(0, _dom.div)(".controllBar", [(0, _dom.label)(".record", { class: { checked: toggled } }, [(0, _dom.input)({ attrs: { type: 'checkbox' } }), (0, _dom.span)("record")])]), (0, _dom.ul)("", lines)]);
+	  });
+
+	  var logReducer$ = filtered$.compose((0, _sampleCombine2.default)(toggle$)).filter(function (_ref5) {
+	    var _ref6 = _slicedToArray(_ref5, 2),
+	        _ = _ref6[0],
+	        toggle = _ref6[1];
+
+	    return toggle;
+	  }).map(function (_ref7) {
+	    var _ref8 = _slicedToArray(_ref7, 1),
+	        comm = _ref8[0];
+
+	    return function logReducer(parent) {
+	      console.log(parent);
+	      var history = parent.history.concat(comm);
+	      return _.assign({}, parent, { history: history });
+	    };
+	  });
+
+	  return {
+	    DOM: vdom$,
+	    onion: _xstream2.default.merge(logReducer$, lines.onion)
+	  };
+	};
 
 /***/ }
 /******/ ]);
