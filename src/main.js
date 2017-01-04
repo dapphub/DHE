@@ -10,14 +10,6 @@ const tabId = chrome.devtools.inspectedWindow.tabId;
 
 const main = (sources) => {
 
-  sources.Sniffer
-  .filter(e => e.type === "DH_RES")
-  .addListener({
-    next: e => console.log(e),
-    error: e => console.log(e),
-    complete: e => console.log(e)
-  })
-
   const dhExtension = DHExtension(sources);
 
   var DH$ = dhExtension.DOM;

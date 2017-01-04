@@ -83,7 +83,7 @@ chrome.extension.onConnect.addListener(function (port) {
         }
 
         // TODO - switch between different fork sources
-        engine = setUpEngine({db, forkSource: undefined})
+        engine = setUpEngine({db, forkSource})
         console.log("init testrpc", port);
         break;
       case "DH_REQ":
