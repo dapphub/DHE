@@ -13,6 +13,29 @@ import _ from 'lodash';
 
 var ABI = ({DOM, onion}) => {
 
+  const click$ = DOM
+  .select("button")
+  .events("click")
+
+  const changes$ = DOM
+  .select("input")
+  .events("change")
+  .map(e => ({
+    index: e.target.getAttribute('ref'),
+    value: e.target.value}))
+
+  const sendState$ = changes$
+  .fold((acc, e) => {(acc[e.index] = e.value); return acc;}, [])
+
+  const sendEvent$ = click$
+  .compose(sampleCombine(sendState$))
+  .map(([_, state]) => state)
+  .compose(sampleCombine(onion.state$))
+  .map(([value, state]) => ({
+    value: value,
+    fabi: state
+  }))
+
   const context = (name, content) => fieldset("", [
     legend(name),
     table("", [
@@ -46,7 +69,8 @@ var ABI = ({DOM, onion}) => {
   ]))
 
   return {
-    DOM: mainView$
+    DOM: mainView$,
+    web3$: sendEvent$
   }
 }
 
@@ -61,33 +85,6 @@ const TabNavView = ({DOM, onion}) => {
 
 export const AddrView = ({DOM, onion}) => {
 
-  const click$ = DOM
-  .select("button")
-  .events("click")
-
-  const changes$ = DOM
-  .select("input")
-  .events("change")
-  .map(e => ({
-    index: e.target.getAttribute('ref'),
-    value: e.target.value
-  }))
-
-  const select$ = DOM
-  .select(".abiNavBtn")
-  .events("click")
-  .map(e => e.target.getAttribute('ref'))
-  .startWith("0")
-
-  const sendState$ = xs.merge(changes$, select$.mapTo("reset"))
-  .fold((acc, e) => e === "reset"
-    ? []
-    : (acc[e.index] = e.value) && acc, [])
-
-  const sendEvent$ = click$
-  .compose(sampleCombine(sendState$))
-  .map(([_, state]) => state)
-
   const fabisOnion = isolateSource(onion, 'children')
 
   const C = {
@@ -97,7 +94,7 @@ export const AddrView = ({DOM, onion}) => {
   const tabs = Tabs({
     C,
     TabNavView,
-    sinkNames: ["onion"],
+    sinkNames: ["onion", "web3$"],
     classname: ".abiView"
   })
 
@@ -106,36 +103,19 @@ export const AddrView = ({DOM, onion}) => {
     onion: fabisOnion
   })
 
-  const currentFABI$ = xs.combine(select$, onion.state$)
-  .filter(([s, _]) => s !== 0)
-  .map(([select, p]) => ({
-    contract: p.state.contract,
-    fabi: p.state.contract.signatures_to_fabi[select],
-    address: p.state.address,
-    p: p
-  }))
-
-  const snapshot$ = xs.combine(select$, onion.state$)
-  .map(([select, p]) => p.state.contract.abi.map(abi => ({
-    id: abi.signature,
-    props: {
-      abi,
-      selected: select === abi.signature
-    }
-  })));
-
-  const web3$ = sendEvent$
-  .compose(sampleCombine(currentFABI$))
-  .map(([params, {contract, fabi, address}]) => ({
+  const web3$ = tab.web3$
+  .compose(sampleCombine(onion.state$))
+  .debug("state")
+  .map(([{value, fabi}, {state}]) => ({
     id: 1,
     method: fabi.constant ? "eth_call" : "eth_sendTransaction",
     params: [{
       from: "0xb007ed86a7198a7bfe97b4dcf291bceabe40852d", // TODO - dynamic
-      to: address,
+      to: state.address,
       gas: "0x76c0",
       gasPrice: "0x9184e72a000",
       value: "0x0",
-      data: "0x"+fabi.signature+fabi.encodeInputs(params)
+      data: "0x"+fabi.signature+fabi.encodeInputs(value)
     }]
   }))
 
