@@ -37,6 +37,7 @@ level.prototype._batch = function () {
 
 function setUpEngine({db, forkSource}) {
 
+  console.log("set up engine");
   if(!forkSource) {
     forkSource = "http://localhost:8545";
   }
@@ -44,9 +45,6 @@ function setUpEngine({db, forkSource}) {
     db = levelup("/db", {
       db: memdown
     })
-    // db = levelup("/db", {
-    //   db: level
-    // })
   }
 
   var engine = new ProviderEngine();
@@ -68,7 +66,7 @@ function setUpEngine({db, forkSource}) {
   engine.addProvider(gethApiDouble);
 
   // for debug purposes only
-  // window.web3 = _web3;
+  window.web3 = _web3;
 
   // start polling for blocks
   engine._ready.setMaxListeners(100);

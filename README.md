@@ -85,19 +85,19 @@ Main entrypoing for the dev-tools-panel view.
 
 # TODOs
 
-  * make web3 calls in address view work
-  * custom contract view
-  * fork reset
   * toggle fork/ forward transactions to real blockchain
   * settings - main account/ current fork
-  * **resolve testrpc bug where accounts don't get updated**
+  * custom contract view
   * reset filters once a frontend disconnects
   * address view - deploy new instances
 
 ## Changelog
 
- * make use of original web3 object as a fork provider
-     with this metamask works for forking chains
+  * fork reset
+  * **resolve testrpc bug where accounts don't get updated**
+  * make web3 calls in address view work
+  * make use of original web3 object as a fork provider
+      with this metamask works for forking chains
 
 # Screenshots
 

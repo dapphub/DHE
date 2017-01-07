@@ -107,10 +107,6 @@ export const Tabs = opt => (sources) => {
     ))
     .compose(mix(xs.combine))
 
-  const web3$ = stage$
-    .compose(pick(sinks => sinks.web3$))
-    .compose(mix(xs.merge))
-
   const sinkObjects = opt.sinkNames
   .map(sink => stage$
     .compose(pick(sinks => sinks[sink]))

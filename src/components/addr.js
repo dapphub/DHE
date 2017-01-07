@@ -6,7 +6,6 @@ import {json, member, componentSwitch} from '../helper.js';
 import isolate from '@cycle/isolate';
 import {Stage, TabNav, Tabs} from '../treeview.js';
 import {pick, mix} from 'cycle-onionify';
-import Collection from '@cycle/collection';
 import {isolateSource, isolateSink} from 'cycle-onionify';
 import xs from 'xstream';
 import _ from 'lodash';
@@ -16,8 +15,8 @@ var ABI = ({DOM, onion, Sniffer}) => {
   // TODO - handle errors well
   const resp$ = Sniffer
   .filter(e => e.type === "DH_RES")
+  .filter(e => e.req.method === "eth_call" || e.req.method === "eth_sendTransaction")
   .compose(sampleCombine(onion.state$))
-  .debug("26")
   .filter(([resp, state]) => resp.req.params[0].data.slice(2,10) === state.signature)
   .map(([resp, state]) => state.decodeOutputs(resp.res.result && resp.res.result.slice(2)))
   .startWith([])
@@ -120,21 +119,24 @@ export const AddrView = ({DOM, onion, Sniffer}) => {
   .compose(sampleCombine(onion.state$))
   .debug("state")
   .map(([{value, fabi}, {state}]) => ({
-    id: 1,
-    method: fabi.constant ? "eth_call" : "eth_sendTransaction",
-    params: [{
-      from: "0xb007ed86a7198a7bfe97b4dcf291bceabe40852d", // TODO - dynamic
-      to: state.address,
-      gas: "0x76c0",
-      gasPrice: "0x9184e72a000",
-      value: "0x0",
-      data: "0x"+fabi.signature+fabi.encodeInputs(value)
-    }]
+    type: "DH_REQ",
+    req: {
+      id: 1,
+      method: fabi.constant ? "eth_call" : "eth_sendTransaction",
+      params: [{
+        from: "0xb007ed86a7198a7bfe97b4dcf291bceabe40852d", // TODO - dynamic
+        to: state.address,
+        gas: "0x76c0",
+        gasPrice: "0x9184e72a000",
+        value: "0x0",
+        data: "0x"+fabi.signature+fabi.encodeInputs(value)
+      }]
+    }
   }))
 
   return {
     DOM: tab.DOM,
-    web3$: web3$,
-    onion: isolateSink(tab.onion, 'children')
+    onion: isolateSink(tab.onion, 'children'),
+    Sniffer: web3$
   }
 }

@@ -11,10 +11,24 @@ require("./style.scss");
 import {AddrView} from './components/addr.js';
 import {DHExtension} from './components/dhe.js';
 
+const ForkManager = {
+  forks: [],
+  newFork: function(type) {
+    if(!type) console.log("WARN: no fork type given");
+    const fork = setUpEngine({})
+    this.forks.push(fork);
+    return {id: this.forks.length - 1, fork};
+  },
+  resetFork: function(id) {
+    this.forks[id] && this.forks[id].stop();
+    this.forks[id] = setUpEngine({});
+    return this.forks[id];
+  }
+}
 
 const FakeSniffer = (in$) => {
 
-  const engine = setUpEngine({})
+  var {fork, id} = ForkManager.newFork()
 
   const out$ = xs
   .periodic(1000)
@@ -33,10 +47,29 @@ const FakeSniffer = (in$) => {
   const resp$ = xs.create({
     start: listener => {
       in$.addListener({
-        next: e => {
-          engine.sendAsync(e.req, (err, res) => {
-            listener.next({type: "DH_RES", res, req: e.req})
-          })
+        next: r => {
+          console.log("rr",r)
+          const handleRequest = (e) => {
+            switch(e.type) {
+              case "DH_REQ":
+                fork.sendAsync(e.req, (err, res) => {
+                  let resp = {type: "DH_RES", res, req: e.req};
+                  listener.next(_.assign({}, e, resp));
+                })
+                break;
+              case "DH_RESET_FORK":
+                fork = ForkManager.resetFork(id);
+                break;
+              default:
+                console.log("NO SNIFFER HANDLER FOR", e);
+            }
+          }
+          console.log("!",r);
+          if(Array.isArray(r)) {
+            r.forEach(handleRequest);
+          } else {
+            handleRequest(r);
+          }
         },
         error: e => console.log(e),
         complete: e => console.log(e)
@@ -72,15 +105,12 @@ const main = (sources) => {
   // const vdom$ = AddrView(sources).DOM;
   const dhex = DHExtension(sources);
 
-  const web3$ = dhex.web3$
-  .map(req => ({type: "DH_REQ", req}))
-
   return {
     DOM: dhex.DOM,
     // HTTP: memepool.HTTP,
     HTTP: dhex.HTTP,
     onion: dhex.onion,
-    Sniffer: web3$
+    Sniffer: dhex.Sniffer
   };
 }
 
