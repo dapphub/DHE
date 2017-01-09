@@ -13,15 +13,15 @@ import {DHExtension} from './components/dhe.js';
 
 const ForkManager = {
   forks: [],
-  newFork: function(type) {
+  newFork: function(type, _setupEngine=setupEngine) {
     if(!type) console.log("WARN: no fork type given");
-    const fork = setUpEngine({})
+    const fork = _setUpEngine({})
     this.forks.push(fork);
     return {id: this.forks.length - 1, fork};
   },
-  resetFork: function(id) {
+  resetFork: function(id, _setupEngine=setupEngine) {
     this.forks[id] && this.forks[id].stop();
-    this.forks[id] = setUpEngine({});
+    this.forks[id] = _setUpEngine({});
     return this.forks[id];
   }
 }
