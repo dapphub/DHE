@@ -48,19 +48,8 @@ export const DHExtension = (sources) => {
     classname: ".treeview"
   }), 'tabs')(sources)
 
-  const web3requests$ = tabSinks.Sniffer
-  .filter(t => t.type === "REQ")
-  .fold((parent, cmd) => ({
-    cmd: _.assign(cmd, {req: _.assign(cmd.req, {id: parent.id + 1})}),
-    id: parent.id + 1
-  }) ,{cmd: {}, id: 0})
-  .filter(e => e.id > 0)
-  .map(e => e.cmd)
-
   const notWeb3Requests$ = tabSinks.Sniffer
   .filter(t => Array.isArray(t) || t.type !== "REQ")
-
-  const requests$ = xs.merge(web3requests$, notWeb3Requests$)
 
   const initState$ = xs.of(function initStateReducer() {
     return {
@@ -70,12 +59,9 @@ export const DHExtension = (sources) => {
         type: "settings",
         state: {
           forkStatus: 0,
-          options: [
-            'native',
-            'create new fork'
-          ],
+          options: ["not forked"],
           defaultAccount: "0x2134",
-          blockHeight: {"/web3": "blockNumber", params: [], f: utils.toDecimal}
+          blockNumber: {"/web3": "blockNumber", params: [], f: utils.toDecimal}
         },
         selected: false
       }, {
@@ -93,10 +79,50 @@ export const DHExtension = (sources) => {
     };
   })
 
+  // save blockNumber
+  const blockNumberReducer$ = sources.Sniffer
+  .filter(e => e.type === "RES")
+  .filter(e => e.req.method === "eth_blockNumber")
+  .map(e => function blockNumberReducer(parent) {
+    let settings = parent.tabs.find(t => t.type === "settings");
+    settings.state.blockNumber = utils.toDecimal(e.res.result);
+    return _.assign({}, parent)
+  });
+
+  // Set Up Default Settings
+  const setUpState$ = xs.of({
+    type: "REQ",
+    req: {
+      jsonrpc: "2.0",
+      method: "eth_blockNumber",
+      params: []
+    }
+  })
+
+  // TODO - export this somewhere to the top
+  const web3requests$ = xs.merge(tabSinks.Sniffer, setUpState$)
+  .filter(t => t.type === "REQ")
+  .fold((parent, cmd) => ({
+    cmd: _.assign(cmd, {req: _.assign(cmd.req, {
+      id: parent.id + 1,
+      jsonrpc: "2.0"
+    })}),
+    id: parent.id + 1
+  }) ,{cmd: {}, id: 0})
+  .filter(e => e.id > 0)
+  .map(e => e.cmd)
+
   const reducer$ = xs.merge(
     initState$,
     tabSinks.onion,
-    newMemeReducer$
+    newMemeReducer$,
+    blockNumberReducer$
+  )
+
+  const requests$ = xs.merge(
+    web3requests$,
+    notWeb3Requests$,
+    setUpState$
   )
 
   return {

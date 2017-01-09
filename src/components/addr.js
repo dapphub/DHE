@@ -4,7 +4,7 @@ import {button, fieldset, legend, table, tbody, tr, td, thunk, div, span, ul, li
 import sampleCombine from 'xstream/extra/sampleCombine'
 import {json, member, componentSwitch} from '../helper.js';
 import isolate from '@cycle/isolate';
-import {Stage, TabNav, Tabs} from '../treeview.js';
+import {Tabs} from '../treeview.js';
 import {pick, mix} from 'cycle-onionify';
 import {isolateSource, isolateSink} from 'cycle-onionify';
 import xs from 'xstream';
@@ -14,7 +14,7 @@ var ABI = ({DOM, onion, Sniffer}) => {
 
   // TODO - handle errors well
   const resp$ = Sniffer
-  .filter(e => e.type === "DH_RES")
+  .filter(e => e.type === "RES")
   .filter(e => e.req.method === "eth_call" || e.req.method === "eth_sendTransaction")
   .compose(sampleCombine(onion.state$))
   .filter(([resp, state]) => resp.req.params[0].data.slice(2,10) === state.signature)
@@ -43,8 +43,6 @@ var ABI = ({DOM, onion, Sniffer}) => {
     value: value,
     fabi: state
   }))
-
-
 
   const context = (name, content) => fieldset("", [
     legend(name),
@@ -119,7 +117,7 @@ export const AddrView = ({DOM, onion, Sniffer}) => {
   .compose(sampleCombine(onion.state$))
   .debug("state")
   .map(([{value, fabi}, {state}]) => ({
-    type: "DH_REQ",
+    type: "REQ",
     req: {
       id: 1,
       method: fabi.constant ? "eth_call" : "eth_sendTransaction",

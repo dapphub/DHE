@@ -1,4 +1,4 @@
-import {input, h2, button, div, select, option} from '@cycle/dom';
+import {fieldset, legend, input, h2, button, div, select, option} from '@cycle/dom';
 import xs from 'xstream';
 import _ from 'lodash';
 import sampleCombine from 'xstream/extra/sampleCombine'
@@ -7,20 +7,36 @@ import utils from 'web3/lib/utils/utils.js';
 
 export const Settings = ({DOM, onion, Sniffer}) => {
 
+
   const vdom$ = onion.state$
   .map(state => div(".settings", [
-    h2(`Block Height: ${state.state.blockHeight}`),
-    select('.forkStatus', [
-      option({attrs:{value: 0, selected: state.state.forkStatus === 0}}, "native web3"),
-      option({attrs:{value: 1, selected: state.state.forkStatus === 1}}, "new fork")
+    fieldset([
+      h2(`Block Height: ${state.state.blockNumber}`),
+      legend("current fork"),
+      select('.forkStatus', state.state.options
+             .map((name, i) => option({
+               attrs: {
+                 value: i
+               }}, name))
+      ),
+      state.state.options[state.state.forkStatus],
+      button(".reset", "reset fork"),
     ]),
-    state.state.options[state.state.forkStatus],
-    button(".reset", "reset fork"),
-    h2(`Default Account:`),
-    input(".defaultAccount", {attrs: {
-      value: state.state.defaultAccount
-    }}),
-    button(".setDefaultAccount", "submit"),
+    fieldset([
+      legend("new fork"),
+      input(".newFork", {attrs: {
+        placeholder: "new fork name"
+      }}),
+      button(".newForkBtn", "create new fork"),
+    ]),
+    fieldset([
+      legend("default account"),
+      h2(`Default Account:`),
+      input(".defaultAccount", {attrs: {
+        value: state.state.defaultAccount
+      }}),
+      button(".setDefaultAccount", "submit"),
+    ]),
     json(state.state)
   ]))
 
@@ -38,7 +54,6 @@ export const Settings = ({DOM, onion, Sniffer}) => {
     return _.assign({}, parent);
   })
 
-
   const selectReducer$ = DOM
   .select('.forkStatus')
   .events('change')
@@ -51,6 +66,13 @@ export const Settings = ({DOM, onion, Sniffer}) => {
 
   // TODO come up with a descreptive web3 query which builds requests + reducers
   // TODO - refactor this
+  //      - do I really want to have this approach?
+  //        overall, this only happens during certain
+  //        events/ intents, and with this the state
+  //        is scanned every time some property is
+  //        changed. So a reason for another approach
+  //        would be performance.
+  //
   // e.g.
   // {
   //   blockNumber: {"/web3": "blockNumber", format: utils.toDecimal}
@@ -63,61 +85,61 @@ export const Settings = ({DOM, onion, Sniffer}) => {
   //
   // toDecimal is a function which is applied to the result
   //
-  const genRequests = (path, o) => {
-    let reqs = []
-    if(typeof o === "object") {
-      let index = Object.keys(o).indexOf("/web3");
-      if(index > -1) {
-        let method = o["/web3"];
-        let params = o["params"];
-        reqs.push({
-          type: "DH_REQ",
-          _location: path,
-          _f: o.f,
-          req: {
-            "jsonrpc": "2.0",
-            "method": "eth_"+method,
-            "params": params
-          }
-        })
-      } else { // index === -1
-        let childReqs = Object.keys(o)
-        .map(key => genRequests(path + (path ? "." : "") + key, o[key]))
-        reqs = _.flatten(childReqs);
-      }
-    }
-    return reqs;
-  }
+  // const genRequests = (path, o) => {
+  //   let reqs = []
+  //   if(typeof o === "object") {
+  //     let index = Object.keys(o).indexOf("/web3");
+  //     if(index > -1) {
+  //       let method = o["/web3"];
+  //       let params = o["params"];
+  //       reqs.push({
+  //         type: "DH_REQ",
+  //         _location: path,
+  //         _f: o.f,
+  //         req: {
+  //           "jsonrpc": "2.0",
+  //           "method": "eth_"+method,
+  //           "params": params
+  //         }
+  //       })
+  //     } else { // index === -1
+  //       let childReqs = Object.keys(o)
+  //       .map(key => genRequests(path + (path ? "." : "") + key, o[key]))
+  //       reqs = _.flatten(childReqs);
+  //     }
+  //   }
+  //   return reqs;
+  // }
 
-  const blockHeightRequest$ = onion.state$
-  .map(state => genRequests("", state))
-  .filter(r => r.length > 0)
+  // const blockHeightRequest$ = onion.state$
+  // .map(state => genRequests("", state))
+  // .filter(r => r.length > 0)
 
-  const removeKnownRequestsReducer$ = blockHeightRequest$
-  .map(s => function removeKnownRequestsReducer (parent) {
-    s.forEach(t => {
-      let o = t._location
-      .split('.')
-      .slice(0,-1)
-      .reduce((a, l) => a[l], parent);
-      o[t._location.split('.').slice(-1)] = "."
-    })
-    return _.assign({}, parent);
-  })
+  // const removeKnownRequestsReducer$ = blockHeightRequest$
+  // .map(s => function removeKnownRequestsReducer (parent) {
+  //   s.forEach(t => {
+  //     let o = t._location
+  //     .split('.')
+  //     .slice(0,-1)
+  //     .reduce((a, l) => a[l], parent);
+  //     o[t._location.split('.').slice(-1)] = "."
+  //   })
+  //   return _.assign({}, parent);
+  // })
 
-  const blockHeightReducer$ = Sniffer
-  .filter(t => t.type === "DH_RES")
-  .filter(t => t.req.method === "eth_blockNumber")
-  .map(t => function blockNumberReducer(parent) {
-    let _df = e => e
-    // TODO - rewrite it with immutable or something
-    let o = t._location
-    .split('.')
-    .slice(0,-1)
-    .reduce((a, l) => a[l], parent);
-    o[t._location.split('.').slice(-1)] = (t._f || _df)(t.res.result)
-    return _.assign({}, parent);
-  })
+  // const blockHeightReducer$ = Sniffer
+  // .filter(t => t.type === "RES")
+  // .filter(t => t.req.method === "eth_blockNumber")
+  // .map(t => function blockNumberReducer(parent) {
+  //   let _df = e => e
+  //   // TODO - rewrite it with immutable or something
+  //   let o = t._location
+  //   .split('.')
+  //   .slice(0,-1)
+  //   .reduce((a, l) => a[l], parent);
+  //   o[t._location.split('.').slice(-1)] = (t._f || _df)(t.res.result)
+  //   return _.assign({}, parent);
+  // })
 
   // TODO - trigger reducer
   const reset$ = DOM
@@ -125,15 +147,20 @@ export const Settings = ({DOM, onion, Sniffer}) => {
   .events('click')
   .mapTo({type: "DH_RESET_FORK"})
 
-  const snifReq$ = xs.merge(reset$, blockHeightRequest$.map(e => xs.fromArray(e)).flatten())
+  const snifReq$ = xs.merge(
+    reset$,
+    // blockHeightRequest$
+    // .map(e => xs.fromArray(e))
+    // .flatten()
+  )
 
   return {
     DOM: vdom$,
     onion: xs.merge(
       selectReducer$,
-      blockHeightReducer$,
+      // blockHeightReducer$,
       defaultAccountReducer$,
-      removeKnownRequestsReducer$
+      // removeKnownRequestsReducer$
     ),
     Sniffer: snifReq$,
   }

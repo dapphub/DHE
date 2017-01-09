@@ -95,7 +95,7 @@
 	  });
 
 	  var web3$ = dhExtension.web3$.map(function (req) {
-	    return { type: "DH_REQ", req: req };
+	    return { type: "REQ", req: req };
 	  });
 
 	  var MV = {
@@ -20028,24 +20028,9 @@
 	    classname: ".treeview"
 	  }), 'tabs')(sources);
 
-	  var web3requests$ = tabSinks.Sniffer.filter(function (t) {
-	    return t.type === "REQ";
-	  }).fold(function (parent, cmd) {
-	    return {
-	      cmd: _lodash2.default.assign(cmd, { req: _lodash2.default.assign(cmd.req, { id: parent.id + 1 }) }),
-	      id: parent.id + 1
-	    };
-	  }, { cmd: {}, id: 0 }).filter(function (e) {
-	    return e.id > 0;
-	  }).map(function (e) {
-	    return e.cmd;
-	  });
-
 	  var notWeb3Requests$ = tabSinks.Sniffer.filter(function (t) {
 	    return Array.isArray(t) || t.type !== "REQ";
 	  });
-
-	  var requests$ = _xstream2.default.merge(web3requests$, notWeb3Requests$);
 
 	  var initState$ = _xstream2.default.of(function initStateReducer() {
 	    return {
@@ -20055,9 +20040,9 @@
 	        type: "settings",
 	        state: {
 	          forkStatus: 0,
-	          options: ['native', 'create new fork'],
+	          options: ["not forked"],
 	          defaultAccount: "0x2134",
-	          blockHeight: { "/web3": "blockNumber", params: [], f: _utils2.default.toDecimal }
+	          blockNumber: { "/web3": "blockNumber", params: [], f: _utils2.default.toDecimal }
 	        },
 	        selected: false
 	      }, {
@@ -20074,7 +20059,51 @@
 	    };
 	  });
 
-	  var reducer$ = _xstream2.default.merge(initState$, tabSinks.onion, newMemeReducer$);
+	  // save blockNumber
+	  var blockNumberReducer$ = sources.Sniffer.filter(function (e) {
+	    return e.type === "RES";
+	  }).filter(function (e) {
+	    return e.req.method === "eth_blockNumber";
+	  }).map(function (e) {
+	    return function blockNumberReducer(parent) {
+	      var settings = parent.tabs.find(function (t) {
+	        return t.type === "settings";
+	      });
+	      settings.state.blockNumber = _utils2.default.toDecimal(e.res.result);
+	      return _lodash2.default.assign({}, parent);
+	    };
+	  });
+
+	  // Set Up Default Settings
+	  var setUpState$ = _xstream2.default.of({
+	    type: "REQ",
+	    req: {
+	      jsonrpc: "2.0",
+	      method: "eth_blockNumber",
+	      params: []
+	    }
+	  });
+
+	  // TODO - export this somewhere to the top
+	  var web3requests$ = _xstream2.default.merge(tabSinks.Sniffer, setUpState$).filter(function (t) {
+	    return t.type === "REQ";
+	  }).fold(function (parent, cmd) {
+	    return {
+	      cmd: _lodash2.default.assign(cmd, { req: _lodash2.default.assign(cmd.req, {
+	          id: parent.id + 1,
+	          jsonrpc: "2.0"
+	        }) }),
+	      id: parent.id + 1
+	    };
+	  }, { cmd: {}, id: 0 }).filter(function (e) {
+	    return e.id > 0;
+	  }).map(function (e) {
+	    return e.cmd;
+	  });
+
+	  var reducer$ = _xstream2.default.merge(initState$, tabSinks.onion, newMemeReducer$, blockNumberReducer$);
+
+	  var requests$ = _xstream2.default.merge(web3requests$, notWeb3Requests$, setUpState$);
 
 	  return {
 	    DOM: tabSinks.DOM,
@@ -54038,7 +54067,7 @@
 
 	  // TODO - handle errors well
 	  var resp$ = Sniffer.filter(function (e) {
-	    return e.type === "DH_RES";
+	    return e.type === "RES";
 	  }).filter(function (e) {
 	    return e.req.method === "eth_call" || e.req.method === "eth_sendTransaction";
 	  }).compose((0, _sampleCombine2.default)(onion.state$)).filter(function (_ref2) {
@@ -54165,7 +54194,7 @@
 	        state = _ref15[1].state;
 
 	    return {
-	      type: "DH_REQ",
+	      type: "REQ",
 	      req: {
 	        id: 1,
 	        method: fabi.constant ? "eth_call" : "eth_sendTransaction",
@@ -54411,6 +54440,9 @@
 	  };
 	};
 
+	// ------ {etwas}
+	//         \____ case 1: etwas === 1 ----- >
+	//          \___ case 2: etwas === 3 --- >
 	var componentSwitch = exports.componentSwitch = function componentSwitch(keyf, C, sources) {
 	  return function (in$) {
 	    return in$.fold(function (old, state) {
@@ -54464,6 +54496,10 @@
 	var _sampleCombine = __webpack_require__(919);
 
 	var _sampleCombine2 = _interopRequireDefault(_sampleCombine);
+
+	var _flattenConcurrently = __webpack_require__(945);
+
+	var _flattenConcurrently2 = _interopRequireDefault(_flattenConcurrently);
 
 	var _helper = __webpack_require__(920);
 
@@ -54532,8 +54568,21 @@
 	var Stage = exports.Stage = function Stage(C, sinkNames) {
 	  return function (sources) {
 
-	    var ctype$ = sources.onion.state$.filter(function (state) {
-	      return state.selected;
+	    var selected$ = sources.onion.state$.map(function (s) {
+	      return s.selected;
+	    });
+
+	    var ctype$ = _xstream2.default.combine(sources.onion.state$, selected$).filter(function (_ref6) {
+	      var _ref7 = _slicedToArray(_ref6, 2),
+	          state = _ref7[0],
+	          s = _ref7[1];
+
+	      return s;
+	    }).map(function (_ref8) {
+	      var _ref9 = _slicedToArray(_ref8, 1),
+	          s = _ref9[0];
+
+	      return s;
 	    }).compose((0, _helper.componentSwitch)(function (state) {
 	      return state.type;
 	    }, C, sources));
@@ -54542,15 +54591,15 @@
 	      return function (in$) {
 	        return in$.map(function (c) {
 	          return c.c[attr] || _xstream2.default.of();
-	        }).flatten().compose((0, _sampleCombine2.default)(sources.onion.state$)).filter(function (_ref6) {
-	          var _ref7 = _slicedToArray(_ref6, 2),
-	              _ = _ref7[0],
-	              s = _ref7[1];
+	        }).flatten().compose((0, _sampleCombine2.default)(sources.onion.state$)).filter(function (_ref10) {
+	          var _ref11 = _slicedToArray(_ref10, 2),
+	              _ = _ref11[0],
+	              s = _ref11[1];
 
 	          return s.selected;
-	        }).map(function (_ref8) {
-	          var _ref9 = _slicedToArray(_ref8, 1),
-	              v = _ref9[0];
+	        }).map(function (_ref12) {
+	          var _ref13 = _slicedToArray(_ref12, 1),
+	              v = _ref13[0];
 
 	          return v;
 	        });
@@ -54559,17 +54608,17 @@
 
 	    var filterInstant = function filterInstant(attr) {
 	      return function (in$) {
-	        return _xstream2.default.combine(sources.onion.state$, in$.map(function (c) {
+	        return _xstream2.default.combine(selected$, in$.map(function (c) {
 	          return c.c[attr] || _xstream2.default.of();
-	        }).flatten()).filter(function (_ref10) {
-	          var _ref11 = _slicedToArray(_ref10, 1),
-	              s = _ref11[0];
+	        }).flatten()).filter(function (_ref14) {
+	          var _ref15 = _slicedToArray(_ref14, 1),
+	              s = _ref15[0];
 
-	          return s.selected;
-	        }).map(function (_ref12) {
-	          var _ref13 = _slicedToArray(_ref12, 2),
-	              _ = _ref13[0],
-	              v = _ref13[1];
+	          return s;
+	        }).map(function (_ref16) {
+	          var _ref17 = _slicedToArray(_ref16, 2),
+	              _ = _ref17[0],
+	              v = _ref17[1];
 
 	          return v;
 	        });
@@ -54618,10 +54667,10 @@
 
 	    var sinks = _lodash2.default.zipObject(opt.sinkNames, sinkObjects);
 
-	    var vdom$ = _xstream2.default.combine(tabNavView$, tabStageView$).map(function (_ref14) {
-	      var _ref15 = _slicedToArray(_ref14, 2),
-	          tabs = _ref15[0],
-	          view = _ref15[1];
+	    var vdom$ = _xstream2.default.combine(tabNavView$, tabStageView$).map(function (_ref18) {
+	      var _ref19 = _slicedToArray(_ref18, 2),
+	          tabs = _ref19[0],
+	          view = _ref19[1];
 
 	      return (0, _dom.div)(opt.classname, [(0, _dom.div)('.selectView', tabs), (0, _dom.div)('.mainView', [view])]);
 	    });
@@ -74417,8 +74466,6 @@
 	});
 	exports.Settings = undefined;
 
-	var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
-
 	var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
 
 	var _dom = __webpack_require__(711);
@@ -74450,9 +74497,16 @@
 
 
 	  var vdom$ = onion.state$.map(function (state) {
-	    return (0, _dom.div)(".settings", [(0, _dom.h2)('Block Height: ' + state.state.blockHeight), (0, _dom.select)('.forkStatus', [(0, _dom.option)({ attrs: { value: 0, selected: state.state.forkStatus === 0 } }, "native web3"), (0, _dom.option)({ attrs: { value: 1, selected: state.state.forkStatus === 1 } }, "new fork")]), state.state.options[state.state.forkStatus], (0, _dom.button)(".reset", "reset fork"), (0, _dom.h2)('Default Account:'), (0, _dom.input)(".defaultAccount", { attrs: {
+	    return (0, _dom.div)(".settings", [(0, _dom.fieldset)([(0, _dom.h2)('Block Height: ' + state.state.blockNumber), (0, _dom.legend)("current fork"), (0, _dom.select)('.forkStatus', state.state.options.map(function (name, i) {
+	      return (0, _dom.option)({
+	        attrs: {
+	          value: i
+	        } }, name);
+	    })), state.state.options[state.state.forkStatus], (0, _dom.button)(".reset", "reset fork")]), (0, _dom.fieldset)([(0, _dom.legend)("new fork"), (0, _dom.input)(".newFork", { attrs: {
+	        placeholder: "new fork name"
+	      } }), (0, _dom.button)(".newForkBtn", "create new fork")]), (0, _dom.fieldset)([(0, _dom.legend)("default account"), (0, _dom.h2)('Default Account:'), (0, _dom.input)(".defaultAccount", { attrs: {
 	        value: state.state.defaultAccount
-	      } }), (0, _dom.button)(".setDefaultAccount", "submit"), (0, _helper.json)(state.state)]);
+	      } }), (0, _dom.button)(".setDefaultAccount", "submit")]), (0, _helper.json)(state.state)]);
 	  });
 
 	  var defaultAccountChange$ = DOM.select('.defaultAccount').events('change').map(function (e) {
@@ -74482,6 +74536,13 @@
 
 	  // TODO come up with a descreptive web3 query which builds requests + reducers
 	  // TODO - refactor this
+	  //      - do I really want to have this approach?
+	  //        overall, this only happens during certain
+	  //        events/ intents, and with this the state
+	  //        is scanned every time some property is
+	  //        changed. So a reason for another approach
+	  //        would be performance.
+	  //
 	  // e.g.
 	  // {
 	  //   blockNumber: {"/web3": "blockNumber", format: utils.toDecimal}
@@ -74494,80 +74555,72 @@
 	  //
 	  // toDecimal is a function which is applied to the result
 	  //
-	  var genRequests = function genRequests(path, o) {
-	    var reqs = [];
-	    if ((typeof o === 'undefined' ? 'undefined' : _typeof(o)) === "object") {
-	      var index = Object.keys(o).indexOf("/web3");
-	      if (index > -1) {
-	        var method = o["/web3"];
-	        var params = o["params"];
-	        reqs.push({
-	          type: "DH_REQ",
-	          _location: path,
-	          _f: o.f,
-	          req: {
-	            "jsonrpc": "2.0",
-	            "method": "eth_" + method,
-	            "params": params
-	          }
-	        });
-	      } else {
-	        // index === -1
-	        var childReqs = Object.keys(o).map(function (key) {
-	          return genRequests(path + (path ? "." : "") + key, o[key]);
-	        });
-	        reqs = _lodash2.default.flatten(childReqs);
-	      }
-	    }
-	    return reqs;
-	  };
+	  // const genRequests = (path, o) => {
+	  //   let reqs = []
+	  //   if(typeof o === "object") {
+	  //     let index = Object.keys(o).indexOf("/web3");
+	  //     if(index > -1) {
+	  //       let method = o["/web3"];
+	  //       let params = o["params"];
+	  //       reqs.push({
+	  //         type: "DH_REQ",
+	  //         _location: path,
+	  //         _f: o.f,
+	  //         req: {
+	  //           "jsonrpc": "2.0",
+	  //           "method": "eth_"+method,
+	  //           "params": params
+	  //         }
+	  //       })
+	  //     } else { // index === -1
+	  //       let childReqs = Object.keys(o)
+	  //       .map(key => genRequests(path + (path ? "." : "") + key, o[key]))
+	  //       reqs = _.flatten(childReqs);
+	  //     }
+	  //   }
+	  //   return reqs;
+	  // }
 
-	  var blockHeightRequest$ = onion.state$.map(function (state) {
-	    return genRequests("", state);
-	  }).filter(function (r) {
-	    return r.length > 0;
-	  });
+	  // const blockHeightRequest$ = onion.state$
+	  // .map(state => genRequests("", state))
+	  // .filter(r => r.length > 0)
 
-	  var removeKnownRequestsReducer$ = blockHeightRequest$.map(function (s) {
-	    return function removeKnownRequestsReducer(parent) {
-	      s.forEach(function (t) {
-	        var o = t._location.split('.').slice(0, -1).reduce(function (a, l) {
-	          return a[l];
-	        }, parent);
-	        o[t._location.split('.').slice(-1)] = ".";
-	      });
-	      return _lodash2.default.assign({}, parent);
-	    };
-	  });
+	  // const removeKnownRequestsReducer$ = blockHeightRequest$
+	  // .map(s => function removeKnownRequestsReducer (parent) {
+	  //   s.forEach(t => {
+	  //     let o = t._location
+	  //     .split('.')
+	  //     .slice(0,-1)
+	  //     .reduce((a, l) => a[l], parent);
+	  //     o[t._location.split('.').slice(-1)] = "."
+	  //   })
+	  //   return _.assign({}, parent);
+	  // })
 
-	  var blockHeightReducer$ = Sniffer.filter(function (t) {
-	    return t.type === "DH_RES";
-	  }).filter(function (t) {
-	    return t.req.method === "eth_blockNumber";
-	  }).map(function (t) {
-	    return function blockNumberReducer(parent) {
-	      var _df = function _df(e) {
-	        return e;
-	      };
-	      // TODO - rewrite it with immutable or something
-	      var o = t._location.split('.').slice(0, -1).reduce(function (a, l) {
-	        return a[l];
-	      }, parent);
-	      o[t._location.split('.').slice(-1)] = (t._f || _df)(t.res.result);
-	      return _lodash2.default.assign({}, parent);
-	    };
-	  });
+	  // const blockHeightReducer$ = Sniffer
+	  // .filter(t => t.type === "RES")
+	  // .filter(t => t.req.method === "eth_blockNumber")
+	  // .map(t => function blockNumberReducer(parent) {
+	  //   let _df = e => e
+	  //   // TODO - rewrite it with immutable or something
+	  //   let o = t._location
+	  //   .split('.')
+	  //   .slice(0,-1)
+	  //   .reduce((a, l) => a[l], parent);
+	  //   o[t._location.split('.').slice(-1)] = (t._f || _df)(t.res.result)
+	  //   return _.assign({}, parent);
+	  // })
 
 	  // TODO - trigger reducer
 	  var reset$ = DOM.select('.reset').events('click').mapTo({ type: "DH_RESET_FORK" });
 
-	  var snifReq$ = _xstream2.default.merge(reset$, blockHeightRequest$.map(function (e) {
-	    return _xstream2.default.fromArray(e);
-	  }).flatten());
+	  var snifReq$ = _xstream2.default.merge(reset$);
 
 	  return {
 	    DOM: vdom$,
-	    onion: _xstream2.default.merge(selectReducer$, blockHeightReducer$, defaultAccountReducer$, removeKnownRequestsReducer$),
+	    onion: _xstream2.default.merge(selectReducer$,
+	    // blockHeightReducer$,
+	    defaultAccountReducer$),
 	    Sniffer: snifReq$
 	  };
 	};
@@ -76480,7 +76533,7 @@
 	exports.push([module.id, "@import url(https://fonts.googleapis.com/css?family=Source+Code+Pro);", ""]);
 
 	// module
-	exports.push([module.id, "@charset \"UTF-8\";\nbody {\n  margin: 0;\n  font-size: 12px;\n  font-size: calculateRem(12px);\n  background: #e7e7e7;\n  font-family: sans-serif;\n  color: #27243F; }\n  body #app {\n    height: 100%; }\n\nlegend {\n  color: #13111f;\n  letter-spacing: 1px; }\n\nlabel {\n  font-size: 12px;\n  font-size: calculateRem(12px); }\n\nfieldset {\n  margin: 1.2rem 0 0 0;\n  border: 1px solid #e7e7e7;\n  color: #3b375f; }\n\ninput {\n  border: 1px solid #e7e7e7;\n  color: #8D86C9;\n  display: inline-block;\n  width: 80%;\n  padding: 6px 10px;\n  margin: 6px 0; }\n\nbutton {\n  display: inline-block;\n  border: 1px solid #27243F;\n  background: #27243F;\n  color: #e7e7e7;\n  border-radius: 2px;\n  letter-spacing: 1px;\n  margin: 10px 0;\n  padding: 8px 28px;\n  text-transform: uppercase; }\n  button + button {\n    margin-left: 10px; }\n  button:disabled {\n    background: #a19bcd;\n    color: #ddd;\n    position: relative; }\n    button:disabled:after {\n      display: block;\n      position: absolute;\n      color: #333;\n      top: 0;\n      width: 460px;\n      content: 'cannot call non static functions via server.';\n      left: 100%;\n      text-align: left;\n      padding: 9px 18px; }\n\n.injectDappHub {\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  flex-direction: column;\n  height: 80%; }\n\n.treeview {\n  height: 100%;\n  display: flex;\n  flex-direction: row;\n  align-content: flex-start;\n  flex: 1; }\n  .treeview > .selectView {\n    flex: 1;\n    overflow-y: auto;\n    position: relative;\n    background: #27243F;\n    color: #fff;\n    min-width: 15%;\n    width: 15%; }\n    .treeview > .selectView > .navBtn {\n      padding: 6px 15px;\n      font-size: 12px;\n      font-weight: 300;\n      letter-spacing: 1px;\n      background-color: #27243F;\n      color: #fff; }\n      .treeview > .selectView > .navBtn:hover {\n        background-color: #4f4980; }\n      .treeview > .selectView > .navBtn.selected {\n        border-left: 4px solid #725AC1;\n        background: #4f4980;\n        padding-left: 11px; }\n  .treeview .mainView {\n    flex: 8;\n    overflow: auto;\n    display: flex; }\n    .treeview .mainView .sniffer {\n      display: flex;\n      flex-direction: column;\n      font-family: monospace;\n      width: 100%;\n      overflow-wrap: break-word; }\n      .treeview .mainView .sniffer .controllBar {\n        border-bottom: 4px solid #ddd;\n        padding: 2px 6px; }\n        .treeview .mainView .sniffer .controllBar .record input {\n          display: none; }\n        .treeview .mainView .sniffer .controllBar .record::before {\n          content: \" \";\n          display: inline-block;\n          width: 12px;\n          height: 12px;\n          background: #bbb;\n          border-radius: 20px;\n          margin: 0px 7px 2px 3px;\n          vertical-align: middle; }\n        .treeview .mainView .sniffer .controllBar .record.checked::before {\n          background: #ff603b;\n          box-shadow: 0px 1px 4px 0px #ff603b; }\n      .treeview .mainView .sniffer ul {\n        padding: 0;\n        margin: 0;\n        overflow-y: auto; }\n        .treeview .mainView .sniffer ul li.sniffline {\n          cursor: default;\n          width: 100%;\n          list-style: none; }\n          .treeview .mainView .sniffer ul li.sniffline.call {\n            background: #cce1f0; }\n          .treeview .mainView .sniffer ul li.sniffline.tx {\n            background: #f7e5d2; }\n          .treeview .mainView .sniffer ul li.sniffline span.req {\n            padding: 4px 15px;\n            display: block;\n            border-bottom: 1px solid #cdcdcd; }\n            .treeview .mainView .sniffer ul li.sniffline span.req:hover, .treeview .mainView .sniffer ul li.sniffline span.req.open {\n              background: rgba(255, 255, 255, 0.3); }\n          .treeview .mainView .sniffer ul li.sniffline span.res {\n            display: block;\n            padding: 5px 35px;\n            background: rgba(0, 0, 0, 0.1);\n            white-space: pre-wrap; }\n          .treeview .mainView .sniffer ul li.sniffline::before {\n            content: \"\\25B8\";\n            font-size: 10px;\n            line-height: 10px;\n            float: left;\n            margin: 5px 10px; }\n          .treeview .mainView .sniffer ul li.sniffline.open::before {\n            content: \"\\25BE\"; }\n\n.objectView {\n  width: 100%; }\n\n.abiView {\n  display: flex;\n  width: 100%;\n  height: 100%; }\n  .abiView .selectView {\n    flex: 3;\n    overflow-y: auto; }\n    .abiView .selectView .navBtn {\n      cursor: default;\n      font-weight: 100;\n      background: #fff;\n      font-weight: 400;\n      position: relative;\n      padding: 6px 15px; }\n      .abiView .selectView .navBtn.contract, .abiView .selectView .navBtn.objectInfo {\n        font-size: 18px;\n        padding: 10px;\n        background: #8D86C9;\n        color: #fff;\n        letter-spacing: 1px; }\n        .abiView .selectView .navBtn.contract.selected, .abiView .selectView .navBtn.objectInfo.selected {\n          border-left: 4px solid #f0a800;\n          padding-left: 11px; }\n        .abiView .selectView .navBtn.contract:hover, .abiView .selectView .navBtn.contract.selected, .abiView .selectView .navBtn.objectInfo:hover, .abiView .selectView .navBtn.objectInfo.selected {\n          background: #534d86; }\n        .abiView .selectView .navBtn.contract:before, .abiView .selectView .navBtn.objectInfo:before {\n          border-bottom: none; }\n      .abiView .selectView .navBtn.selected {\n        border-left: 4px solid #725AC1;\n        padding-left: 11px; }\n      .abiView .selectView .navBtn:hover {\n        background: rgba(255, 255, 255, 0.1); }\n      .abiView .selectView .navBtn:before {\n        content: \" \";\n        border-bottom: 1px dotted #e7e7e7;\n        display: block;\n        position: absolute;\n        bottom: 0;\n        right: 0;\n        width: 90%; }\n      .abiView .selectView .navBtn:hover {\n        background: #F8F7F5; }\n      .abiView .selectView .navBtn.selected {\n        border-left: 4px solid #725AC1;\n        background: #F8F7F5; }\n  .abiView .mainView {\n    flex: 6;\n    overflow-y: auto;\n    padding: 15px;\n    border-left: 1px solid #F8F7F5;\n    background: #fff; }\n    .abiView .mainView table {\n      width: 100%; }\n      .abiView .mainView table td {\n        margin: 6px 0; }\n      .abiView .mainView table td.input {\n        display: flex; }\n        .abiView .mainView table td.input > input {\n          flex: 1; }\n      .abiView .mainView table td.label {\n        text-align: right;\n        padding-right: 10px;\n        width: 18%; }\n      .abiView .mainView table td.type {\n        padding-left: 4px;\n        width: 15%; }\n\n.jsonDisplay {\n  white-space: pre;\n  font-family: monospace;\n  padding: 20px;\n  display: block; }\n", ""]);
+	exports.push([module.id, "@charset \"UTF-8\";\nbody {\n  margin: 0;\n  font-size: 12px;\n  font-size: calculateRem(12px);\n  background: #e7e7e7;\n  font-family: sans-serif;\n  color: #27243F; }\n  body #app {\n    height: 100%; }\n\nlegend {\n  color: #13111f;\n  letter-spacing: 1px; }\n\nlabel {\n  font-size: 12px;\n  font-size: calculateRem(12px); }\n\nfieldset {\n  margin: 1.2rem 0 0 0;\n  border: 1px solid #e7e7e7;\n  color: #3b375f; }\n\ninput {\n  border: 1px solid #e7e7e7;\n  color: #8D86C9;\n  display: inline-block;\n  width: 80%;\n  padding: 6px 10px;\n  margin: 6px 0; }\n\nbutton {\n  display: inline-block;\n  border: 1px solid #27243F;\n  background: #27243F;\n  color: #e7e7e7;\n  border-radius: 2px;\n  letter-spacing: 1px;\n  margin: 10px 0;\n  padding: 8px 28px;\n  text-transform: uppercase; }\n  button + button {\n    margin-left: 10px; }\n  button:disabled {\n    background: #a19bcd;\n    color: #ddd;\n    position: relative; }\n    button:disabled:after {\n      display: block;\n      position: absolute;\n      color: #333;\n      top: 0;\n      width: 460px;\n      content: 'cannot call non static functions via server.';\n      left: 100%;\n      text-align: left;\n      padding: 9px 18px; }\n\n.injectDappHub {\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  flex-direction: column;\n  height: 80%; }\n\n.treeview {\n  height: 100%;\n  display: flex;\n  flex-direction: row;\n  align-content: flex-start;\n  flex: 1; }\n  .treeview > .selectView {\n    flex: 1;\n    overflow-y: auto;\n    position: relative;\n    background: #27243F;\n    color: #fff;\n    min-width: 15%;\n    width: 15%; }\n    .treeview > .selectView > .navBtn {\n      padding: 6px 15px;\n      font-size: 12px;\n      font-weight: 300;\n      letter-spacing: 1px;\n      background-color: #27243F;\n      color: #fff; }\n      .treeview > .selectView > .navBtn:hover {\n        background-color: #4f4980; }\n      .treeview > .selectView > .navBtn.selected {\n        border-left: 4px solid #725AC1;\n        background: #4f4980;\n        padding-left: 11px; }\n  .treeview .mainView {\n    flex: 8;\n    overflow: auto;\n    display: flex; }\n    .treeview .mainView .sniffer {\n      display: flex;\n      flex-direction: column;\n      font-family: monospace;\n      width: 100%;\n      overflow-wrap: break-word; }\n      .treeview .mainView .sniffer .controllBar {\n        border-bottom: 4px solid #ddd;\n        padding: 2px 6px; }\n        .treeview .mainView .sniffer .controllBar .record input {\n          display: none; }\n        .treeview .mainView .sniffer .controllBar .record::before {\n          content: \" \";\n          display: inline-block;\n          width: 12px;\n          height: 12px;\n          background: #bbb;\n          border-radius: 20px;\n          margin: 0px 7px 2px 3px;\n          vertical-align: middle; }\n        .treeview .mainView .sniffer .controllBar .record.checked::before {\n          background: #ff603b;\n          box-shadow: 0px 1px 4px 0px #ff603b; }\n      .treeview .mainView .sniffer ul {\n        padding: 0;\n        margin: 0;\n        overflow-y: auto; }\n        .treeview .mainView .sniffer ul li.sniffline {\n          cursor: default;\n          width: 100%;\n          list-style: none; }\n          .treeview .mainView .sniffer ul li.sniffline.call {\n            background: #cce1f0; }\n          .treeview .mainView .sniffer ul li.sniffline.tx {\n            background: #f7e5d2; }\n          .treeview .mainView .sniffer ul li.sniffline span.req {\n            padding: 4px 15px;\n            display: block;\n            border-bottom: 1px solid #cdcdcd; }\n            .treeview .mainView .sniffer ul li.sniffline span.req:hover, .treeview .mainView .sniffer ul li.sniffline span.req.open {\n              background: rgba(255, 255, 255, 0.3); }\n          .treeview .mainView .sniffer ul li.sniffline span.res {\n            display: block;\n            padding: 5px 35px;\n            background: rgba(0, 0, 0, 0.1);\n            white-space: pre-wrap; }\n          .treeview .mainView .sniffer ul li.sniffline::before {\n            content: \"\\25B8\";\n            font-size: 10px;\n            line-height: 10px;\n            float: left;\n            margin: 5px 10px; }\n          .treeview .mainView .sniffer ul li.sniffline.open::before {\n            content: \"\\25BE\"; }\n\n.objectView {\n  width: 100%; }\n\n.abiView {\n  display: flex;\n  width: 100%;\n  height: 100%; }\n  .abiView .selectView {\n    flex: 3;\n    overflow-y: auto; }\n    .abiView .selectView .navBtn {\n      cursor: default;\n      font-weight: 100;\n      background: #fff;\n      font-weight: 400;\n      position: relative;\n      padding: 6px 15px; }\n      .abiView .selectView .navBtn.contract, .abiView .selectView .navBtn.objectInfo {\n        font-size: 18px;\n        padding: 10px;\n        background: #8D86C9;\n        color: #fff;\n        letter-spacing: 1px; }\n        .abiView .selectView .navBtn.contract.selected, .abiView .selectView .navBtn.objectInfo.selected {\n          border-left: 4px solid #f0a800;\n          padding-left: 11px; }\n        .abiView .selectView .navBtn.contract:hover, .abiView .selectView .navBtn.contract.selected, .abiView .selectView .navBtn.objectInfo:hover, .abiView .selectView .navBtn.objectInfo.selected {\n          background: #534d86; }\n        .abiView .selectView .navBtn.contract:before, .abiView .selectView .navBtn.objectInfo:before {\n          border-bottom: none; }\n      .abiView .selectView .navBtn.selected {\n        border-left: 4px solid #725AC1;\n        padding-left: 11px; }\n      .abiView .selectView .navBtn:hover {\n        background: rgba(255, 255, 255, 0.1); }\n      .abiView .selectView .navBtn:before {\n        content: \" \";\n        border-bottom: 1px dotted #e7e7e7;\n        display: block;\n        position: absolute;\n        bottom: 0;\n        right: 0;\n        width: 90%; }\n      .abiView .selectView .navBtn:hover {\n        background: #F8F7F5; }\n      .abiView .selectView .navBtn.selected {\n        border-left: 4px solid #725AC1;\n        background: #F8F7F5; }\n  .abiView .mainView {\n    flex: 6;\n    overflow-y: auto;\n    padding: 15px;\n    border-left: 1px solid #F8F7F5;\n    background: #fff; }\n    .abiView .mainView table {\n      width: 100%; }\n      .abiView .mainView table td {\n        margin: 6px 0; }\n      .abiView .mainView table td.input {\n        display: flex; }\n        .abiView .mainView table td.input > input {\n          flex: 1; }\n      .abiView .mainView table td.label {\n        text-align: right;\n        padding-right: 10px;\n        width: 18%; }\n      .abiView .mainView table td.type {\n        padding-left: 4px;\n        width: 15%; }\n\n.jsonDisplay {\n  white-space: pre;\n  font-family: monospace;\n  padding: 20px;\n  display: block; }\n\n.settings {\n  flex: 1;\n  padding: 0em 3em; }\n  .settings fieldset + fieldset {\n    margin: 2em 0; }\n  .settings fieldset {\n    border-color: #27243f; }\n", ""]);
 
 	// exports
 
@@ -76792,6 +76845,103 @@
 			URL.revokeObjectURL(oldSrc);
 	}
 
+
+/***/ },
+/* 945 */
+/***/ function(module, exports, __webpack_require__) {
+
+	"use strict";
+	var core_1 = __webpack_require__(704);
+	var FCIL = (function () {
+	    function FCIL(out, op) {
+	        this.out = out;
+	        this.op = op;
+	    }
+	    FCIL.prototype._n = function (t) {
+	        this.out._n(t);
+	    };
+	    FCIL.prototype._e = function (err) {
+	        this.out._e(err);
+	    };
+	    FCIL.prototype._c = function () {
+	        this.op.less();
+	    };
+	    return FCIL;
+	}());
+	var FlattenConcOperator = (function () {
+	    function FlattenConcOperator(ins) {
+	        this.ins = ins;
+	        this.type = 'flattenConcurrently';
+	        this.active = 1; // number of outers and inners that have not yet ended
+	        this.out = null;
+	    }
+	    FlattenConcOperator.prototype._start = function (out) {
+	        this.out = out;
+	        this.ins._add(this);
+	    };
+	    FlattenConcOperator.prototype._stop = function () {
+	        this.ins._remove(this);
+	        this.active = 1;
+	        this.out = null;
+	    };
+	    FlattenConcOperator.prototype.less = function () {
+	        if (--this.active === 0) {
+	            var u = this.out;
+	            if (!u)
+	                return;
+	            u._c();
+	        }
+	    };
+	    FlattenConcOperator.prototype._n = function (s) {
+	        var u = this.out;
+	        if (!u)
+	            return;
+	        this.active++;
+	        s._add(new FCIL(u, this));
+	    };
+	    FlattenConcOperator.prototype._e = function (err) {
+	        var u = this.out;
+	        if (!u)
+	            return;
+	        u._e(err);
+	    };
+	    FlattenConcOperator.prototype._c = function () {
+	        this.less();
+	    };
+	    return FlattenConcOperator;
+	}());
+	exports.FlattenConcOperator = FlattenConcOperator;
+	/**
+	 * Flattens a "stream of streams", handling multiple concurrent nested streams
+	 * simultaneously.
+	 *
+	 * If the input stream is a stream that emits streams, then this operator will
+	 * return an output stream which is a flat stream: emits regular events. The
+	 * flattening happens concurrently. It works like this: when the input stream
+	 * emits a nested stream, *flattenConcurrently* will start imitating that
+	 * nested one. When the next nested stream is emitted on the input stream,
+	 * *flattenConcurrently* will also imitate that new one, but will continue to
+	 * imitate the previous nested streams as well.
+	 *
+	 * Marble diagram:
+	 *
+	 * ```text
+	 * --+--------+---------------
+	 *   \        \
+	 *    \       ----1----2---3--
+	 *    --a--b----c----d--------
+	 *     flattenConcurrently
+	 * -----a--b----c-1--d-2---3--
+	 * ```
+	 *
+	 * @return {Stream}
+	 */
+	function flattenConcurrently(ins) {
+	    return new core_1.Stream(new FlattenConcOperator(ins));
+	}
+	Object.defineProperty(exports, "__esModule", { value: true });
+	exports.default = flattenConcurrently;
+	//# sourceMappingURL=flattenConcurrently.js.map
 
 /***/ }
 /******/ ]);

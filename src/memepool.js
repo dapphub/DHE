@@ -17,7 +17,7 @@ export var Memepool = (sources) => {
 
   // TODO - refactor this to onion state
   const memepool$ = xs.merge(res$, req$)
-  .fold( (state, act) => {
+  .fold((state, act) => {
     state.next = null;
 
     switch(act.type) {

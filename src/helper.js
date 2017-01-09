@@ -18,6 +18,9 @@ in$.fold((parent, state) => {
   return arr;
 }, [])
 
+// ------ {etwas}
+//         \____ case 1: etwas === 1 ----- >
+//          \___ case 2: etwas === 3 --- >
 export const componentSwitch = (keyf, C, sources) => (in$) =>
 in$.fold((old, state) => {
   // Remember Atom if the type didn't change

@@ -5,6 +5,7 @@ import xs from 'xstream';
 import isolate from '@cycle/isolate';
 import {isolateSource} from '@cycle/isolate';
 import sampleCombine from 'xstream/extra/sampleCombine'
+import flattenConcurrently from 'xstream/extra/flattenConcurrently'
 import {member} from './helper.js';
 import {componentSwitch} from './helper.js';
 import {pick, mix, isolateSource as isolateOnionSource, isolateSink as isolateOnionSink} from 'cycle-onionify';
@@ -51,8 +52,12 @@ export const TabNav = TabNavView => ({DOM, onion}) => {
 
 export const Stage = (C, sinkNames) => (sources) => {
 
-  const ctype$ = sources.onion.state$
-  .filter(state => state.selected)
+  const selected$ = sources.onion.state$
+  .map(s => s.selected)
+
+  const ctype$ = xs.combine(sources.onion.state$, selected$)
+  .filter(([state, s]) => s)
+  .map(([s]) => s)
   .compose(componentSwitch(state => state.type, C, sources))
 
   const filterSelected = attr => in$ =>
@@ -64,10 +69,10 @@ export const Stage = (C, sinkNames) => (sources) => {
     .map(([v]) => v)
 
   const filterInstant = attr => in$ =>
-    xs.combine(sources.onion.state$, in$
+    xs.combine(selected$, in$
     .map(c => c.c[attr] || xs.of())
     .flatten())
-    .filter(([s]) => s.selected)
+    .filter(([s]) => s)
     .map(([_, v]) => v)
 
   const sinkObjects = sinkNames

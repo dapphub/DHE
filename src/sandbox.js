@@ -28,10 +28,36 @@ const ForkManager = {
 
 const FakeSniffer = (in$) => {
 
-  var {fork, id} = ForkManager.newFork()
+  // This should manage the current chain endpoint
+  // Chain endpoints must be one of the following:
+  // 1. passive
+  //    no fork, just sniff the input and use native web3
+  //
+  // 2. native fork
+  //    fork off the native web3 provided by the client
+  //    e.g. Metamask
+  //
+  // 3. custom fork from rpc
+  //    fork off a given rpc endpoint provided by the user
+  //
+  // 4. custom semantic rpc fork
+  //    fork off a given semantic pointer
+  //    Semantic pointer which should be supported are:
+  //    rposen, morden, livenet...
+  //
+  // var {fork, id} = ForkManager.newFork()
+  var web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545"))
+  var fork = web3.currentProvider;
+
+  // TODO
+  //       1. modularize fork/ chain selection
+  //       2. analyze chain type
+  //       3. push chaintype, forktype to DHE
+
 
   const out$ = xs
   .periodic(1000)
+  // .of(1)
   .mapTo({
     req: {
       "jsonrpc":"2.0",
@@ -48,12 +74,13 @@ const FakeSniffer = (in$) => {
     start: listener => {
       in$.addListener({
         next: r => {
-          console.log("rr",r)
           const handleRequest = (e) => {
             switch(e.type) {
-              case "DH_REQ":
+              case "REQ":
+                console.log(1, e.req);
                 fork.sendAsync(e.req, (err, res) => {
-                  let resp = {type: "DH_RES", res, req: e.req};
+                  console.log(err, res);
+                  let resp = {type: "RES", res, req: e.req};
                   listener.next(_.assign({}, e, resp));
                 })
                 break;
@@ -64,7 +91,6 @@ const FakeSniffer = (in$) => {
                 console.log("NO SNIFFER HANDLER FOR", e);
             }
           }
-          console.log("!",r);
           if(Array.isArray(r)) {
             r.forEach(handleRequest);
           } else {

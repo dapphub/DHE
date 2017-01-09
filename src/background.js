@@ -86,12 +86,10 @@ chrome.extension.onConnect.addListener(function (port) {
         engine = setUpEngine({db, forkSource})
         console.log("init testrpc", port);
         break;
-      case "DH_REQ":
-        console.log("DH REQ", message.req);
+      case "REQ":
         engine.sendAsync(message.req, (err, res) => {
-          console.log("DH RES", res);
           port && port.postMessage({
-            type: "DH_RES",
+            type: "RES",
             res: res,
             req: message.req
           });

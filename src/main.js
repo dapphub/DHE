@@ -33,7 +33,7 @@ const main = (sources) => {
   .map(i => i ? ({type: "start", tabId}) : ({}))
 
   const web3$ = dhExtension.web3$
-  .map(req => ({type: "DH_REQ", req}))
+  .map(req => ({type: "REQ", req}))
 
   var MV = {
     DOM: vdom$,
