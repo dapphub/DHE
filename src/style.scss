@@ -303,4 +303,10 @@ button {
   fieldset {
     border-color: #27243f;
   }
+  label {
+    display: block;
+    > input {
+      margin-left: 1em;
+    }
+  }
 }

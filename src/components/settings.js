@@ -1,68 +1,160 @@
-import {fieldset, legend, input, h2, button, div, select, option} from '@cycle/dom';
-import xs from 'xstream';
-import _ from 'lodash';
-import sampleCombine from 'xstream/extra/sampleCombine'
-import {json, member, componentSwitch} from '../helper.js';
-import utils from 'web3/lib/utils/utils.js';
+import { hr, fieldset, legend, input, h2, label, button, div, select, option } from "@cycle/dom";
+import xs from "xstream";
+import _ from "lodash";
+import sampleCombine from "xstream/extra/sampleCombine";
+import dropRepeats from "xstream/extra/dropRepeats";
+import { json, member, componentSwitch } from "../helper.js";
+import utils from "web3/lib/utils/utils.js";
 
-export const Settings = ({DOM, onion, Sniffer}) => {
+export const Settings = ({ DOM, onion, Sniffer }) => {
+  // INTENT
+  //   DOM
+  const newForkClick$ = DOM.select(".newForkBtn").events("click");
 
+  const fromRPC$ = DOM
+    .select(".fromRPC")
+    .events("change")
+    .map(e => e.target.checked)
+    .startWith(false)
 
-  const vdom$ = onion.state$
-  .map(state => div(".settings", [
-    fieldset([
-      h2(`Block Height: ${state.state.blockNumber}`),
-      legend("current fork"),
-      select('.forkStatus', state.state.options
-             .map((name, i) => option({
-               attrs: {
-                 value: i
-               }}, name))
-      ),
-      state.state.options[state.state.forkStatus],
-      button(".reset", "reset fork"),
-    ]),
-    fieldset([
-      legend("new fork"),
-      input(".newFork", {attrs: {
-        placeholder: "new fork name"
-      }}),
-      button(".newForkBtn", "create new fork"),
-    ]),
-    fieldset([
-      legend("default account"),
-      h2(`Default Account:`),
-      input(".defaultAccount", {attrs: {
-        value: state.state.defaultAccount
-      }}),
-      button(".setDefaultAccount", "submit"),
-    ]),
-    json(state.state)
-  ]))
+  const forkName$ = DOM
+    .select(".forkName")
+    .events("change")
+    .map(e => e.target.value)
+    .startWith("")
+
+  const forkURI$ = DOM
+    .select(".rpcURI")
+    .events("change")
+    .map(e => e.target.value)
+    .startWith("http://localhost:8545")
 
   const defaultAccountChange$ = DOM
-  .select('.defaultAccount')
-  .events('change')
-  .map(e => e.target.value)
+    .select(".defaultAccount")
+    .events("change")
+    .map(e => e.target.value);
+
+  const changeChain$ = DOM
+    .select(".forkStatus")
+    .events("change")
+    .map(e => e.target.value)
+
+  // INTENT
+  //   SNIFFER
+
+  const newChainList$ = Sniffer
+  .filter(msg => msg.type === "CHAIN_LIST")
+
+  const chaininfo$ = Sniffer
+  .filter(msg => msg.type === "CHAININFO")
+
+
+  // ACTIONS
+  const vdom$ = onion.state$.map(
+    state =>
+      div(".settings", [
+        fieldset([
+          h2(`Block Height: ${state.state.blockNumber}`),
+          h2(`Chain Type: ${state.state.chaintype}`),
+          hr(),
+          h2("actions"),
+          legend("current fork"),
+          label([
+            "Select fork:",
+            select(
+              ".forkStatus",
+              state.state.options.map(
+                (name, i) => option({ attrs: {
+                  value: name,
+                  selected: state.state.selected === name
+                } }, name)
+              )
+            ),
+          ]),
+          button(".reset", "reset fork")
+        ]),
+        fieldset([
+          legend("new fork"),
+          label("", [
+            "Fork Name",
+            input(".forkName", { attrs: { placeholder: "new fork name" } })
+          ]),
+          label("", [
+            "from RPC",
+            input({ attrs: { type: "checkbox" }, class: { fromRPC: true } })
+          ]),
+          label("", [
+            "RPC URI",
+            input({
+              attrs: { placeholder: "e.g. http://localhost:8545" },
+              class: { rpcURI: true }
+            })
+          ]),
+          button(".newForkBtn", "create new fork")
+        ]),
+        fieldset([
+          legend("default account"),
+          h2(`Default Account:`),
+          input(".defaultAccount", {
+            attrs: { value: state.state.defaultAccount }
+          }),
+          button(".setDefaultAccount", "submit")
+        ]),
+        json(state.state)
+      ])
+  );
 
   const defaultAccountReducer$ = DOM
-  .select('.setDefaultAccount')
-  .events('click')
-  .compose(sampleCombine(defaultAccountChange$))
-  .map(([e, value]) => function defaultAccountReducer(parent) {
-    parent.state.defaultAccount = value;
+    .select(".setDefaultAccount")
+    .events("click")
+    .compose(sampleCombine(defaultAccountChange$))
+    .map(
+      ([ e, value ]) => function defaultAccountReducer(parent) {
+        parent.state.defaultAccount = value;
+        return _.assign({}, parent);
+      }
+    );
+
+  const selectReducer$ = changeChain$
+    .map(
+      e => function reduceForkStatus(parent) {
+        let state = parent.state;
+        console.log(e);
+        state.selected = e;
+        return _.assign({}, parent, { state });
+      }
+    );
+
+  const chaintypeReq$ = onion.state$
+  .map(state => state.state.chaintype)
+  .filter(state => !state)
+  .mapTo({type: "GET_CHAINTYPE"})
+
+  const changeChainReq$ = changeChain$
+  .map(name => ({type: "CHANGE_CHAIN", name}))
+
+  const newForkMsg$ = newForkClick$
+  .compose(sampleCombine(xs.combine(forkName$, fromRPC$, forkURI$ )))
+  .map(([_, data]) => ({
+    type: "NEW_FORK",
+    name: data[0],
+    fromrpc: data[1],
+    rpc: data[2]
+  }))
+
+  const chainListReducer$ = newChainList$
+  .map(msg => function chainListReducer(parent) {
+    parent.state.options = msg.chains;
+    return _.assign({}, parent)
+  });
+
+  const chaininfoReducer$ = chaininfo$
+  .map(msg => function chaininfoReducer(parent) {
+    parent.state.selected = msg.selected;
+    parent.state.chaintype = msg.chaintype;
     return _.assign({}, parent);
   })
 
-  const selectReducer$ = DOM
-  .select('.forkStatus')
-  .events('change')
-  .map(e => parseInt(e.target.value))
-  .map(e => function reduceForkStatus(parent) {
-    let state = parent.state;
-    state.forkStatus = e;
-    return _.assign({}, parent, {state});
-  })
 
   // TODO come up with a descreptive web3 query which builds requests + reducers
   // TODO - refactor this
@@ -110,11 +202,9 @@ export const Settings = ({DOM, onion, Sniffer}) => {
   //   }
   //   return reqs;
   // }
-
   // const blockHeightRequest$ = onion.state$
   // .map(state => genRequests("", state))
   // .filter(r => r.length > 0)
-
   // const removeKnownRequestsReducer$ = blockHeightRequest$
   // .map(s => function removeKnownRequestsReducer (parent) {
   //   s.forEach(t => {
@@ -126,7 +216,6 @@ export const Settings = ({DOM, onion, Sniffer}) => {
   //   })
   //   return _.assign({}, parent);
   // })
-
   // const blockHeightReducer$ = Sniffer
   // .filter(t => t.type === "RES")
   // .filter(t => t.req.method === "eth_blockNumber")
@@ -140,29 +229,37 @@ export const Settings = ({DOM, onion, Sniffer}) => {
   //   o[t._location.split('.').slice(-1)] = (t._f || _df)(t.res.result)
   //   return _.assign({}, parent);
   // })
-
   // TODO - trigger reducer
   const reset$ = DOM
-  .select('.reset')
-  .events('click')
-  .mapTo({type: "DH_RESET_FORK"})
+    .select(".reset")
+    .events("click")
+    .mapTo({ type: "RESET_FORK" })
+    .compose(sampleCombine(onion.state$))
+    .map(([e, state]) => _.assign({}, e, {name: state.state.selected}))
 
   const snifReq$ = xs.merge(
     reset$,
     // blockHeightRequest$
     // .map(e => xs.fromArray(e))
     // .flatten()
-  )
+    newForkMsg$,
+    changeChainReq$
+  );
+
 
   return {
     DOM: vdom$,
     onion: xs.merge(
       selectReducer$,
       // blockHeightReducer$,
-      defaultAccountReducer$,
       // removeKnownRequestsReducer$
+      defaultAccountReducer$,
+      chainListReducer$,
+      chaininfoReducer$
     ),
-    Sniffer: snifReq$,
-  }
-}
-
+    Sniffer: xs.merge(
+      snifReq$,
+      chaintypeReq$
+    )
+  };
+};

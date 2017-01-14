@@ -12,6 +12,7 @@ export var Memepool = (sources) => {
   .map(res => ({type: "res", data: JSON.parse(res.text)}))
 
   const req$ = sources.Sniffer
+  .filter(comm => comm.type === "RES")
   .filter(comm => comm.req.method === "eth_call")
   .map(comm => ({type: "req", addr: comm.req.params[0].to}))
 

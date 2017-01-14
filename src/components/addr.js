@@ -15,6 +15,7 @@ var ABI = ({DOM, onion, Sniffer}) => {
   // TODO - handle errors well
   const resp$ = Sniffer
   .filter(e => e.type === "RES")
+  .filter(e => !(typeof e.res === "object" && "error" in e.res))
   .filter(e => e.req.method === "eth_call" || e.req.method === "eth_sendTransaction")
   .compose(sampleCombine(onion.state$))
   .filter(([resp, state]) => resp.req.params[0].data.slice(2,10) === state.signature)
