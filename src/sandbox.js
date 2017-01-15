@@ -23,9 +23,9 @@ const ForkManager = {
   }
 }
 
-const FakeSniffer = (in$) => {
+const FakeSniffer = (in$, _setUpEngine=setUpEngine) => {
 
-  var {fork, id} = ForkManager.newFork()
+  var {fork, id} = ForkManager.newFork(undefined, _setUpEngine)
 
   const out$ = xs
   .periodic(1000)
@@ -55,7 +55,7 @@ const FakeSniffer = (in$) => {
                 })
                 break;
               case "DH_RESET_FORK":
-                fork = ForkManager.resetFork(id);
+                fork = ForkManager.resetFork(id, _setUpEngine);
                 break;
               default:
                 console.log("NO SNIFFER HANDLER FOR", e);
