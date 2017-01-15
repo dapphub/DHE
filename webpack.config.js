@@ -5,7 +5,7 @@ var config = module.exports = {
      entry: {
        main: './src/main.js',
        content: './src/content.js',
-       sandbox: './src/sandbox.js',
+       sandbox: './src/sandbox.webpack.js',
        background: './src/background.js'
      },
      output: {

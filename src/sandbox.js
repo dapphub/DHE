@@ -1,11 +1,8 @@
-import {run} from '@cycle/xstream-run';
-import {button, span, div, label, input, hr, h1, makeDOMDriver} from '@cycle/dom';
+import {button, span, div, label, input, hr, h1} from '@cycle/dom';
 import xs from 'xstream';
-import {makeHTTPDriver} from '@cycle/http';
 import {Memepool} from './memepool.js';
 import onionify from 'cycle-onionify';
 import setUpEngine from './testrpc.js';
-require("./style.scss");
 
 
 import {AddrView} from './components/addr.js';
@@ -13,13 +10,13 @@ import {DHExtension} from './components/dhe.js';
 
 const ForkManager = {
   forks: [],
-  newFork: function(type, _setupEngine=setupEngine) {
+  newFork: function(type, _setUpEngine=setUpEngine) {
     if(!type) console.log("WARN: no fork type given");
     const fork = _setUpEngine({})
     this.forks.push(fork);
     return {id: this.forks.length - 1, fork};
   },
-  resetFork: function(id, _setupEngine=setupEngine) {
+  resetFork: function(id, _setUpEngine=setUpEngine) {
     this.forks[id] && this.forks[id].stop();
     this.forks[id] = _setUpEngine({});
     return this.forks[id];
@@ -114,8 +111,8 @@ const main = (sources) => {
   };
 }
 
-run(onionify(main), {
-  DOM: makeDOMDriver('#app'),
-  HTTP: makeHTTPDriver(),
-  Sniffer: FakeSniffer
-});
+module.exports = {
+  FakeSniffer,
+  ForkManager,
+  main
+};
