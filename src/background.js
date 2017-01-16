@@ -4,329 +4,381 @@ const forkMode = true;
 const debug = 1;
 ////////////////////
 ////////////////////
-
-var setUpEngine = require('./testrpc.js');
-const levelup = require('levelup');
-const level = require('level-js');
+var setUpEngine = require("./testrpc.js");
+const levelup = require("levelup");
+const level = require("level-js");
 import xs from "xstream";
 import sampleCombine from "xstream/extra/sampleCombine";
-import {run} from "@cycle/xstream-run";
-import {Router} from './router.js';
-import onionify from 'cycle-onionify';
-import _ from 'lodash';
+import { run } from "@cycle/xstream-run";
+import { Router } from "./router.js";
+import onionify from "cycle-onionify";
+import _ from "lodash";
 
 var name2tabid = {};
 
-const dheManager = (msg) => {
+const dheManager = msg => {
   // Handle request from devtools
-  chrome.extension.onConnect
-  .addListener(function (port) {
-
-    const setUpRouter = (clientid) => {
-      Router.registerClient(clientid, (res, req) => {
-        // console.log(1,res);
-        if(res.type === "RES") {
-          // send back to dapp
-          chrome.tabs.sendMessage(name2tabid[clientid], res)
-        } else {
-          // console.log("this", res);
-        }
-        // Send to dev tool panel
-        port && port.postMessage(res);
-        // {
-        //   type: "RES",
-        //   res: res,
-        //   req: req
-        // }
-      })
-
-      // TODO - this is designed to serve as a fallback provider
-      //        its verry likely that the callback
-      //        don't work as intended
-      const forkSource = {
-        sendAsync: (payload, callback) => {
-          chrome.tabs.sendMessage(name2tabid[clientid], {
-            type: "REQ",
-            req: payload
-          })
-          origMSGpassCallback[payload.id] = callback;
-        },
-        send: () => {
-          throw new Error("sync requests are not supported");
-        }
-      }
-      Router.registerChain(clientid, "native", {
-        type: "native",
-        chain: forkSource
-      })
+  chrome.extension.onConnect.addListener(function(port) {
+    const onDHEMsg = function(message, _port) {
+      msg(_.assign({}, message, {port: _port}));
+    };
+    const onDisconnect = function(_port) {
+      port.onMessage.removeListener(onDHEMsg);
+      port.onDisconnect.removeListener(onDisconnect);
+      msg({type: "DISCONNECT", port: _port});
     }
 
-    // TODO - better name
-    // holds the callbacks for each payload id
-    var origMSGpassCallback = {}
-
-    // dapp => bg
-    var middleware = function (message, sender) {
-      Router.process(port.name)(message)
-      // if(debug >= 1) console.log("Adding Middleware", sender);
-
-      // if(debug >= 2) console.log(">>", message);
-      // if(message.type === "REQ" && forkMode && engine) {
-      //   engine.sendAsync(message.req, (err, res) => {
-      //     if(debug >= 2) console.log("<<", res);
-      //     // send back to content script
-      //     chrome.tabs.sendMessage(sender.tab.id, {
-      //       type: "RES",
-      //       res: res
-      //     })
-      //     // Send to dev tool panel
-      //     port && port.postMessage({
-      //       type: "RES",
-      //       res: res,
-      //       req: message.req
-      //     });
-      //   })
-      // }
-      if(message.type === "RES") {
-        console.log("NEVER EXPECTED TO GET HERE", new Error());
-        // chrome.tabs.sendMessage(sender.tab.id, {
-        //   type: "RES",
-        //   res: message.res,
-        //   req: message.req
-        // })
-        // port && port.postMessage(message);
-      }
-      if(message.type === "RES") {
-        console.log("DUNNO WHAT THIS IS");
-        let id = message.res.id;
-        // TODO - forward errors
-        // origMSGpassCallback[id](null, message.res);
-        // delete origMSGpassCallback[id];
-      }
-    }
-
-
-    var onDHEMsg = function (message, _port) {
-      msg({
-        type: "MSG",
-        name: _port.name,
-        msg: message,
-        port: _port
-      })
-      return null;
-      // if(debug >= 1) console.log("Adding Testrpc", message, port);
-      const sendToOrigWeb3 = (tabId) => (payload, cb) => {
-        origMSGpassCallback[payload.id] = cb;
-        chrome.tabs.sendMessage(tabId, {
-          type: "REQ",
-          req: payload
-        })
-      }
-
-      switch(message && message.type) {
-        case "CONNECT":
-          name2tabid[_port.name] = message.tabid;
-          setUpRouter(_port.name);
-          // msg({
-          //   type: "CONNECT",
-          //   name: _port.name
-          // })
-          break;
-        case "start":
-          //TODO - better name for sendToWeb3
-          const sendToWeb3 = sendToOrigWeb3(message.tabId);
-          const db = levelup("/db", {
-            db: level
-          });
-          // this takes care of rerouting forked requests back
-          // into the browser.
-          const forkSource = {
-            sendAsync: (payload, callback) => {
-              sendToWeb3(payload, callback);
-            },
-            send: () => {
-              throw new Error("sync requests are not supported");
-            }
-          }
-
-          // TODO - switch between different fork sources
-          // engine = setUpEngine({db, forkSource})
-          console.log("init testrpc", port);
-          break;
-        case "REQ":
-          // engine.sendAsync(message.req, (err, res) => {
-          //   port && port.postMessage({
-          //     type: "RES",
-          //     res: res,
-          //     req: message.req
-          //   });
-          // })
-          break;
-      }
-
-    }
-
-    port.onMessage.addListener(onDHEMsg)
-
-    port.onDisconnect.addListener(function (_port) {
-      msg({
-        type: "DISCONNECT",
-        name: _port.name
-      })
-    })
-
+    port.onMessage.addListener(onDHEMsg);
+    port.onDisconnect.addListener(onDisconnect);
   });
 };
 
 // in$  - messages, which should be send to DHE
 // out$ - messages received from DHE
-const DappDriver = (in$) => {
-  in$
-  .addListener({
-    next: (msg) => {
-      // omit msg.sender and msg.chainid
-      chrome.tabs.sendMessage(msg.sender, msg)
+const DappDriver = in$ => {
+  in$.addListener({
+    next: msg => {
+      chrome.tabs.sendMessage(msg.sender, _.omit(msg, [ "sender", "chainid" ]));
     },
     error: e => console.log(e),
     complete: e => console.log(e)
-  })
+  });
 
   return xs.create({
     start: listener => {
-      chrome.extension.onMessage
-      .addListener((msg, sender) => {
-        listener.next(_.assign(
-          {},
-          msg,
-          {sender: sender.tab.id}))
-      })
+      chrome.extension.onMessage.addListener((msg, sender) => {
+        listener.next(_.assign({}, msg, { sender: sender.tab.id }));
+      });
     },
     stop: () => {}
-  })
-}
+  });
+};
 
-const DHEDriver = (in$) => {
-
+const DHEDriver = in$ => {
   var name2sender = {};
   var sender2port = {};
 
-  in$
-  .addListener({
+  in$.addListener({
     next: msg => {
-      if(msg.sender in sender2port) {
+      if (msg.sender in sender2port) {
         sender2port[msg.sender].postMessage(msg);
       }
     },
     error: e => console.log(e),
     complete: e => console.log(e)
-  })
+  });
 
   return xs.create({
     start: listener => {
-      dheManager((msg) => {
-        if(msg.msg.type === "CONNECT") {
-          name2sender[msg.name] = msg.msg.tabid;
-          sender2port[msg.msg.tabid] = msg.port;
-        } else if(msg.name in name2sender) {
-          msg.msg.sender = name2sender[msg.name];
+      dheManager(msg => {
+        if (msg.type === "CONNECT") {
+          // TODO rename tabid to sender?
+          name2sender[msg.port.name] = msg.tabid;
+          sender2port[msg.tabid] = msg.port;
+          msg.sender = msg.tabid;
+        } else if(msg.type === "DISCONNECT") {
+          let sender = name2sender[msg.port.name];
+          delete name2sender[msg.port.name];
+          delete sender2port[sender];
+        } else if (msg.port.name in name2sender) {
+          msg.sender = name2sender[msg.port.name];
         }
-        listener.next(msg.msg);
-      })
+        listener.next(msg);
+      });
     },
     stop: () => {}
-  })
+  });
+};
 
-}
-
-const ChainDriver = (in$) => {
-
-  const forkSource = 'http://localhost:8545';
-  const fork = setUpEngine({forkSource})
+const ChainDriver = in$ => {
+  // const forkSource = "http://localhost:8545";
+  const db = levelup("/db", { db: level });
+  // const fork = setUpEngine({ forkSource, db });
+  const chains = {};
 
   return xs.create({
     start: listener => {
-      in$
-      .addListener({
-        next: ({msg, sender, chainid}) => {
-          fork
-          .sendAsync(msg.req, (err, res) => {
-            var response = {type: "RES", res, req: msg.req};
-            listener.next({res: response, sender})
-          })
+      in$.addListener({
+        // TODO - change forkReq format
+        next: (msg) => {
+          switch(msg.type) {
+            case "REQ":
+              chains[msg.chainid].chain.sendAsync(msg.req, (err, res) => {
+                var response = { type: "RES", res, req: msg.req, sender: msg.sender };
+                listener.next(response);
+              });
+              break;
+            case "NEW_FORK": // { name, sender, rpc }
+              if(chains[msg.name]) console.error(`Chain with the name ${msg.name} already exists, overwriting may cause WW3.`)
+              let forkSource = msg.rpc;
+              let setup = { db };
+              if(!msg.fromrpc) {
+                // FORK from native web3
+                // this involves sending requests back to the dapp,
+                // remember the callback, and call it once a response
+                // arrives.
+                // TODO - this needs a cleaner architecture and a review
+                forkSource = {
+                  sendAsync: (payload, callback) => {
+                    // TODO - refactor this outu together with content's native
+                    //        callback rememberance methods
+                    listener.next({
+                      type: "REQ",
+                      req: payload,
+                      sender: msg.sender
+                    })
+                    chains[msg.name].cbs[payload.id] = callback;
+                  },
+                  send: () => {
+                    throw new Error("sync requests are not supported");
+                  }
+                }
+                // remember sender for fork rerouting
+                setup.from = msg.sender;
+              }
+              setup.forkSource = forkSource;
+              chains[msg.name] = {
+                chain: setUpEngine(setup),
+                setup,
+                cbs: {} // callback for native forks
+              }
+              break;
+            case "RESET_FORK":
+              console.log("reset", msg);
+              chains[msg.chainid].chain =
+                setUpEngine(chains[msg.chainid].setup)
+              break;
+            case "RES": // { chainid, req, res, sender }
+              if(!(msg.req.id in chains[msg.chainid].cbs)) {
+                console.log(`WARN: no callback known for fork response with id ${msg.req.id}`, msg)
+                return null;
+              }
+              chains[msg.chainid].cbs[msg.req.id](null, msg.res);
+              delete chains[msg.chainid].cbs[msg.req.id];
+          }
         },
         error: e => console.log(e),
-          complete: e => console.log(e)
-      })
+        complete: e => console.log(e)
+      });
     },
     stop: () => {}
-  })
-}
+  });
+};
 
 // TODO - make an consistent msg format
-function main({Dapp, DHE, Chain, onion}) {
+// ## Dapp
+// -> REQ:
+// -> RES:
+//
+// <- REQ:
+// <- RES:
+//
+// ## DHE
+//
+// ## Chain
+// -> FORK_REQ
+// -> REQ
+//
+// <- FORK_RES
+// <- RES
+//
+// ## onion
+function main({ Dapp, DHE, Chain, onion }) {
 
   // TODO - get msg type here right
   const dappreq$ = Dapp
-  .filter(msg => msg.type === "REQ")
-  .compose(sampleCombine(onion.state$))
-  .map(([msg, state]) =>
-    _.assign({}, msg, {chainid: state.selected[msg.sender]})
-  )
+    .filter(msg => msg.type === "REQ")
+    .compose(sampleCombine(onion.state$))
+    .map(
+      ([ msg, state ]) =>
+        _.assign({}, msg, { chainid: state.selected[msg.sender] })
+    )
 
   const dhereq$ = DHE
-  .filter(msg => msg.type === "REQ")
+    .filter(msg => msg.type === "REQ")
+    .compose(sampleCombine(onion.state$))
+    .map(
+      ([ { req, sender }, state ]) =>
+        ({ type: "REQ", req, sender, chainid: state.selected[sender] })
+    );
+
+  const chaintypeReq$ = DHE
+  .filter(msg => msg.type === "GET_CHAINTYPE")
+
+  const newForkReq$ = DHE
+  .filter(msg => msg.type === "NEW_FORK")
+
+  const resetReq$ = DHE
+  .filter(msg => msg.type === "RESET_FORK")
   .compose(sampleCombine(onion.state$))
-  .map(([{req, sender}, state]) => ({
-    type: "REQ",
-    req,
-    sender,
-    chainid: state.selected[sender]
+  .map(([msg, state]) => _.assign({}, msg, {
+    chainid: state.selected[msg.sender]
   }))
 
-  const req$ = xs.merge(dappreq$, dhereq$)
-
-  // send requests to a fork
-  const forkReq$ = req$
-  .filter(({chainid}) => !!chainid);
-
-  forkReq$
-  .addListener({
-    next: e => console.log("fork", e),
-    error: e => console.log(e),
-    complete: e => console.log(e)
+  const changeChain$ = DHE
+  .filter(msg => msg.type === "CHANGE_CHAIN")
+  .compose(sampleCombine(onion.state$))
+  .map(([msg, state]) => {
+    var selected;
+    if(msg.name === "native") {
+      selected = Object.keys(state.chains)
+      .find(name => state.chains[name].owner === msg.sender)
+    } else {
+      selected = msg.name;
+    }
+    msg.name = selected;
+    return msg;
   })
 
-  // send request back to the dapps web3
-  const nativeReq$ = req$
-  .filter(({chainid}) => !chainid)
-
-  const dappres$ = Dapp
-  .filter(msg => msg.type === "RES")
-
-  const forkres$ = Chain
-  .map(({res, sender}) => ({msg: res, sender}))
-
-  const res$ = xs.merge(dappres$, forkres$)
-
-  const initialStateReducer$ = xs.of(function initialStateReducer() {
+  const chaintypeRes$ = chaintypeReq$
+  .compose(sampleCombine(onion.state$))
+  .map(([msg, state]) => {
+    let selected = state.selected[msg.sender];
     return {
-      forks: {},
-      selected: {}
+      sender: msg.sender,
+      port: msg.port,
+      type: "CHAINTYPE",
+      chaintype: state.chains[selected].type
     };
   })
 
+  const newChaintypeChange$ = xs.merge(newForkReq$, changeChain$)
+  .compose(sampleCombine(onion.state$))
+  .map(([msg, state]) => {
+    let name = /^native_/.test(msg.name) ? "native" : msg.name;
+    return ({
+      type: "CHAININFO",
+      port: msg.port,
+      sender: msg.sender,
+      chaintype: state.chains[msg.name].type,
+      selected: name
+    })
+  })
+  .debug("info")
+
+  const chainListChange$ = newForkReq$
+  .compose(sampleCombine(onion.state$))
+  .map(([msg, state]) => {
+    let chains = _.map(state.chains, (info, name) => {
+      if("owner" in info) {
+        if(info.owner !== msg.sender) return null
+        return "native";
+      } else {
+        return name;
+      }
+    })
+    .filter(name => !!name)
+
+    return ({
+      sender: msg.sender,
+      port: msg.port,
+      type: "CHAIN_LIST",
+      chains: chains
+    })
+  })
+
+  const req$ = xs.merge(dappreq$, dhereq$);
+
+  const isNative = (name) => !name || /^native_/.test(name)
+  // send requests to a fork
+  const forkReq$ = req$.filter(({ chainid }) => !isNative(chainid));
+
+  // send request back to the dapps web3
+  const nativeReq$ = req$.filter(({ chainid }) => isNative(chainid));
+
+  const dappres$ = Dapp.filter(msg => msg.type === "RES")
+
+  const forkres$ = Chain
+  .filter(msg => msg.type === "RES")
+  // .map(({ res, sender }) => ({ msg: res, sender }));
+
+  const forkNativeReq$ = Chain
+  .filter(msg => msg.type === "REQ")
+
+  const dappres2dapp$ = dappres$
+  .compose(sampleCombine(onion.state$))
+  .filter(([msg, state]) => {
+    let chainid = state.selected[msg.sender];
+    return isNative(chainid);
+    // let chain = state.chains[selected];
+    // console.log(state, msg);
+    // return chain.type === "native"
+  })
+  .map(([msg, state]) => msg)
+
+  const dappres2fork$ = dappres$
+  .compose(sampleCombine(onion.state$))
+  .filter(([msg, state]) => {
+    let chainid = state.selected[msg.sender];
+    return !isNative(chainid);
+  })
+  .map(([msg, state]) => _.assign({}, msg, {
+    chainid: state.selected[msg.sender]
+  }))
+
+  const res$ = xs.merge(dappres2dapp$, forkres$);
+
+  const initNativeReducer$ = DHE
+  .filter(msg => msg.type === "CONNECT")
+  .map(msg => function initNativeReducer(parent) {
+    parent.chains["native_" + msg.sender] = {
+      type: "native",
+      owner: msg.sender
+    }
+    parent.selected[msg.sender] = "native_" + msg.sender;
+    return _.assign({}, parent)
+  })
+
+  const selectForkReducer$ = newForkReq$
+  .map(msg => function selectForkReducer(parent) {
+    parent.selected[msg.sender] = msg.name;
+    parent.chains[msg.name] = {
+      type: "fork"
+    };
+    return _.assign({}, parent)
+  })
+
+  const changeChainReducer$ = changeChain$
+  // .compose(sampleCombine(onion.state$))
+  .map((msg) => function changeChainReducer(parent) {
+    parent.selected[msg.sender] = msg.name;
+    return _.assign({}, parent)
+  })
+
+  const initialStateReducer$ = xs.of(function initialStateReducer() {
+    return {
+      chains: {}, // fork_name => ???
+      selected: {} // sender => fork_name
+    };
+  });
+
   return {
-    Dapp: xs.merge(res$, nativeReq$), // {msg, sender}
-    DHE: xs.merge(res$),
-    Chain: forkReq$, // {msg, sender, chainid}
+    // {msg, sender}
+    Dapp: xs.merge(
+      res$,
+      nativeReq$,
+      forkNativeReq$
+    ),
+    DHE: xs.merge(
+      res$,
+      chaintypeRes$,
+      newChaintypeChange$,
+      chainListChange$
+    ),
+    // {msg, sender, chainid}
+    Chain: xs.merge(
+      forkReq$,
+      newForkReq$,
+      resetReq$,
+      dappres2fork$
+    ),
     onion: xs.merge(
-      initialStateReducer$
+      initialStateReducer$,
+      selectForkReducer$,
+      initNativeReducer$,
+      changeChainReducer$
     )
   };
 }
 
-run(onionify(main), {
-  Dapp: DappDriver,
-  DHE: DHEDriver,
-  Chain: ChainDriver
-})
+run(onionify(main), { Dapp: DappDriver, DHE: DHEDriver, Chain: ChainDriver });

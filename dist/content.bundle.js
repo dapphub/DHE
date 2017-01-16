@@ -204,7 +204,7 @@
 	    return msg.data.type === "BRIDGE_IN";
 	  }).map(function (msg) {
 	    return msg.data.msg;
-	  }).debug("REQ");
+	  });
 	};
 
 	// in$  - requests to the chain
@@ -217,8 +217,8 @@
 	        next: function next(_ref2) {
 	          var req = _ref2.req;
 
-	          // TODO - _sendAsync !!!
-	          _sendAsync(req, function (e, res) {
+	          var request = JSON.parse(JSON.stringify(req));
+	          _sendAsync(request, function (e, res) {
 	            listener.next({ type: "RES", res: res, req: req });
 	          });
 	        },

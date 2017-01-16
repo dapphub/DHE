@@ -97,7 +97,6 @@ export const DHExtension = (sources) => {
   // save blockNumber
   const blockNumberReducer$ = sources.Sniffer
     .filter(e => e.type === "RES")
-    .debug("ress")
     .filter(e => e.req.method === "eth_blockNumber")
     .map(e => function blockNumberReducer(parent) {
       let settings = parent.tabs.find(t => t.type === "settings");

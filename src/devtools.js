@@ -6,7 +6,6 @@ chrome.devtools.panels.create("DappHub","chrome.png", "panel.html", function(pan
   panel.onShown.addListener(function tmp(panelWindow) {
      panel.onShown.removeListener(tmp); // Run once only
     _window = panelWindow;
-    console.log(panelWindow);
 
     var port = chrome.extension.connect({
       name: "DappHub" + Math.random().toString().slice(2)

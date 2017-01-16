@@ -141,7 +141,6 @@ const MsgDriver = (in$) => {
   return fromEvent(window, "message")
   .filter(msg => msg.data.type === "BRIDGE_IN")
   .map(msg => msg.data.msg)
-  .debug("REQ")
 }
 
 // in$  - requests to the chain
@@ -153,8 +152,8 @@ const ChainDriver = (in$) => {
       in$
       .addListener({
         next: ({req}) => {
-          // TODO - _sendAsync !!!
-          _sendAsync(req, (e, res) => {
+          let request = JSON.parse(JSON.stringify(req));
+          _sendAsync(request, (e, res) => {
             listener.next({type: "RES", res, req})
           });
         },

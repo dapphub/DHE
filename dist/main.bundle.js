@@ -9079,7 +9079,7 @@
 	  // save blockNumber
 	  var blockNumberReducer$ = sources.Sniffer.filter(function (e) {
 	    return e.type === "RES";
-	  }).debug("ress").filter(function (e) {
+	  }).filter(function (e) {
 	    return e.req.method === "eth_blockNumber";
 	  }).map(function (e) {
 	    return function blockNumberReducer(parent) {

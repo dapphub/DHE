@@ -62,7 +62,6 @@
 	  panel.onShown.addListener(function tmp(panelWindow) {
 	    panel.onShown.removeListener(tmp); // Run once only
 	    _window = panelWindow;
-	    console.log(panelWindow);
 
 	    var port = chrome.extension.connect({
 	      name: "DappHub" + Math.random().toString().slice(2)
@@ -2091,7 +2090,7 @@
 /* 11 */
 /***/ function(module, exports, __webpack_require__) {
 
-	'use strict';
+	"use strict";
 
 	Object.defineProperty(exports, "__esModule", {
 	  value: true
@@ -2116,6 +2115,7 @@
 	  return function dheBridgeDriver(out$) {
 	    out$.addListener({
 	      next: function next(cmd) {
+	        console.log("out", cmd);
 	        onout && onout(cmd);
 	      },
 	      error: function error(e) {
