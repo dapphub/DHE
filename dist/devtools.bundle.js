@@ -40,13 +40,14 @@
 /******/ 	return __webpack_require__(0);
 /******/ })
 /************************************************************************/
-/******/ ([
-/* 0 */
+/******/ ({
+
+/***/ 0:
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
-	var _dheBridge = __webpack_require__(11);
+	var _dheBridge = __webpack_require__(717);
 
 	var _dheBridge2 = _interopRequireDefault(_dheBridge);
 
@@ -110,7 +111,8 @@
 	});
 
 /***/ },
-/* 1 */
+
+/***/ 1:
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
@@ -122,7 +124,8 @@
 	//# sourceMappingURL=index.js.map
 
 /***/ },
-/* 2 */
+
+/***/ 2:
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
@@ -1997,14 +2000,16 @@
 	//# sourceMappingURL=core.js.map
 
 /***/ },
-/* 3 */
+
+/***/ 3:
 /***/ function(module, exports, __webpack_require__) {
 
 	module.exports = __webpack_require__(4);
 
 
 /***/ },
-/* 4 */
+
+/***/ 4:
 /***/ function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(global, module) {'use strict';
@@ -2039,7 +2044,8 @@
 	/* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }()), __webpack_require__(5)(module)))
 
 /***/ },
-/* 5 */
+
+/***/ 5:
 /***/ function(module, exports) {
 
 	module.exports = function(module) {
@@ -2055,7 +2061,8 @@
 
 
 /***/ },
-/* 6 */
+
+/***/ 6:
 /***/ function(module, exports) {
 
 	'use strict';
@@ -2083,11 +2090,8 @@
 	};
 
 /***/ },
-/* 7 */,
-/* 8 */,
-/* 9 */,
-/* 10 */,
-/* 11 */
+
+/***/ 717:
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
@@ -2131,4 +2135,5 @@
 	}
 
 /***/ }
-/******/ ]);
+
+/******/ });

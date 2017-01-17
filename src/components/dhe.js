@@ -72,7 +72,7 @@ export const DHExtension = (sources) => {
         state: {
           selected: "native",
           options: ["native"], // TODO - rename to chains or chain names
-          defaultAccount: "0x2134",
+          defaultAccount: "",
           blockNumber: {
             "/web3": "blockNumber",
             params: [],

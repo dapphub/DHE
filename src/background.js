@@ -174,6 +174,7 @@ const ChainDriver = in$ => {
 // <- RES:
 //
 // ## DHE
+// -> NEW_FORK { name, port, sender }
 //
 // ## Chain
 // -> FORK_REQ
@@ -242,6 +243,14 @@ function main({ Dapp, DHE, Chain, onion }) {
     };
   })
 
+  const accountReducer$ = Dapp
+  .filter(msg => msg.type === "RES")
+  .filter(msg => msg.req.method === "eth_accounts")
+  .map(msg => function accountReducer(parent) {
+    parent.accounts = msg.res.result
+    return _.assign({}, parent);
+  })
+
   const newChaintypeChange$ = xs.merge(newForkReq$, changeChain$)
   .compose(sampleCombine(onion.state$))
   .map(([msg, state]) => {
@@ -251,7 +260,8 @@ function main({ Dapp, DHE, Chain, onion }) {
       port: msg.port,
       sender: msg.sender,
       chaintype: state.chains[msg.name].type,
-      selected: name
+      selected: name,
+      accounts: state.accounts
     })
   })
   .debug("info")
@@ -282,6 +292,18 @@ function main({ Dapp, DHE, Chain, onion }) {
   const isNative = (name) => !name || /^native_/.test(name)
   // send requests to a fork
   const forkReq$ = req$.filter(({ chainid }) => !isNative(chainid));
+
+  const requests2fork$ = forkReq$
+  .filter(msg => msg.req.method !== "eth_accounts")
+
+  const forkAccountsRes$ = forkReq$
+  .filter(msg => msg.req.method === "eth_accounts")
+  .compose(sampleCombine(onion.state$))
+  .map(([msg, state]) => _.assign({}, msg, {res: {
+    id: msg.req.id,
+    jsonrpc: "2.0",
+    result: state.accounts
+  }, type: "RES"}))
 
   // send request back to the dapps web3
   const nativeReq$ = req$.filter(({ chainid }) => isNative(chainid));
@@ -316,7 +338,7 @@ function main({ Dapp, DHE, Chain, onion }) {
     chainid: state.selected[msg.sender]
   }))
 
-  const res$ = xs.merge(dappres2dapp$, forkres$);
+  const res$ = xs.merge(dappres2dapp$, forkres$, forkAccountsRes$);
 
   const initNativeReducer$ = DHE
   .filter(msg => msg.type === "CONNECT")
@@ -338,6 +360,15 @@ function main({ Dapp, DHE, Chain, onion }) {
     return _.assign({}, parent)
   })
 
+  // If a new fork is created, make sure the accounts are updated based on the fork source
+  // const newForkAccountReq$ = newForkReq$
+  // .map(msg => ({type: "REQ", sender: msg.sender, req: {
+  //   id: Math.floor(Math.random() * 100000),
+  //   method: "eth_accounts",
+  //   jsonrpc: "2.0",
+  //   params: []
+  // }}))
+
   const changeChainReducer$ = changeChain$
   // .compose(sampleCombine(onion.state$))
   .map((msg) => function changeChainReducer(parent) {
@@ -348,7 +379,8 @@ function main({ Dapp, DHE, Chain, onion }) {
   const initialStateReducer$ = xs.of(function initialStateReducer() {
     return {
       chains: {}, // fork_name => ???
-      selected: {} // sender => fork_name
+      selected: {}, // sender => fork_name
+      accounts: ["0x0000000000000000000000000000000000000000"]
     };
   });
 
@@ -367,7 +399,7 @@ function main({ Dapp, DHE, Chain, onion }) {
     ),
     // {msg, sender, chainid}
     Chain: xs.merge(
-      forkReq$,
+      requests2fork$,
       newForkReq$,
       resetReq$,
       dappres2fork$
@@ -376,7 +408,8 @@ function main({ Dapp, DHE, Chain, onion }) {
       initialStateReducer$,
       selectForkReducer$,
       initNativeReducer$,
-      changeChainReducer$
+      changeChainReducer$,
+      accountReducer$
     )
   };
 }

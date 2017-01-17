@@ -100,16 +100,18 @@ export const Settings = ({ DOM, onion, Sniffer }) => {
           }),
           button(".setDefaultAccount", "submit")
         ]),
-        json(state.state)
+        // json(state.state)
       ])
   );
 
-  const defaultAccountReducer$ = DOM
+  const defaultAccountChainge$ = DOM
     .select(".setDefaultAccount")
     .events("click")
     .compose(sampleCombine(defaultAccountChange$))
-    .map(
-      ([ e, value ]) => function defaultAccountReducer(parent) {
+    .map(([e, value]) => value)
+
+  const defaultAccountReducer$ = defaultAccountChange$
+    .map(value => function defaultAccountReducer(parent) {
         parent.state.defaultAccount = value;
         return _.assign({}, parent);
       }
@@ -152,6 +154,7 @@ export const Settings = ({ DOM, onion, Sniffer }) => {
   .map(msg => function chaininfoReducer(parent) {
     parent.state.selected = msg.selected;
     parent.state.chaintype = msg.chaintype;
+    parent.state.defaultAccount = msg.accounts[0];
     return _.assign({}, parent);
   })
 
