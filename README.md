@@ -1,4 +1,4 @@
-last update: 29.12.2016
+last update: 17.01.2017
 
 ## Development
 #### SetUp:
@@ -85,14 +85,16 @@ Main entrypoing for the dev-tools-panel view.
 
 # TODOs
 
-  * toggle fork/ forward transactions to real blockchain
-  * settings - main account/ current fork
   * custom contract view
-  * reset filters once a frontend disconnects
+
+## won't Do:
   * address view - deploy new instances
 
 ## Changelog
 
+  * reset filters once a frontend disconnects
+  * toggle fork/ forward transactions to real blockchain
+  * settings - main account/ current fork
   * fork reset
   * **resolve testrpc bug where accounts don't get updated**
   * make web3 calls in address view work
