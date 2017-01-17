@@ -53,7 +53,8 @@ function setUpEngine({db, forkSource}) {
   var gethApiDouble = new GethApiDouble({
     fork: forkSource,
     db,
-    mnemonic: "secret"
+    mnemonic: "secret",
+    unlock_all: true
   });
 
   engine.manager = gethApiDouble;

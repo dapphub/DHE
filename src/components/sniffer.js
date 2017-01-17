@@ -119,6 +119,7 @@ export var Sniffer = (sources) => {
   // Filter out uninteresting information
   const filter = ["eth_syncing", "eth_getFilterChanges"]
   const filtered$ = sources.Sniffer
+  .filter(comm => comm.type === "RES")
   .filter(l => filter.indexOf(l.req.method) === -1)
 
   const lines = isolate(Children, 'history')(sources);

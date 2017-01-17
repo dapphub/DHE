@@ -32,17 +32,20 @@ const main = (sources) => {
   const sniffer$ = init$
   .map(i => i ? ({type: "start", tabId}) : ({}))
 
-  const web3$ = dhExtension.web3$
-  .map(req => ({type: "DH_REQ", req}))
+  // const web3$ = dhExtension.web3$
+  // .map(req => ({type: "REQ", req}))
 
   var MV = {
     DOM: vdom$,
     HTTP: dhExtension.HTTP,
-    Sniffer: xs.merge(sniffer$, web3$),
+    Sniffer: xs.merge(
+      sniffer$,
+      // web3$
+    ),
     onion: dhExtension.onion
   }
 
-  return MV;
+  return dhExtension;
 }
 
 window.main = onionify(main);

@@ -6,7 +6,8 @@ var config = module.exports = {
        main: './src/main.js',
        content: './src/content.js',
        sandbox: './src/sandbox.js',
-       background: './src/background.js'
+       background: './src/background.js',
+       devtools: './src/devtools.js'
      },
      output: {
          path: './dist/',
