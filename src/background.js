@@ -16,7 +16,7 @@ import _ from "lodash";
 
 var name2tabid = {};
 
-const dheManager = msg => {
+const dheManager = _.curry((chrome, msg) => {
   // Handle request from devtools
   chrome.extension.onConnect.addListener(function(port) {
     const onDHEMsg = function(message, _port) {
@@ -31,11 +31,11 @@ const dheManager = msg => {
     port.onMessage.addListener(onDHEMsg);
     port.onDisconnect.addListener(onDisconnect);
   });
-};
+});
 
 // in$  - messages, which should be send to DHE
 // out$ - messages received from DHE
-const DappDriver = in$ => {
+const DappDriver = _.curry((chrome, console, in$) => {
   in$.addListener({
     next: msg => {
       chrome.tabs.sendMessage(msg.sender, _.omit(msg, [ "sender", "chainid" ]));
@@ -52,9 +52,9 @@ const DappDriver = in$ => {
     },
     stop: () => {}
   });
-};
+});
 
-const DHEDriver = in$ => {
+const DHEDriver = _.curry((chrome, console, in$) => {
   var name2sender = {};
   var sender2port = {};
 
@@ -70,7 +70,7 @@ const DHEDriver = in$ => {
 
   return xs.create({
     start: listener => {
-      dheManager(msg => {
+      dheManager(chrome, msg => {
         if (msg.type === "CONNECT") {
           // TODO rename tabid to sender?
           name2sender[msg.port.name] = msg.tabid;
@@ -88,9 +88,9 @@ const DHEDriver = in$ => {
     },
     stop: () => {}
   });
-};
+});
 
-const ChainDriver = in$ => {
+const ChainDriver = _.curry((console, in$) => {
   // const forkSource = "http://localhost:8545";
   const db = levelup("/db", { db: level });
   // const fork = setUpEngine({ forkSource, db });
@@ -163,7 +163,7 @@ const ChainDriver = in$ => {
     },
     stop: () => {}
   });
-};
+});
 
 // TODO - make an consistent msg format
 // ## Dapp
@@ -414,8 +414,12 @@ function main({ Dapp, DHE, Chain, onion }) {
   };
 }
 
-function webpackMain(Dapp=DappDriver, DHE=DHEDriver, Chain=ChainDriver) {
-  run(onionify(main), { Dapp, DHE, Chain });
+function webpackMain(chrome, console) {
+  run(onionify(main), {
+    Dapp: DappDriver(chrome, console),
+    DHE: DHEDriver(chrome, console),
+    Chain: ChainDriver(console)
+  });
 }
 
 module.exports = {
