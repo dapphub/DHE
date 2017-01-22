@@ -1,3 +1,8 @@
-import {setupPanel} from './devtools.js'
+import _ from "lodash";
+import {webpackMain} from './devtools.js'
 
-chrome.devtools.panels.create("DappHub","chrome.png", "panel.html", setupPanel)
+try {
+  webpackMain(chrome, console, Math)
+} catch (e) {
+  console.err('DappHub Explorer developer tab error: ' + e);
+}

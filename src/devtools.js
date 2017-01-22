@@ -1,10 +1,13 @@
 import DHEBridge from './dhe-bridge.js';
 import xs from 'xstream';
+
 var _window;
 
 // Dependency injecting Math so we can force .random() to return
 // a particular value if we want.
-function setupPanel(panel, chrome=chrome, Math=Math) {
+// Not using default arguments here (instead planning to use currying) because
+// Chrome apparently cares about the arity of the function it's given. :p
+const setupPanel = _.curry((chrome, console, Math, panel) => {
   panel.onShown.addListener(function tmp(panelWindow) {
      panel.onShown.removeListener(tmp); // Run once only
     _window = panelWindow;
@@ -53,8 +56,14 @@ function setupPanel(panel, chrome=chrome, Math=Math) {
     });
 
   });
+});
+
+function webpackMain(chrome, console, Math) {
+  chrome.devtools.panels.create("DappHub","chrome.png", "panel.html",
+    setupPanel(chrome, console, Math))
 }
 
 module.exports = {
-  setupPanel
+  setupPanel,
+  webpackMain
 }
