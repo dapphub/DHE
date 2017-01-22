@@ -2,7 +2,9 @@ import DHEBridge from './dhe-bridge.js';
 import xs from 'xstream';
 var _window;
 
-chrome.devtools.panels.create("DappHub","chrome.png", "panel.html", function(panel) {
+// Dependency injecting Math so we can force .random() to return
+// a particular value if we want.
+function setupPanel(panel, chrome=chrome, Math=Math) {
   panel.onShown.addListener(function tmp(panelWindow) {
      panel.onShown.removeListener(tmp); // Run once only
     _window = panelWindow;
@@ -51,5 +53,8 @@ chrome.devtools.panels.create("DappHub","chrome.png", "panel.html", function(pan
     });
 
   });
-});
+}
 
+module.exports = {
+  setupPanel
+}
