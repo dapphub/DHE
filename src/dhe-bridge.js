@@ -8,7 +8,7 @@ import xs from 'xstream';
 export default function DHEBridge({
   onout,
   in$
-}) {
+}, console=console) {
   return function dheBridgeDriver(out$) {
     out$
     .addListener({
