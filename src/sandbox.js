@@ -8,12 +8,8 @@ import DHEBridge from './dhe-bridge.js';
 import {Router} from './router.js';
 require("./style.scss");
 
-
 import {AddrView} from './components/addr.js';
 import {DHExtension} from './components/dhe.js';
-
-var web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545"))
-var fork = web3.currentProvider;
 
 // This should manage the current chain endpoint
 // Chain endpoints must be one of the following:
@@ -47,7 +43,8 @@ const main = (sources) => {
 // TODO - this should be called whenever dhe triggers some event
 const onout = Router.process('the one and only client');
 
-const in$ = xs.create({
+// TODO - Streamify? My brain still thinks in closures.
+const in$Make = (fork) => xs.create({
   start: listener => {
     Router.registerClient('the one and only client', msg => {
       listener.next(msg)
@@ -76,12 +73,9 @@ const out$ = xs
   },
   res: "0x123"})
 
-
-run(onionify(main), {
-  DOM: makeDOMDriver('#app'),
-  HTTP: makeHTTPDriver(),
-  Sniffer: DHEBridge({ onout, in$: xs.merge(
-    in$,
-    out$
-  ) }),
-});
+module.exports = {
+  main,
+  onout,
+  in$Make,
+  out$
+};
