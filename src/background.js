@@ -414,4 +414,15 @@ function main({ Dapp, DHE, Chain, onion }) {
   };
 }
 
-run(onionify(main), { Dapp: DappDriver, DHE: DHEDriver, Chain: ChainDriver });
+function webpackMain(Dapp=DappDriver, DHE=DHEDriver, Chain=ChainDriver) {
+  run(onionify(main), { Dapp, DHE, Chain });
+}
+
+module.exports = {
+  ChainDriver,
+  DappDriver,
+  DHEDriver,
+  dheManager,
+  main,
+  webpackMain
+}

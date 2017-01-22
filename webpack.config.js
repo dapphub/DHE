@@ -6,7 +6,7 @@ var config = module.exports = {
        main: './src/main.js',
        content: './src/content.js',
        sandbox: './src/sandbox.webpack.js',
-       background: './src/background.js',
+       background: './src/background.webpack.js',
        devtools: './src/devtools.js'
      },
      output: {
