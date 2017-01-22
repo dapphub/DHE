@@ -6,7 +6,6 @@ import {Memepool} from './memepool.js';
 import onionify from 'cycle-onionify';
 import DHEBridge from './dhe-bridge.js';
 import {Router} from './router.js';
-require("./style.scss");
 
 import {AddrView} from './components/addr.js';
 import {DHExtension} from './components/dhe.js';
@@ -73,9 +72,26 @@ const out$ = xs
   },
   res: "0x123"})
 
+// Dependency-injected entrypoint wrapper to facilitate virtual testing of the
+// whole plugin later on.
+function webpackMain(Web3=Web3, console=console, main=main, in$Make=in$Make) {
+    var web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545"))
+    var fork = web3.currentProvider;
+
+    run(onionify(main), {
+      DOM: makeDOMDriver('#app'),
+      HTTP: makeHTTPDriver(),
+      Sniffer: DHEBridge({ onout, in$: xs.merge(
+        in$Make(fork),
+        out$
+      ) }),
+    });
+}
+
 module.exports = {
   main,
   onout,
   in$Make,
-  out$
+  out$,
+  webpackMain
 };
