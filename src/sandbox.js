@@ -15,109 +15,22 @@ import {DHExtension} from './components/dhe.js';
 var web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545"))
 var fork = web3.currentProvider;
 
-  // This should manage the current chain endpoint
-  // Chain endpoints must be one of the following:
-  // 1. passive
-  //    no fork, just sniff the input and use native web3
-  //
-  // 2. native fork
-  //    fork off the native web3 provided by the client
-  //    e.g. Metamask
-  //
-  // 3. custom fork from rpc
-  //    fork off a given rpc endpoint provided by the user
-  //
-  // 4. custom semantic rpc fork
-  //    fork off a given semantic pointer
-  //    Semantic pointer which should be supported are:
-  //    rposen, morden, livenet...
-
-// const FakeSniffer = (in$) => {
+// This should manage the current chain endpoint
+// Chain endpoints must be one of the following:
+// 1. passive
+//    no fork, just sniff the input and use native web3
 //
-//   //
-//   // var {fork, id} = Router.newFork()
-//   var web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545"))
-//   var fork = web3.currentProvider;
+// 2. native fork
+//    fork off the native web3 provided by the client
+//    e.g. Metamask
 //
-//   // TODO
-//   //       [ ] modularize fork/ chain selection
-//   //       [x] analyze chain type
-//   //       [x] push chaintype, forktype to DHE
+// 3. custom fork from rpc
+//    fork off a given rpc endpoint provided by the user
 //
-//   var _listener;
-//   // Do all the chain related analytics
-//   setTimeout(() => {
-//     _listener.next({
-//       type: "CHAINTYPE",
-//       chaintype: "passive"
-//     })
-//     web3.eth.getBlock(0, (err, res) => {
-//       let types = {
-//         "4194102368": "ropsen",
-//         "1dcc4de8de": "eth"
-//       }
-//       _listener.next({
-//         type: "CHAINTYPE",
-//         chaintype: `passive > ${types[res.hash.slice(2,12)]}`
-//       })
-//     })
-//   }, 1000)
-//
-//   const out$ = xs
-//   .periodic(1000)
-//   // .of(1)
-//   .mapTo({
-//     type: "RES",
-//     req: {
-//       "jsonrpc":"2.0",
-//       "method":"eth_call",
-//       "params":[{
-//         "data":"0x4579268a",
-//         "to":"0xd43a1e8b374a17d5556ccca1c42353cc18b55b7a"
-//       }],
-//       "id":1
-//     },
-//     res: "0x123"})
-//
-//   const resp$ = xs.create({
-//     start: listener => {
-//       _listener = listener;
-//       in$.addListener({
-//         next: r => {
-//           const handleRequest = (e) => {
-//             switch(e.type) {
-//               case "REQ":
-//                 fork.sendAsync(e.req, (err, res) => {
-//                   let resp = {type: "RES", res, req: e.req};
-//                   listener.next(_.assign({}, e, resp));
-//                 })
-//                 break;
-//               case "DH_RESET_FORK":
-//                 fork = Router.resetFork(id);
-//                 break;
-//               case "NEW_FORK":
-//                 fork = Router.newFork(e);
-//                 break;
-//               default:
-//                 console.log("NO SNIFFER HANDLER FOR", e);
-//             }
-//           }
-//           if(Array.isArray(r)) {
-//             r.forEach(handleRequest);
-//           } else {
-//             handleRequest(r);
-//           }
-//         },
-//         error: e => console.log(e),
-//         complete: e => console.log(e)
-//       })
-//     },
-//     stop: () => {}
-//   })
-//
-//   return xs.merge(out$, resp$)
-//
-// }
+// 4. custom semantic rpc fork
+//    fork off a given semantic pointer
+//    Semantic pointer which should be supported are:
+//    rposen, morden, livenet...
 
 const main = (sources) => {
 
@@ -150,7 +63,6 @@ const in$ = xs.create({
 // Fake incomming sniffer msgs
 const out$ = xs
 .periodic(1000)
-// .of(1)
 .mapTo({
   type: "RES",
   req: {
