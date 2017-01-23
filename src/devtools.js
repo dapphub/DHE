@@ -31,7 +31,6 @@ const setupPanel = _.curry((chrome, console, Math, panel) => {
           if(Array.isArray(data.req)) {
             msgs = data.req.map( (e, i) => ({type: "RES", req: e, res: data.res[i]}))
           } else {
-            console.log(data);
             msgs = [data]
           }
 

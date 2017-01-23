@@ -13,7 +13,6 @@ export default function DHEBridge({
     out$
     .addListener({
       next: (cmd) => {
-        console.log("out", cmd);
         onout && onout(cmd);
       },
       error: e => console.error(e),

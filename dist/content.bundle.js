@@ -47,15 +47,15 @@
 
 	"use strict";
 
-	var _xstream = __webpack_require__(1);
+	var _xstream = __webpack_require__(2);
 
 	var _xstream2 = _interopRequireDefault(_xstream);
 
-	var _fromEvent = __webpack_require__(716);
+	var _fromEvent = __webpack_require__(717);
 
 	var _fromEvent2 = _interopRequireDefault(_fromEvent);
 
-	var _xstreamRun = __webpack_require__(8);
+	var _xstreamRun = __webpack_require__(9);
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -219,6 +219,10 @@
 	          var req = _ref2.req;
 
 	          var request = JSON.parse(JSON.stringify(req));
+	          // Set default account if no from value is given
+	          if (request.method === "eth_call" || request.method === "eth_sendTransaction") {
+	            if (!request.params[0].from || request.params[0].from === "") request.params[0].from = web3.eth.defaultAccount;
+	          }
 	          _sendAsync(request, function (e, res) {
 	            listener.next({ type: "RES", res: res, req: req });
 	          });
@@ -300,11 +304,11 @@
 
 /***/ },
 
-/***/ 1:
+/***/ 2:
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
-	var core_1 = __webpack_require__(2);
+	var core_1 = __webpack_require__(3);
 	exports.Stream = core_1.Stream;
 	exports.MemoryStream = core_1.MemoryStream;
 	Object.defineProperty(exports, "__esModule", { value: true });
@@ -313,7 +317,7 @@
 
 /***/ },
 
-/***/ 2:
+/***/ 3:
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
@@ -322,7 +326,7 @@
 	    function __() { this.constructor = d; }
 	    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 	};
-	var symbol_observable_1 = __webpack_require__(3);
+	var symbol_observable_1 = __webpack_require__(4);
 	var NO = {};
 	function noop() { }
 	function copy(a) {
@@ -2189,15 +2193,15 @@
 
 /***/ },
 
-/***/ 3:
+/***/ 4:
 /***/ function(module, exports, __webpack_require__) {
 
-	module.exports = __webpack_require__(4);
+	module.exports = __webpack_require__(5);
 
 
 /***/ },
 
-/***/ 4:
+/***/ 5:
 /***/ function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(global, module) {'use strict';
@@ -2206,7 +2210,7 @@
 	  value: true
 	});
 
-	var _ponyfill = __webpack_require__(6);
+	var _ponyfill = __webpack_require__(7);
 
 	var _ponyfill2 = _interopRequireDefault(_ponyfill);
 
@@ -2229,11 +2233,11 @@
 
 	var result = (0, _ponyfill2['default'])(root);
 	exports['default'] = result;
-	/* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }()), __webpack_require__(5)(module)))
+	/* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }()), __webpack_require__(6)(module)))
 
 /***/ },
 
-/***/ 5:
+/***/ 6:
 /***/ function(module, exports) {
 
 	module.exports = function(module) {
@@ -2250,7 +2254,7 @@
 
 /***/ },
 
-/***/ 6:
+/***/ 7:
 /***/ function(module, exports) {
 
 	'use strict';
@@ -2279,12 +2283,12 @@
 
 /***/ },
 
-/***/ 8:
+/***/ 9:
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
-	var base_1 = __webpack_require__(9);
-	var xstream_adapter_1 = __webpack_require__(10);
+	var base_1 = __webpack_require__(10);
+	var xstream_adapter_1 = __webpack_require__(11);
 	/**
 	 * Takes a `main` function and circularly connects it to the given collection
 	 * of driver functions.
@@ -2362,7 +2366,7 @@
 
 /***/ },
 
-/***/ 9:
+/***/ 10:
 /***/ function(module, exports) {
 
 	"use strict";
@@ -2478,11 +2482,11 @@
 
 /***/ },
 
-/***/ 10:
+/***/ 11:
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
-	var xstream_1 = __webpack_require__(1);
+	var xstream_1 = __webpack_require__(2);
 	var XStreamAdapter = {
 	    adapt: function (originStream, originStreamSubscribe) {
 	        if (XStreamAdapter.isValidStream(originStream)) {
@@ -2529,11 +2533,11 @@
 
 /***/ },
 
-/***/ 716:
+/***/ 717:
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
-	var core_1 = __webpack_require__(2);
+	var core_1 = __webpack_require__(3);
 	var DOMEventProducer = (function () {
 	    function DOMEventProducer(node, eventType, useCapture) {
 	        this.node = node;

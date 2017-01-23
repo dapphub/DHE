@@ -153,6 +153,11 @@ const ChainDriver = (in$) => {
       .addListener({
         next: ({req}) => {
           let request = JSON.parse(JSON.stringify(req));
+          // Set default account if no from value is given
+          if(request.method === "eth_call" || request.method === "eth_sendTransaction") {
+            if(!request.params[0].from || request.params[0].from === "")
+              request.params[0].from = web3.eth.defaultAccount;
+          }
           _sendAsync(request, (e, res) => {
             listener.next({type: "RES", res, req})
           });

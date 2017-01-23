@@ -184,6 +184,7 @@ const ChainDriver = _.curry((console, in$) => {
 // <- RES
 //
 // ## onion
+// TODO - imidiatelly notify DHE for the defaultAccount and height
 function main({ Dapp, DHE, Chain, onion }) {
 
   // TODO - get msg type here right
@@ -191,8 +192,11 @@ function main({ Dapp, DHE, Chain, onion }) {
     .filter(msg => msg.type === "REQ")
     .compose(sampleCombine(onion.state$))
     .map(
-      ([ msg, state ]) =>
-        _.assign({}, msg, { chainid: state.selected[msg.sender] })
+      ([ msg, state ]) => {
+        let msg_ = _.assign({}, msg, { chainid: state.selected[msg.sender] })
+        if(msg_.req.method === "eth_call" || msg_.req.method === "eth_sendTransaction") msg_.req.params[0].from = state.accounts[0];
+        return msg_;
+      }
     )
 
   const dhereq$ = DHE
@@ -201,7 +205,7 @@ function main({ Dapp, DHE, Chain, onion }) {
     .map(
       ([ { req, sender }, state ]) =>
         ({ type: "REQ", req, sender, chainid: state.selected[sender] })
-    );
+    )
 
   const chaintypeReq$ = DHE
   .filter(msg => msg.type === "GET_CHAINTYPE")
@@ -306,7 +310,7 @@ function main({ Dapp, DHE, Chain, onion }) {
   }, type: "RES"}))
 
   // send request back to the dapps web3
-  const nativeReq$ = req$.filter(({ chainid }) => isNative(chainid));
+  const nativeReq$ = req$.filter(({ chainid }) => isNative(chainid))
 
   const dappres$ = Dapp.filter(msg => msg.type === "RES")
 

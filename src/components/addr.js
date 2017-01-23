@@ -19,6 +19,7 @@ var ABI = ({DOM, onion, Sniffer}) => {
   .filter(e => e.req.method === "eth_call" || e.req.method === "eth_sendTransaction")
   .compose(sampleCombine(onion.state$))
   .filter(([resp, state]) => resp.req.params[0].data.slice(2,10) === state.signature)
+  .filter(([resp]) => resp.res.result.slice(2) !== "")
   .map(([resp, state]) => state.decodeOutputs(resp.res.result && resp.res.result.slice(2)))
   .startWith([])
 
@@ -116,20 +117,18 @@ export const AddrView = ({DOM, onion, Sniffer}) => {
 
   const web3$ = tab.web3$
   .compose(sampleCombine(onion.state$))
-  .debug("state")
   .map(([{value, fabi}, {state}]) => ({
     type: "REQ",
     req: {
       id: 1,
       method: fabi.constant ? "eth_call" : "eth_sendTransaction",
       params: [{
-        from: "0xb007ed86a7198a7bfe97b4dcf291bceabe40852d", // TODO - dynamic
         to: state.address,
-        gas: "0x76c0",
-        gasPrice: "0x9184e72a000",
+        gas: "0x2dc6c0",
+        gasPrice: "0x4a817c800",
         value: "0x0",
         data: "0x"+fabi.signature+fabi.encodeInputs(value)
-      }]
+      }, "latest"]
     }
   }))
 

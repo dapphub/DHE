@@ -11,6 +11,7 @@ import {
 import {
   Settings
 } from './settings.js';
+import sampleCombine from 'xstream/extra/sampleCombine'
 import xs from 'xstream';
 import utils from 'web3/lib/utils/utils.js';
 import _ from 'lodash';
@@ -115,7 +116,7 @@ export const DHExtension = (sources) => {
   // Set Up Default Settings
   const setUpState$ = xs
   // .of()
-  .periodic(1000)
+  .periodic(4000)
   .mapTo({
     type: "REQ",
     req: {
@@ -142,6 +143,14 @@ export const DHExtension = (sources) => {
     })
     .filter(e => e.id > 0)
     .map(e => e.cmd)
+    .compose(sampleCombine(sources.onion.state$))
+    .map(([cmd, state]) => {
+      if(!(cmd.req.method === "eth_call" || cmd.req.method === "eth_sendTransaction")) return cmd;
+      let settings = state.tabs.find(t => t.name === "settings").state;
+      let defaultAccount = settings.defaultAccount;
+      cmd.req.params[0].from = defaultAccount;
+      return cmd;
+    })
 
   const reducer$ = xs.merge(
     initState$,
