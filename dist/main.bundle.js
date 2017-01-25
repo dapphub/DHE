@@ -37524,18 +37524,6 @@
 	    return Array.isArray(t) || t.type !== "REQ";
 	  });
 
-	  notWeb3Requests$.addListener({
-	    next: function next(e) {
-	      return console.log("17", e);
-	    },
-	    error: function error(e) {
-	      return console.log(e);
-	    },
-	    complete: function complete(e) {
-	      return console.log(e);
-	    }
-	  });
-
 	  var initState$ = _xstream2.default
 	  // .of()
 	  .of(function initStateReducer() {
@@ -71615,7 +71603,7 @@
 	    return !(_typeof(e.res) === "object" && "error" in e.res);
 	  }).filter(function (e) {
 	    return e.req.method === "eth_call" || e.req.method === "eth_sendTransaction";
-	  }).debug("response").compose((0, _sampleCombine2.default)(onion.state$)).filter(function (_ref2) {
+	  }).compose((0, _sampleCombine2.default)(onion.state$)).filter(function (_ref2) {
 	    var _ref3 = _slicedToArray(_ref2, 2),
 	        resp = _ref3[0],
 	        state = _ref3[1];

@@ -103,6 +103,11 @@ const ChainDriver = _.curry((console, in$) => {
         next: (msg) => {
           switch(msg.type) {
             case "REQ":
+              if(msg.req.method === "eth_sendTransaction") {
+                msg.req.params = [
+                  _.assign({}, _.omit(msg.req.params[0], ['gasPrice', 'value']), {})
+                ]
+              }
               chains[msg.chainid].chain.sendAsync(msg.req, (err, res) => {
                 var response = { type: "RES", res, req: msg.req, sender: msg.sender };
                 listener.next(response);
@@ -295,7 +300,8 @@ function main({ Dapp, DHE, Chain, onion }) {
 
   const isNative = (name) => !name || /^native_/.test(name)
   // send requests to a fork
-  const forkReq$ = req$.filter(({ chainid }) => !isNative(chainid));
+  const forkReq$ = req$
+  .filter(({ chainid }) => !isNative(chainid))
 
   const requests2fork$ = forkReq$
   .filter(msg => msg.req.method !== "eth_accounts")
