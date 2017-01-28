@@ -4,7 +4,7 @@ import {
 } from '../memepool.js';
 import {
   AddrView
-} from './addr.js';
+} from 'dh-core/components/addr';
 import {
   Sniffer
 } from './sniffer.js';
@@ -18,7 +18,7 @@ import _ from 'lodash';
 import {
   MakeTabChildren,
   Tabs
-} from '../treeview.js';
+} from 'dh-core/treeview';
 
 export const DHExtension = (sources) => {
 

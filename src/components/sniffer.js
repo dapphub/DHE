@@ -6,7 +6,7 @@ import {pick, mix, isolateSource as isolateOnionSource, isolateSink as isolateOn
 import isolate from '@cycle/isolate';
 import sampleCombine from 'xstream/extra/sampleCombine'
 import xs from 'xstream';
-import {member, json} from '../helper.js';
+import {member, json} from 'dh-core/helper';
 
 
 var formatSniffLine = (data, memep = {}) => {

@@ -22,7 +22,17 @@ If you modified something or experience errors restart the extension:
 
 TODO: simplify this
 
-buld the sources with `webpack --watch`
+You will also need to install the dh-core npm package. As this is not currently released, you will need to:
+
+```bash
+git clone git@github.com:nexusdev/DH-core.git
+cd DH-core
+npm link
+cd ../DHE
+npm link dh-core
+```
+
+build the sources with `webpack --watch`
 
 ## Architecture
 

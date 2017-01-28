@@ -3,7 +3,7 @@ import xs from "xstream";
 import _ from "lodash";
 import sampleCombine from "xstream/extra/sampleCombine";
 import dropRepeats from "xstream/extra/dropRepeats";
-import { json, member, componentSwitch } from "../helper.js";
+import { json, member, componentSwitch } from "dh-core/helper";
 import utils from "web3/lib/utils/utils.js";
 
 export const Settings = ({ DOM, onion, Sniffer }) => {

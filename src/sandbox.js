@@ -7,7 +7,7 @@ import onionify from 'cycle-onionify';
 import DHEBridge from './dhe-bridge.js';
 import {Router} from './router.js';
 
-import {AddrView} from './components/addr.js';
+import {AddrView} from 'dh-core/components/addr';
 import {DHExtension} from './components/dhe.js';
 
 // This should manage the current chain endpoint
