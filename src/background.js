@@ -199,7 +199,13 @@ function main({ Dapp, DHE, Chain, onion }) {
     .map(
       ([ msg, state ]) => {
         let msg_ = _.assign({}, msg, { chainid: state.selected[msg.sender] })
-        if(msg_.req.method === "eth_call" || msg_.req.method === "eth_sendTransaction") msg_.req.params[0].from = state.accounts[0];
+        if(
+          (msg_.req.method === "eth_call" ||
+          msg_.req.method === "eth_sendTransaction") &&
+          state.accounts[0] !== "0x0000000000000000000000000000000000000000"
+        ) {
+            msg_.req.params[0].from = state.accounts[0];
+          }
         return msg_;
       }
     )
