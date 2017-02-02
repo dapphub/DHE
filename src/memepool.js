@@ -25,10 +25,11 @@ export var Memepool = (sources) => {
 
       case "res":
         const data = act.data;
-        const contractName = Object.keys(data.lock.contracts).find(name => data.lock.contracts[name].address === data.address);
-        const contractDef = data.lock.contracts[contractName];
-        data.name = contractName;
-        data.contract = new Contract(contractDef, contractDef.contract_name);
+        const contract_name = data.contract_type.contract_name
+        // .find(name => data.lock.contracts[name].address === data.address);
+        const contract_type = data.contract_type;
+        data.name = contract_name;
+        data.contract = new Contract(contract_type, contract_type.contract_name);
         state.addrs[data.address] = data;
         break;
 

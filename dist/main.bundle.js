@@ -37780,30 +37780,26 @@
 	  var memepool$ = _xstream2.default.merge(res$, req$).fold(function (state, act) {
 	    state.next = null;
 
-	    (function () {
-	      switch (act.type) {
+	    switch (act.type) {
 
-	        case "res":
-	          var data = act.data;
-	          var contractName = Object.keys(data.lock.contracts).find(function (name) {
-	            return data.lock.contracts[name].address === data.address;
-	          });
-	          var contractDef = data.lock.contracts[contractName];
-	          data.name = contractName;
-	          data.contract = new _contract2.default(contractDef, contractDef.contract_name);
-	          state.addrs[data.address] = data;
-	          break;
+	      case "res":
+	        var data = act.data;
+	        var contract_name = data.contract_type.contract_name;
+	        // .find(name => data.lock.contracts[name].address === data.address);
+	        var contract_type = data.contract_type;
+	        data.name = contract_name;
+	        data.contract = new _contract2.default(contract_type, contract_type.contract_name);
+	        state.addrs[data.address] = data;
+	        break;
 
-	        case "req":
-	          var addr = act.addr;
-	          if (!(addr in state.known)) {
-	            state.next = addr;
-	            state.known[addr] = true;
-	          }
-	          break;
-	      }
-	    })();
-
+	      case "req":
+	        var addr = act.addr;
+	        if (!(addr in state.known)) {
+	          state.next = addr;
+	          state.known[addr] = true;
+	        }
+	        break;
+	    }
 	    return state;
 	  }, { addrs: {}, known: {}, next: null });
 
