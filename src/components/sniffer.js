@@ -60,6 +60,7 @@ var formatSniffLine = (data, memep = {}) => {
       tx,
       sniffline: true,
       open: data.expanded,
+      loading: !data.res,
       ["id"+data.req.id]: true
     },
   }, line)
@@ -77,6 +78,8 @@ const Line = function(sources) {
   .map(([state, memep]) => formatSniffLine(state, memep))
 
   const reducer$ = expanded$
+  .compose(sampleCombine(sources.onion.state$))
+  .filter(([_, state]) => !!state.res)
   .map(v => function lineExpandedReducer(parent) {
     return _.assign({}, parent, {
       expanded: !parent.expanded
@@ -119,7 +122,7 @@ export var Sniffer = (sources) => {
   // Filter out uninteresting information
   const filter = ["eth_syncing", "eth_getFilterChanges"]
   const filtered$ = sources.Sniffer
-  .filter(comm => comm.type === "RES")
+  .filter(comm => comm.type === "RES" || comm.type === "REQ")
   .filter(l => filter.indexOf(l.req.method) === -1)
 
   const lines = isolate(Children, 'history')(sources);
@@ -139,8 +142,23 @@ export var Sniffer = (sources) => {
   .compose(sampleCombine(toggle$))
   .filter(([_, toggle]) => toggle)
   .map(([comm]) => function logReducer(parent) {
-    console.log(parent);
-    const history = parent.history.concat(comm)
+    // console.log(parent);
+    var history = [];
+    if(comm.type === "RES") {
+      var knownIndex = parent.history
+      .findIndex(el => el.req && el.req.id === comm.req.id)
+      if(knownIndex > -1) {
+        history = parent.history
+        .slice(0, knownIndex)
+        .concat([comm])
+        .concat(parent.history.slice(knownIndex + 1))
+      } else {
+        console.log(parent.history, comm);
+        history = parent.history.concat(comm)
+      }
+    } else if(comm.type === "REQ") {
+      history = parent.history.concat(comm)
+    }
     return _.assign({}, parent, {history});
   })
 

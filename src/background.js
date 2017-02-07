@@ -403,6 +403,7 @@ function main({ Dapp, DHE, Chain, onion }) {
     ),
     DHE: xs.merge(
       res$,
+      nativeReq$,
       chaintypeRes$,
       newChaintypeChange$,
       chainListChange$

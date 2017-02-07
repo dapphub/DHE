@@ -19157,9 +19157,19 @@
 	      start: function start(listener) {
 	        port.onMessage.addListener(function (data) {
 	          var msgs = void 0;
-	          if (Array.isArray(data.req)) {
+	          if (data.type == "RES" && Array.isArray(data.req)) {
 	            msgs = data.req.map(function (e, i) {
-	              return { type: "RES", req: e, res: data.res[i] };
+	              return {
+	                type: "RES",
+	                req: e,
+	                res: data.res[i] };
+	            });
+	          } else if (data.type == "REQ" && Array.isArray(data.req)) {
+	            msgs = data.req.map(function (e, i) {
+	              return {
+	                type: "RES",
+	                req: e
+	              };
 	            });
 	          } else {
 	            msgs = [data];

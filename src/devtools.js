@@ -28,8 +28,16 @@ const setupPanel = _.curry((chrome, console, Math, panel) => {
       start: listener => {
         port.onMessage.addListener(function (data) {
           let msgs;
-          if(Array.isArray(data.req)) {
-            msgs = data.req.map( (e, i) => ({type: "RES", req: e, res: data.res[i]}))
+          if(data.type == "RES" && Array.isArray(data.req)) {
+            msgs = data.req.map( (e, i) => ({
+              type: "RES",
+              req: e,
+              res: data.res[i]}))
+          } else if(data.type == "REQ" && Array.isArray(data.req)) {
+            msgs = data.req.map( (e, i) => ({
+              type: "RES",
+              req: e
+            }))
           } else {
             msgs = [data]
           }

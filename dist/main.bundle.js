@@ -98450,7 +98450,8 @@
 	      call: call,
 	      tx: tx,
 	      sniffline: true,
-	      open: data.expanded
+	      open: data.expanded,
+	      loading: !data.res
 	    }, "id" + data.req.id, true)
 	  }, line);
 	};
@@ -98466,7 +98467,13 @@
 	    return formatSniffLine(state, memep);
 	  });
 
-	  var reducer$ = expanded$.map(function (v) {
+	  var reducer$ = expanded$.compose((0, _sampleCombine2.default)(sources.onion.state$)).filter(function (_ref3) {
+	    var _ref4 = _slicedToArray(_ref3, 2),
+	        _ = _ref4[0],
+	        state = _ref4[1];
+
+	    return !!state.res;
+	  }).map(function (v) {
 	    return function lineExpandedReducer(parent) {
 	      return _.assign({}, parent, {
 	        expanded: !parent.expanded
@@ -98507,34 +98514,47 @@
 	  // Filter out uninteresting information
 	  var filter = ["eth_syncing", "eth_getFilterChanges"];
 	  var filtered$ = sources.Sniffer.filter(function (comm) {
-	    return comm.type === "RES";
+	    return comm.type === "RES" || comm.type === "REQ";
 	  }).filter(function (l) {
 	    return filter.indexOf(l.req.method) === -1;
 	  });
 
 	  var lines = (0, _isolate2.default)(Children, 'history')(sources);
 
-	  var vdom$ = _xstream2.default.combine(lines.DOM, toggle$).map(function (_ref3) {
-	    var _ref4 = _slicedToArray(_ref3, 2),
-	        lines = _ref4[0],
-	        toggled = _ref4[1];
+	  var vdom$ = _xstream2.default.combine(lines.DOM, toggle$).map(function (_ref5) {
+	    var _ref6 = _slicedToArray(_ref5, 2),
+	        lines = _ref6[0],
+	        toggled = _ref6[1];
 
 	    return (0, _dom.div)(".sniffer", [(0, _dom.div)(".controllBar", [(0, _dom.label)(".record", { class: { checked: toggled } }, [(0, _dom.input)({ attrs: { type: 'checkbox' } }), (0, _dom.span)("record")])]), (0, _dom.ul)("", lines)]);
 	  });
 
-	  var logReducer$ = filtered$.compose((0, _sampleCombine2.default)(toggle$)).filter(function (_ref5) {
-	    var _ref6 = _slicedToArray(_ref5, 2),
-	        _ = _ref6[0],
-	        toggle = _ref6[1];
+	  var logReducer$ = filtered$.compose((0, _sampleCombine2.default)(toggle$)).filter(function (_ref7) {
+	    var _ref8 = _slicedToArray(_ref7, 2),
+	        _ = _ref8[0],
+	        toggle = _ref8[1];
 
 	    return toggle;
-	  }).map(function (_ref7) {
-	    var _ref8 = _slicedToArray(_ref7, 1),
-	        comm = _ref8[0];
+	  }).map(function (_ref9) {
+	    var _ref10 = _slicedToArray(_ref9, 1),
+	        comm = _ref10[0];
 
 	    return function logReducer(parent) {
-	      console.log(parent);
-	      var history = parent.history.concat(comm);
+	      // console.log(parent);
+	      var history = [];
+	      if (comm.type === "RES") {
+	        var knownIndex = parent.history.findIndex(function (el) {
+	          return el.req && el.req.id === comm.req.id;
+	        });
+	        if (knownIndex > -1) {
+	          history = parent.history.slice(0, knownIndex).concat([comm]).concat(parent.history.slice(knownIndex + 1));
+	        } else {
+	          console.log(parent.history, comm);
+	          history = parent.history.concat(comm);
+	        }
+	      } else if (comm.type === "REQ") {
+	        history = parent.history.concat(comm);
+	      }
 	      return _.assign({}, parent, { history: history });
 	    };
 	  });
@@ -103264,7 +103284,7 @@
 	exports.push([module.id, "@import url(https://fonts.googleapis.com/css?family=Source+Code+Pro);", ""]);
 
 	// module
-	exports.push([module.id, "@charset \"UTF-8\";\nbody {\n  margin: 0;\n  font-size: 12px;\n  font-size: calculateRem(12px);\n  background: #e7e7e7;\n  font-family: sans-serif;\n  color: #27243F; }\n  body #app {\n    height: 100%; }\n\nlegend {\n  color: #13111f;\n  letter-spacing: 1px; }\n\nlabel {\n  font-size: 12px;\n  font-size: calculateRem(12px); }\n\nfieldset {\n  margin: 1.2rem 0 0 0;\n  border: 1px solid #e7e7e7;\n  color: #3b375f; }\n\ninput {\n  border: 1px solid #e7e7e7;\n  color: #8D86C9;\n  display: inline-block;\n  width: 80%;\n  padding: 6px 10px;\n  margin: 6px 0; }\n\nbutton {\n  display: inline-block;\n  border: 1px solid #27243F;\n  background: #27243F;\n  color: #e7e7e7;\n  border-radius: 2px;\n  letter-spacing: 1px;\n  margin: 10px 0;\n  padding: 8px 28px;\n  text-transform: uppercase; }\n  button + button {\n    margin-left: 10px; }\n  button:disabled {\n    background: #a19bcd;\n    color: #ddd;\n    position: relative; }\n    button:disabled:after {\n      display: block;\n      position: absolute;\n      color: #333;\n      top: 0;\n      width: 460px;\n      content: 'cannot call non static functions via server.';\n      left: 100%;\n      text-align: left;\n      padding: 9px 18px; }\n\n.injectDappHub {\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  flex-direction: column;\n  height: 80%; }\n\n.treeview {\n  height: 100%;\n  display: flex;\n  flex-direction: row;\n  align-content: flex-start;\n  flex: 1; }\n  .treeview > .selectView {\n    flex: 1;\n    overflow-y: auto;\n    position: relative;\n    background: #27243F;\n    color: #fff;\n    min-width: 15%;\n    width: 15%; }\n    .treeview > .selectView > .navBtn {\n      padding: 6px 15px;\n      font-size: 12px;\n      font-weight: 300;\n      letter-spacing: 1px;\n      background-color: #27243F;\n      color: #fff; }\n      .treeview > .selectView > .navBtn:hover {\n        background-color: #4f4980; }\n      .treeview > .selectView > .navBtn.selected {\n        border-left: 4px solid #725AC1;\n        background: #4f4980;\n        padding-left: 11px; }\n  .treeview .mainView {\n    flex: 8;\n    overflow: auto;\n    display: flex; }\n    .treeview .mainView .sniffer {\n      display: flex;\n      flex-direction: column;\n      font-family: monospace;\n      width: 100%;\n      overflow-wrap: break-word; }\n      .treeview .mainView .sniffer .controllBar {\n        border-bottom: 4px solid #ddd;\n        padding: 2px 6px; }\n        .treeview .mainView .sniffer .controllBar .record input {\n          display: none; }\n        .treeview .mainView .sniffer .controllBar .record::before {\n          content: \" \";\n          display: inline-block;\n          width: 12px;\n          height: 12px;\n          background: #bbb;\n          border-radius: 20px;\n          margin: 0px 7px 2px 3px;\n          vertical-align: middle; }\n        .treeview .mainView .sniffer .controllBar .record.checked::before {\n          background: #ff603b;\n          box-shadow: 0px 1px 4px 0px #ff603b; }\n      .treeview .mainView .sniffer ul {\n        padding: 0;\n        margin: 0;\n        overflow-y: auto; }\n        .treeview .mainView .sniffer ul li.sniffline {\n          cursor: default;\n          width: 100%;\n          list-style: none; }\n          .treeview .mainView .sniffer ul li.sniffline.call {\n            background: #cce1f0; }\n          .treeview .mainView .sniffer ul li.sniffline.tx {\n            background: #f7e5d2; }\n          .treeview .mainView .sniffer ul li.sniffline span.req {\n            padding: 4px 15px;\n            display: block;\n            border-bottom: 1px solid #cdcdcd; }\n            .treeview .mainView .sniffer ul li.sniffline span.req:hover, .treeview .mainView .sniffer ul li.sniffline span.req.open {\n              background: rgba(255, 255, 255, 0.3); }\n          .treeview .mainView .sniffer ul li.sniffline span.res {\n            display: block;\n            padding: 5px 35px;\n            background: rgba(0, 0, 0, 0.1);\n            white-space: pre-wrap; }\n          .treeview .mainView .sniffer ul li.sniffline::before {\n            content: \"\\25B8\";\n            font-size: 10px;\n            line-height: 10px;\n            float: left;\n            margin: 5px 10px; }\n          .treeview .mainView .sniffer ul li.sniffline.open::before {\n            content: \"\\25BE\"; }\n\n.objectView {\n  width: 100%; }\n\n.abiView {\n  display: flex;\n  width: 100%;\n  height: 100%; }\n  .abiView .selectView {\n    flex: 3;\n    overflow-y: auto; }\n    .abiView .selectView .navBtn {\n      cursor: default;\n      font-weight: 100;\n      background: #fff;\n      font-weight: 400;\n      position: relative;\n      padding: 6px 15px; }\n      .abiView .selectView .navBtn.contract, .abiView .selectView .navBtn.objectInfo {\n        font-size: 18px;\n        padding: 10px;\n        background: #8D86C9;\n        color: #fff;\n        letter-spacing: 1px; }\n        .abiView .selectView .navBtn.contract.selected, .abiView .selectView .navBtn.objectInfo.selected {\n          border-left: 4px solid #f0a800;\n          padding-left: 11px; }\n        .abiView .selectView .navBtn.contract:hover, .abiView .selectView .navBtn.contract.selected, .abiView .selectView .navBtn.objectInfo:hover, .abiView .selectView .navBtn.objectInfo.selected {\n          background: #534d86; }\n        .abiView .selectView .navBtn.contract:before, .abiView .selectView .navBtn.objectInfo:before {\n          border-bottom: none; }\n      .abiView .selectView .navBtn.selected {\n        border-left: 4px solid #725AC1;\n        padding-left: 11px; }\n      .abiView .selectView .navBtn:hover {\n        background: rgba(255, 255, 255, 0.1); }\n      .abiView .selectView .navBtn:before {\n        content: \" \";\n        border-bottom: 1px dotted #e7e7e7;\n        display: block;\n        position: absolute;\n        bottom: 0;\n        right: 0;\n        width: 90%; }\n      .abiView .selectView .navBtn:hover {\n        background: #F8F7F5; }\n      .abiView .selectView .navBtn.selected {\n        border-left: 4px solid #725AC1;\n        background: #F8F7F5; }\n  .abiView .mainView {\n    flex: 6;\n    overflow-y: auto;\n    padding: 15px;\n    border-left: 1px solid #F8F7F5;\n    background: #fff; }\n    .abiView .mainView table {\n      width: 100%; }\n      .abiView .mainView table td {\n        margin: 6px 0; }\n      .abiView .mainView table td.input {\n        display: flex; }\n        .abiView .mainView table td.input > input {\n          flex: 1; }\n      .abiView .mainView table td.label {\n        text-align: right;\n        padding-right: 10px;\n        width: 18%; }\n      .abiView .mainView table td.type {\n        padding-left: 4px;\n        width: 15%; }\n\n.jsonDisplay {\n  white-space: pre;\n  font-family: monospace;\n  padding: 20px;\n  display: block; }\n\n.settings {\n  flex: 1;\n  padding: 0em 3em; }\n  .settings fieldset + fieldset {\n    margin: 2em 0; }\n  .settings fieldset {\n    border-color: #27243f; }\n  .settings label {\n    display: block; }\n    .settings label > input {\n      margin-left: 1em; }\n", ""]);
+	exports.push([module.id, "@charset \"UTF-8\";\nbody {\n  margin: 0;\n  font-size: 12px;\n  font-size: calculateRem(12px);\n  background: #e7e7e7;\n  font-family: sans-serif;\n  color: #27243F; }\n  body #app {\n    height: 100%; }\n\nlegend {\n  color: #13111f;\n  letter-spacing: 1px; }\n\nlabel {\n  font-size: 12px;\n  font-size: calculateRem(12px); }\n\nfieldset {\n  margin: 1.2rem 0 0 0;\n  border: 1px solid #e7e7e7;\n  color: #3b375f; }\n\ninput {\n  border: 1px solid #e7e7e7;\n  color: #8D86C9;\n  display: inline-block;\n  width: 80%;\n  padding: 6px 10px;\n  margin: 6px 0; }\n\nbutton {\n  display: inline-block;\n  border: 1px solid #27243F;\n  background: #27243F;\n  color: #e7e7e7;\n  border-radius: 2px;\n  letter-spacing: 1px;\n  margin: 10px 0;\n  padding: 8px 28px;\n  text-transform: uppercase; }\n  button + button {\n    margin-left: 10px; }\n  button:disabled {\n    background: #a19bcd;\n    color: #ddd;\n    position: relative; }\n    button:disabled:after {\n      display: block;\n      position: absolute;\n      color: #333;\n      top: 0;\n      width: 460px;\n      content: 'cannot call non static functions via server.';\n      left: 100%;\n      text-align: left;\n      padding: 9px 18px; }\n\n.injectDappHub {\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  flex-direction: column;\n  height: 80%; }\n\n.treeview {\n  height: 100%;\n  display: flex;\n  flex-direction: row;\n  align-content: flex-start;\n  flex: 1; }\n  .treeview > .selectView {\n    flex: 1;\n    overflow-y: auto;\n    position: relative;\n    background: #27243F;\n    color: #fff;\n    min-width: 15%;\n    width: 15%; }\n    .treeview > .selectView > .navBtn {\n      padding: 6px 15px;\n      font-size: 12px;\n      font-weight: 300;\n      letter-spacing: 1px;\n      background-color: #27243F;\n      color: #fff; }\n      .treeview > .selectView > .navBtn:hover {\n        background-color: #4f4980; }\n      .treeview > .selectView > .navBtn.selected {\n        border-left: 4px solid #725AC1;\n        background: #4f4980;\n        padding-left: 11px; }\n  .treeview .mainView {\n    flex: 8;\n    overflow: auto;\n    display: flex; }\n    .treeview .mainView .sniffer {\n      display: flex;\n      flex-direction: column;\n      font-family: monospace;\n      width: 100%;\n      overflow-wrap: break-word; }\n      .treeview .mainView .sniffer .controllBar {\n        border-bottom: 4px solid #ddd;\n        padding: 2px 6px; }\n        .treeview .mainView .sniffer .controllBar .record input {\n          display: none; }\n        .treeview .mainView .sniffer .controllBar .record::before {\n          content: \" \";\n          display: inline-block;\n          width: 12px;\n          height: 12px;\n          background: #bbb;\n          border-radius: 20px;\n          margin: 0px 7px 2px 3px;\n          vertical-align: middle; }\n        .treeview .mainView .sniffer .controllBar .record.checked::before {\n          background: #ff603b;\n          box-shadow: 0px 1px 4px 0px #ff603b; }\n      .treeview .mainView .sniffer ul {\n        padding: 0;\n        margin: 0;\n        overflow-y: auto; }\n        .treeview .mainView .sniffer ul li.sniffline {\n          cursor: default;\n          width: 100%;\n          list-style: none; }\n          .treeview .mainView .sniffer ul li.sniffline.call {\n            background: #cce1f0; }\n          .treeview .mainView .sniffer ul li.sniffline.tx {\n            background: #f7e5d2; }\n          .treeview .mainView .sniffer ul li.sniffline.loading {\n            color: #666; }\n            .treeview .mainView .sniffer ul li.sniffline.loading::before {\n              content: '' !important; }\n            .treeview .mainView .sniffer ul li.sniffline.loading > span {\n              margin-left: 11px; }\n          .treeview .mainView .sniffer ul li.sniffline span.req {\n            padding: 4px 15px;\n            display: block;\n            border-bottom: 1px solid #cdcdcd; }\n            .treeview .mainView .sniffer ul li.sniffline span.req:hover, .treeview .mainView .sniffer ul li.sniffline span.req.open {\n              background: rgba(255, 255, 255, 0.3); }\n          .treeview .mainView .sniffer ul li.sniffline span.res {\n            display: block;\n            padding: 5px 35px;\n            background: rgba(0, 0, 0, 0.1);\n            white-space: pre-wrap; }\n          .treeview .mainView .sniffer ul li.sniffline::before {\n            content: \"\\25B8\";\n            font-size: 10px;\n            line-height: 10px;\n            float: left;\n            margin: 5px 10px; }\n          .treeview .mainView .sniffer ul li.sniffline.open::before {\n            content: \"\\25BE\"; }\n\n.objectView {\n  width: 100%; }\n\n.abiView {\n  display: flex;\n  width: 100%;\n  height: 100%; }\n  .abiView .selectView {\n    flex: 3;\n    overflow-y: auto; }\n    .abiView .selectView .navBtn {\n      cursor: default;\n      font-weight: 100;\n      background: #fff;\n      font-weight: 400;\n      position: relative;\n      padding: 6px 15px; }\n      .abiView .selectView .navBtn.contract, .abiView .selectView .navBtn.objectInfo {\n        font-size: 18px;\n        padding: 10px;\n        background: #8D86C9;\n        color: #fff;\n        letter-spacing: 1px; }\n        .abiView .selectView .navBtn.contract.selected, .abiView .selectView .navBtn.objectInfo.selected {\n          border-left: 4px solid #f0a800;\n          padding-left: 11px; }\n        .abiView .selectView .navBtn.contract:hover, .abiView .selectView .navBtn.contract.selected, .abiView .selectView .navBtn.objectInfo:hover, .abiView .selectView .navBtn.objectInfo.selected {\n          background: #534d86; }\n        .abiView .selectView .navBtn.contract:before, .abiView .selectView .navBtn.objectInfo:before {\n          border-bottom: none; }\n      .abiView .selectView .navBtn.selected {\n        border-left: 4px solid #725AC1;\n        padding-left: 11px; }\n      .abiView .selectView .navBtn:hover {\n        background: rgba(255, 255, 255, 0.1); }\n      .abiView .selectView .navBtn:before {\n        content: \" \";\n        border-bottom: 1px dotted #e7e7e7;\n        display: block;\n        position: absolute;\n        bottom: 0;\n        right: 0;\n        width: 90%; }\n      .abiView .selectView .navBtn:hover {\n        background: #F8F7F5; }\n      .abiView .selectView .navBtn.selected {\n        border-left: 4px solid #725AC1;\n        background: #F8F7F5; }\n  .abiView .mainView {\n    flex: 6;\n    overflow-y: auto;\n    padding: 15px;\n    border-left: 1px solid #F8F7F5;\n    background: #fff; }\n    .abiView .mainView table {\n      width: 100%; }\n      .abiView .mainView table td {\n        margin: 6px 0; }\n      .abiView .mainView table td.input {\n        display: flex; }\n        .abiView .mainView table td.input > input {\n          flex: 1; }\n      .abiView .mainView table td.label {\n        text-align: right;\n        padding-right: 10px;\n        width: 18%; }\n      .abiView .mainView table td.type {\n        padding-left: 4px;\n        width: 15%; }\n\n.jsonDisplay {\n  white-space: pre;\n  font-family: monospace;\n  padding: 20px;\n  display: block; }\n\n.settings {\n  flex: 1;\n  padding: 0em 3em; }\n  .settings fieldset + fieldset {\n    margin: 2em 0; }\n  .settings fieldset {\n    border-color: #27243f; }\n  .settings label {\n    display: block; }\n    .settings label > input {\n      margin-left: 1em; }\n", ""]);
 
 	// exports
 
